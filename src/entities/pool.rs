@@ -40,8 +40,8 @@ impl Pool {
     ) -> Address {
         compute_pool_address(
             factory_address_override.unwrap_or(FACTORY_ADDRESS),
-            token_a.address().to_string().parse::<Address>().unwrap(),
-            token_b.address().to_string().parse::<Address>().unwrap(),
+            token_a.address(),
+            token_b.address(),
             fee,
             init_code_hash_manual_override,
         )
@@ -51,12 +51,12 @@ impl Pool {
     ///
     /// # Arguments
     ///
-    /// * `token_a` - One of the tokens in the pool
-    /// * `token_b` - The other token in the pool
-    /// * `fee` - The fee in hundredths of a bips of the input amount of every swap that is collected by the pool
-    /// * `sqrt_ratio_x96` - The sqrt of the current ratio of amounts of token1 to token0
-    /// * `liquidity` - The current value of in range liquidity
-    /// * `tick_current` - The current tick of the pool
+    /// * `token_a`: One of the tokens in the pool
+    /// * `token_b`: The other token in the pool
+    /// * `fee`: The fee in hundredths of a bips of the input amount of every swap that is collected by the pool
+    /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
+    /// * `liquidity`: The current value of in range liquidity
+    /// * `tick_current`: The current tick of the pool
     pub fn new(
         token_a: Token,
         token_b: Token,
@@ -81,8 +81,8 @@ impl Pool {
         }
     }
 
-    pub fn chain_id(&self) -> u64 {
-        self.token0.chain_id() as u64
+    pub fn chain_id(&self) -> u32 {
+        self.token0.chain_id()
     }
 
     pub fn tick_spacing(&self) -> i32 {
