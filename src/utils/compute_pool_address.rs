@@ -26,9 +26,41 @@ pub fn compute_pool_address(
     } else {
         (token_b, token_a)
     };
-    let pool_key = (factory, token_0, token_1, fee as i32);
+    let pool_key = (token_0, token_1, fee as i32);
     factory.create2(
         keccak256(pool_key.abi_encode()),
         init_code_hash_manual_override.unwrap_or(POOL_INIT_CODE_HASH),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_primitives::address;
+
+    const FACTORY_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
+    const USDC_ADDRESS: Address = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+    const DAI_ADDRESS: Address = address!("6B175474E89094C44Da98b954EedeAC495271d0F");
+
+    #[test]
+    fn test_compute_pool_address() {
+        let result = compute_pool_address(
+            FACTORY_ADDRESS,
+            USDC_ADDRESS,
+            DAI_ADDRESS,
+            FeeAmount::LOW,
+            None,
+        );
+        assert_eq!(result, address!("90B1b09A9715CaDbFD9331b3A7652B24BfBEfD32"));
+        assert_eq!(
+            result,
+            compute_pool_address(
+                FACTORY_ADDRESS,
+                DAI_ADDRESS,
+                USDC_ADDRESS,
+                FeeAmount::LOW,
+                None,
+            )
+        );
+    }
 }
