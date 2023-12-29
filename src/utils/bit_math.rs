@@ -22,7 +22,7 @@ pub fn most_significant_bit(x: U256) -> u8 {
         b256!("0706060506020504060203020504030106050205030304010505030400000000");
     let x_shr_r = x.shr(r).to_le_bytes::<32>()[0] as u32;
 
-    r | SEQUENCE[(0x8421084210842108cc6318c6db6d54be
+    r | SEQUENCE[(0x8421084210842108cc6318c6db6d54be_u128
         .checked_shr(x_shr_r)
         .unwrap_or(0)
         & 0x1f) as usize]
