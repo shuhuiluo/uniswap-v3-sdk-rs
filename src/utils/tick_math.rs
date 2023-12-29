@@ -1,5 +1,9 @@
 use alloy_primitives::U256;
-use uniswap_v3_math::{error::UniswapV3MathError, tick_math};
+use uniswap_v3_math::{
+    error::UniswapV3MathError,
+    tick_math,
+    utils::{ruint_to_u256, u256_to_ruint},
+};
 
 pub use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
 
@@ -10,13 +14,12 @@ pub const MAX_SQRT_RATIO: U256 =
 pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
     // TODO: optimize
     let res = tick_math::get_sqrt_ratio_at_tick(tick)?;
-    Ok(U256::from_limbs_slice(res.as_ref()))
+    Ok(u256_to_ruint(res))
 }
 
 pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3MathError> {
-    let be_bytes = sqrt_ratio_x96.to_be_bytes();
     // TODO: optimize
-    tick_math::get_tick_at_sqrt_ratio(be_bytes.into())
+    tick_math::get_tick_at_sqrt_ratio(ruint_to_u256(sqrt_ratio_x96))
 }
 
 #[cfg(test)]
