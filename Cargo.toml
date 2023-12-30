@@ -16,3 +16,10 @@ num-traits = "0.2.17"
 once_cell = "1.19.0"
 uniswap-sdk-core-rust = "0.4.0"
 uniswap_v3_math = "0.4.1"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "bit_math"
+harness = false
