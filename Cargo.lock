@@ -3439,6 +3439,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "once_cell",
+ "ruint",
  "uniswap-sdk-core-rust",
  "uniswap_v3_math",
 ]
