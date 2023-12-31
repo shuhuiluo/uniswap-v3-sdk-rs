@@ -2,7 +2,7 @@
 //! This library is a Rust port of the [SqrtPriceMath library](https://github.com/uniswap/v3-core/blob/main/contracts/libraries/SqrtPriceMath.sol) in Solidity,
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/SqrtPriceMath.sol).
 
-use super::{mul_div, mul_div_rounding_up, Q96};
+use super::{mul_div, mul_div_96, mul_div_rounding_up, Q96};
 use alloy_primitives::{I256, U256};
 use uniswap_v3_math::error::UniswapV3MathError;
 
@@ -256,7 +256,7 @@ pub fn get_amount_1_delta(
     let denominator = Q96;
 
     let liquidity = to_uint256(liquidity);
-    let amount_1 = mul_div(liquidity, numerator, denominator)?;
+    let amount_1 = mul_div_96(liquidity, numerator)?;
     let carry = liquidity.mul_mod(numerator, denominator).gt(&U256::ZERO) && round_up;
     Ok(amount_1 + U256::from_limbs([carry as u64, 0, 0, 0]))
 }
@@ -287,7 +287,7 @@ pub fn get_amount_0_delta_signed(
         liquidity,
         sign,
     )?);
-    Ok(amount_0 ^ mask - mask)
+    Ok((amount_0 ^ mask) - mask)
 }
 
 /// Helper that gets signed token1 delta
@@ -316,7 +316,7 @@ pub fn get_amount_1_delta_signed(
         liquidity,
         sign,
     )?);
-    Ok(amount_1 ^ mask - mask)
+    Ok((amount_1 ^ mask) - mask)
 }
 
 #[cfg(test)]
