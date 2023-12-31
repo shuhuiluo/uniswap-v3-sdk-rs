@@ -8,6 +8,7 @@ mod nearest_usable_tick;
 mod position;
 mod price_tick_conversions;
 mod sqrt_price_math;
+mod swap_math;
 mod tick_math;
 
 pub use bit_math::*;
@@ -20,6 +21,7 @@ pub use nearest_usable_tick::nearest_usable_tick;
 pub use position::get_tokens_owed;
 pub use price_tick_conversions::*;
 pub use sqrt_price_math::*;
+pub use swap_math::compute_swap_step;
 pub use tick_math::*;
 
 use alloy_primitives::U256;
