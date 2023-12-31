@@ -47,8 +47,8 @@ fn get_tick_at_sqrt_ratio_benchmark_ref(c: &mut Criterion) {
 criterion_group!(
     benches,
     get_sqrt_ratio_at_tick_benchmark,
-    get_tick_at_sqrt_ratio_benchmark,
     get_sqrt_ratio_at_tick_benchmark_ref,
+    get_tick_at_sqrt_ratio_benchmark,
     get_tick_at_sqrt_ratio_benchmark_ref
 );
 criterion_main!(benches);

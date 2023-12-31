@@ -26,5 +26,9 @@ name = "bit_math"
 harness = false
 
 [[bench]]
+name = "sqrt_price_math"
+harness = false
+
+[[bench]]
 name = "tick_math"
 harness = false

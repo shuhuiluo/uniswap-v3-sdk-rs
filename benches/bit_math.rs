@@ -47,8 +47,8 @@ fn least_significant_bit_benchmark_ref(c: &mut Criterion) {
 criterion_group!(
     benches,
     most_significant_bit_benchmark,
-    least_significant_bit_benchmark,
     most_significant_bit_benchmark_ref,
+    least_significant_bit_benchmark,
     least_significant_bit_benchmark_ref
 );
 criterion_main!(benches);

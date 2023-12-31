@@ -6,11 +6,9 @@ use alloy_primitives::{Address, B256, U256};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
 use std::str::FromStr;
-use uniswap_sdk_core_rust::entities::{
-    base_currency::BaseCurrency,
-    currency::CurrencyTrait,
-    fractions::{currency_amount::CurrencyAmount, price::Price},
-    token::Token,
+use uniswap_sdk_core_rust::{
+    entities::fractions::price::Price,
+    prelude::{BaseCurrency, CurrencyAmount, CurrencyTrait, Token},
 };
 
 static Q192: Lazy<BigUint> = Lazy::new(|| {
@@ -177,7 +175,7 @@ impl Pool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uniswap_sdk_core_rust::entities::weth9::WETH9;
+    use uniswap_sdk_core_rust::prelude::WETH9;
 
     const ONE_ETHER: U256 = U256::from_limbs([10u64.pow(18), 0, 0, 0]);
 

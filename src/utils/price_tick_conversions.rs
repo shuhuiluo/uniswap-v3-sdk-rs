@@ -3,9 +3,9 @@ use alloy_primitives::U256;
 use anyhow::Result;
 use num_bigint::BigUint;
 use num_traits::ToBytes;
-use uniswap_sdk_core_rust::entities::{
-    fractions::{fraction::FractionTrait, price::Price},
-    token::Token,
+use uniswap_sdk_core_rust::{
+    entities::fractions::price::Price,
+    prelude::{FractionTrait, Token},
 };
 
 /// Returns a price object corresponding to the input tick and the base/quote token.
