@@ -1,19 +1,16 @@
 use crate::{
     constants::{FeeAmount, FACTORY_ADDRESS},
-    utils::{compute_pool_address, get_tick_at_sqrt_ratio},
+    utils::{compute_pool_address, get_tick_at_sqrt_ratio, u256_to_big_uint, Q192},
 };
 use alloy_primitives::{Address, B256, U256};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
-use std::str::FromStr;
 use uniswap_sdk_core_rust::{
     entities::fractions::price::Price,
     prelude::{BaseCurrency, CurrencyAmount, CurrencyTrait, Token},
 };
 
-static Q192: Lazy<BigUint> = Lazy::new(|| {
-    BigUint::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap()
-});
+static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
 /// Represents a V3 pool
 pub struct Pool {
@@ -101,12 +98,12 @@ impl Pool {
 
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over token0
     pub fn token0_price(&mut self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = BigUint::from_str(&self.sqrt_ratio_x96.to_string()).unwrap();
+        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         self._token0_price.clone().unwrap_or_else(|| {
             let price = Price::new(
                 self.token0.clone(),
                 self.token1.clone(),
-                Q192.clone(),
+                _Q192.clone(),
                 &sqrt_ratio_x96 * &sqrt_ratio_x96,
             );
             self._token0_price = Some(price.clone());
@@ -116,13 +113,13 @@ impl Pool {
 
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over token1
     pub fn token1_price(&mut self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = BigUint::from_str(&self.sqrt_ratio_x96.to_string()).unwrap();
+        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         self._token1_price.clone().unwrap_or_else(|| {
             let price = Price::new(
                 self.token1.clone(),
                 self.token0.clone(),
                 &sqrt_ratio_x96 * &sqrt_ratio_x96,
-                Q192.clone(),
+                _Q192.clone(),
             );
             self._token1_price = Some(price.clone());
             price

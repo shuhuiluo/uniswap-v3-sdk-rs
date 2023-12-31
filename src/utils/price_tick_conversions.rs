@@ -1,7 +1,8 @@
-use super::{encode_sqrt_ratio_x96, get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, Q192};
+use super::{
+    encode_sqrt_ratio_x96, get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, u256_to_big_uint, Q192,
+};
 use alloy_primitives::U256;
 use anyhow::Result;
-use num_bigint::BigUint;
 use num_traits::ToBytes;
 use uniswap_sdk_core_rust::{
     entities::fractions::price::Price,
@@ -23,9 +24,9 @@ pub fn tick_to_price(
     tick: i32,
 ) -> Result<Price<Token, Token>> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    let sqrt_ratio_x96 = BigUint::from_bytes_be(&sqrt_ratio_x96.to_be_bytes::<32>());
+    let sqrt_ratio_x96 = u256_to_big_uint(sqrt_ratio_x96);
     let ratio_x192 = &sqrt_ratio_x96 * &sqrt_ratio_x96;
-    let q192 = BigUint::from_bytes_be(&Q192.to_be_bytes::<32>());
+    let q192 = u256_to_big_uint(Q192);
     Ok(if base_token.sorts_before(&quote_token) {
         Price::new(base_token, quote_token, q192, ratio_x192)
     } else {
