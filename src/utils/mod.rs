@@ -9,6 +9,7 @@ mod position;
 mod price_tick_conversions;
 mod sqrt_price_math;
 mod swap_math;
+mod tick_list;
 mod tick_math;
 
 pub use bit_math::*;
@@ -22,6 +23,7 @@ pub use position::get_tokens_owed;
 pub use price_tick_conversions::*;
 pub use sqrt_price_math::*;
 pub use swap_math::compute_swap_step;
+pub use tick_list::TickList;
 pub use tick_math::*;
 
 use alloy_primitives::U256;
