@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk-rs"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -15,6 +15,7 @@ num-bigint = "0.4.4"
 num-traits = "0.2.17"
 once_cell = "1.19.0"
 ruint = "1.11.1"
+thiserror = "1.0.53"
 uniswap-sdk-core-rust = { git = "https://github.com/malik672/uniswap-sdk-core-rust", branch = "master" }
 uniswap_v3_math = "0.4.1"
 

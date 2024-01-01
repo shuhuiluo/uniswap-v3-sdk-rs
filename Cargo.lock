@@ -3251,8 +3251,8 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 
 [[package]]
 name = "uniswap-sdk-core-rust"
-version = "0.5.0"
-source = "git+https://github.com/malik672/uniswap-sdk-core-rust?branch=master#3ee2f822e5c594137c6707615ec4fe3bfd888d8c"
+version = "0.6.0"
+source = "git+https://github.com/malik672/uniswap-sdk-core-rust?branch=master#5bb6e795a1a7027a3765c45ff2ab618031510de4"
 dependencies = [
  "alloy-primitives",
  "bigdecimal",
@@ -3270,7 +3270,7 @@ dependencies = [
 
 [[package]]
 name = "uniswap-v3-sdk-rs"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "alloy-dyn-abi",
  "alloy-json-abi",
@@ -3283,6 +3283,7 @@ dependencies = [
  "num-traits",
  "once_cell",
  "ruint",
+ "thiserror",
  "uniswap-sdk-core-rust",
  "uniswap_v3_math",
 ]

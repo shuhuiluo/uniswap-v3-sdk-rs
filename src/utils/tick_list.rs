@@ -1,4 +1,3 @@
-use super::add_delta;
 use crate::entities::TickTrait;
 
 /// Utility methods for interacting with sorted lists of self
@@ -40,8 +39,7 @@ impl<T: TickTrait> TickList<T> for [T] {
         );
         assert!(self.is_sorted(), "SORTED");
         assert_eq!(
-            self.iter()
-                .fold(0, |acc, x| add_delta(acc, x.liquidity_net()).unwrap()),
+            self.iter().fold(0, |acc, x| acc + x.liquidity_net()),
             0,
             "ZERO_NET"
         );
