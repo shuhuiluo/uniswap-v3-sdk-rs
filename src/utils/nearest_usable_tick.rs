@@ -9,9 +9,9 @@ use super::tick_math::{MAX_TICK, MIN_TICK};
 ///
 /// returns: i32
 ///
-pub fn nearest_usable_tick(tick: i32, tick_spacing: i32) -> i32 {
+pub const fn nearest_usable_tick(tick: i32, tick_spacing: i32) -> i32 {
     assert!(tick_spacing > 0, "TICK_SPACING");
-    assert!((MIN_TICK..=MAX_TICK).contains(&tick), "TICK_BOUND");
+    assert!(tick >= MIN_TICK && tick <= MAX_TICK, "TICK_BOUND");
     let rounded = tick.div_floor(tick_spacing) * tick_spacing;
     let rounded = rounded + (tick - rounded + tick_spacing / 2) / tick_spacing * tick_spacing;
     if rounded < MIN_TICK {

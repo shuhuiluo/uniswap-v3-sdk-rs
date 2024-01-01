@@ -18,7 +18,7 @@ pub enum FeeAmount {
 
 impl FeeAmount {
     /// The default factory tick spacings by fee amount.
-    pub fn tick_spacing(&self) -> i32 {
+    pub const fn tick_spacing(&self) -> i32 {
         match self {
             Self::LOWEST => 1,
             Self::LOW => 10,
