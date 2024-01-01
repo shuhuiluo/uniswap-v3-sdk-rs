@@ -17,7 +17,7 @@ fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
     }
 }
 
-fn to_uint256(x: u128) -> U256 {
+const fn to_uint256(x: u128) -> U256 {
     U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
 }
 
