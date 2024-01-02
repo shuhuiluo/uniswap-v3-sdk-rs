@@ -5,10 +5,7 @@ use crate::{
 use alloy_primitives::{Address, B256, U256};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
-use uniswap_sdk_core_rust::{
-    entities::fractions::price::Price,
-    prelude::{BaseCurrency, CurrencyAmount, CurrencyTrait, Token},
-};
+use uniswap_sdk_core::prelude::*;
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
@@ -172,34 +169,26 @@ impl Pool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uniswap_sdk_core_rust::prelude::WETH9;
+    use uniswap_sdk_core::token;
 
     const ONE_ETHER: U256 = U256::from_limbs([10u64.pow(18), 0, 0, 0]);
 
     static USDC: Lazy<Token> = Lazy::new(|| {
-        Token::new(
+        token!(
             1,
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-                .parse()
-                .unwrap(),
+            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
             6,
-            Some("USDC".to_owned()),
-            Some("USD Coin".to_owned()),
-            None,
-            None,
+            "USDC",
+            "USD Coin"
         )
     });
     static _DAI: Lazy<Token> = Lazy::new(|| {
-        Token::new(
+        token!(
             1,
-            "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-                .parse()
-                .unwrap(),
+            "0x6B175474E89094C44Da98b954EedeAC495271d0F",
             18,
-            Some("DAI".to_owned()),
-            Some("DAI Stablecoin".to_owned()),
-            None,
-            None,
+            "DAI",
+            "DAI Stablecoin"
         )
     });
 

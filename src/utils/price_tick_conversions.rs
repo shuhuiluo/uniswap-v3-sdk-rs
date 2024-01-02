@@ -4,10 +4,7 @@ use super::{
 use alloy_primitives::U256;
 use anyhow::Result;
 use num_traits::ToBytes;
-use uniswap_sdk_core_rust::{
-    entities::fractions::price::Price,
-    prelude::{FractionTrait, Token},
-};
+use uniswap_sdk_core::prelude::*;
 
 /// Returns a price object corresponding to the input tick and the base/quote token.
 /// Inputs must be tokens because the address order is used to interpret the price represented by the tick.
@@ -73,41 +70,34 @@ pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use num_bigint::BigInt;
     use once_cell::sync::Lazy;
-    use uniswap_sdk_core_rust::constants::Rounding;
+    use uniswap_sdk_core::token;
 
     static TOKEN0: Lazy<Token> = Lazy::new(|| {
-        Token::new(
+        token!(
             1,
-            "0x0000000000000000000000000000000000000000".to_string(),
+            "0x0000000000000000000000000000000000000000",
             18,
-            Some("T0".to_string()),
-            Some("token0".to_string()),
-            None,
-            None,
+            "T0",
+            "token0"
         )
     });
     static TOKEN1: Lazy<Token> = Lazy::new(|| {
-        Token::new(
+        token!(
             1,
-            "0x1111111111111111111111111111111111111111".to_string(),
+            "0x1111111111111111111111111111111111111111",
             18,
-            Some("T1".to_string()),
-            Some("token1".to_string()),
-            None,
-            None,
+            "T1",
+            "token1"
         )
     });
     static TOKEN2_6DECIMALS: Lazy<Token> = Lazy::new(|| {
-        Token::new(
+        token!(
             1,
-            "0x2222222222222222222222222222222222222222".to_string(),
+            "0x2222222222222222222222222222222222222222",
             6,
-            Some("T2".to_string()),
-            Some("token2".to_string()),
-            None,
-            None,
+            "T2",
+            "token2"
         )
     });
 

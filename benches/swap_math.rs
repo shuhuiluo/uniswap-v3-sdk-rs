@@ -1,7 +1,6 @@
 use alloy_primitives::{keccak256, I256, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
-use ethers_core;
 use uniswap_v3_math::{swap_math, utils::ruint_to_u256};
 use uniswap_v3_sdk_rs::utils::compute_swap_step;
 
@@ -53,7 +52,7 @@ fn compute_swap_step_benchmark(c: &mut Criterion) {
 }
 
 fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
-    use ethers_core::types::{I256, U256};
+    use ethers::types::{I256, U256};
 
     let inputs: Vec<(U256, U256, u128, I256, u32)> = generate_inputs()
         .into_iter()
