@@ -6,4 +6,5 @@
 
 pub mod constants;
 pub mod entities;
+pub mod extensions;
 pub mod utils;
