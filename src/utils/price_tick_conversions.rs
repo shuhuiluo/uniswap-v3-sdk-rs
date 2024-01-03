@@ -1,9 +1,7 @@
 use super::{
     encode_sqrt_ratio_x96, get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, u256_to_big_uint, Q192,
 };
-use alloy_primitives::U256;
 use anyhow::Result;
-use num_traits::ToBytes;
 use uniswap_sdk_core::prelude::*;
 
 /// Returns a price object corresponding to the input tick and the base/quote token.
@@ -48,7 +46,7 @@ pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
     } else {
         encode_sqrt_ratio_x96(price.denominator().clone(), price.numerator().clone())
     };
-    let tick = get_tick_at_sqrt_ratio(U256::from_le_slice(&sqrt_ratio_x96.to_le_bytes()))?;
+    let tick = get_tick_at_sqrt_ratio(sqrt_ratio_x96)?;
     let next_tick_price = tick_to_price(
         price.meta.base_currency.clone(),
         price.meta.quote_currency.clone(),
