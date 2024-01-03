@@ -2,7 +2,7 @@ use alloy_primitives::{keccak256, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
 use uniswap_v3_math::{sqrt_price_math, utils::ruint_to_u256};
-use uniswap_v3_sdk_rs::utils::{
+use uniswap_v3_sdk::utils::{
     get_amount_0_delta, get_amount_0_delta_signed, get_amount_1_delta, get_amount_1_delta_signed,
     get_next_sqrt_price_from_input, get_next_sqrt_price_from_output,
 };

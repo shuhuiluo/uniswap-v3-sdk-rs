@@ -210,7 +210,7 @@ mod tests {
     #[test]
     fn test_next_initialized_tick_mid_lte_false() {
         assert_eq!(TICKS.next_initialized_tick(-1, false), &MID_TICK);
-        assert_eq!(TICKS.next_initialized_tick(0 + 1, false), &HIGH_TICK);
+        assert_eq!(TICKS.next_initialized_tick(1, false), &HIGH_TICK);
     }
 
     #[test]

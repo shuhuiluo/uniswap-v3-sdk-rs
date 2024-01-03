@@ -2,7 +2,7 @@ use alloy_primitives::{keccak256, I256, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
 use uniswap_v3_math::{swap_math, utils::ruint_to_u256};
-use uniswap_v3_sdk_rs::utils::compute_swap_step;
+use uniswap_v3_sdk::utils::compute_swap_step;
 
 fn pseudo_random(seed: u64) -> U256 {
     keccak256(seed.abi_encode()).into()

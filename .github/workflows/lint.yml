@@ -1,4 +1,4 @@
-name: Rust Linting
+name: Lint
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Check lint
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Check formatting
-        run: cargo fmt -- --check
+        run: cargo fmt --all -- --check

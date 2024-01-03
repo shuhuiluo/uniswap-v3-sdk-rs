@@ -3960,8 +3960,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "uniswap-v3-sdk-rs"
-version = "0.6.0"
+name = "uniswap-v3-sdk"
+version = "0.6.1"
 dependencies = [
  "alloy-dyn-abi",
  "alloy-json-abi",
