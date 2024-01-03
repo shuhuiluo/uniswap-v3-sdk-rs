@@ -2,7 +2,7 @@ use alloy_primitives::U256;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::ops::Shl;
 use uniswap_v3_math::{tick_math, utils::ruint_to_u256};
-use uniswap_v3_sdk_rs::utils::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio};
+use uniswap_v3_sdk::utils::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio};
 
 fn get_sqrt_ratio_at_tick_benchmark(c: &mut Criterion) {
     c.bench_function("get_sqrt_ratio_at_tick", |b| {

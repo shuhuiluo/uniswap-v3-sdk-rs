@@ -1,9 +1,10 @@
 [package]
-name = "uniswap-v3-sdk-rs"
-version = "0.6.0"
+name = "uniswap-v3-sdk"
+version = "0.6.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
+description = "Uniswap v3 SDK for Rust"
+license = "MIT"
 
 [dependencies]
 alloy-dyn-abi = "0.5.4"

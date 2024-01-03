@@ -2,7 +2,7 @@ use alloy_primitives::U256;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::ops::Shl;
 use uniswap_v3_math::{bit_math, utils::ruint_to_u256};
-use uniswap_v3_sdk_rs::utils::{least_significant_bit, most_significant_bit};
+use uniswap_v3_sdk::utils::{least_significant_bit, most_significant_bit};
 
 fn most_significant_bit_benchmark(c: &mut Criterion) {
     c.bench_function("most_significant_bit", |b| {
