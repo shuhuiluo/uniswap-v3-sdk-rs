@@ -11,5 +11,5 @@ pub mod extensions;
 pub mod utils;
 
 pub mod prelude {
-    pub use crate::{constants::*, entities::*, extensions::*, utils::*};
+    pub use crate::{constants::*, entities::*, utils::*};
 }

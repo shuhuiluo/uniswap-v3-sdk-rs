@@ -165,19 +165,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
 
 [[package]]
-name = "aperture-lens"
-version = "0.3.0"
-source = "git+https://github.com/Aperture-Finance/Aperture-Lens?branch=main#8b02e9dcc1023f68c05ca3ee2f658f23ee97fb5a"
-dependencies = [
- "anyhow",
- "dotenv",
- "ethers",
- "futures",
- "serde",
- "tokio",
-]
-
-[[package]]
 name = "ark-ff"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -983,12 +970,6 @@ dependencies = [
  "redox_users",
  "winapi",
 ]
-
-[[package]]
-name = "dotenv"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "dunce"
@@ -3943,7 +3924,8 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "uniswap-sdk-core"
 version = "0.6.1"
-source = "git+https://github.com/malik672/uniswap-sdk-core-rust?branch=master#d70b78ccca08d457aef22f5721fe752dfd6ab4dd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ce2bebb7001ced20c4762c7f669229abcb3bcd659d4bab6107aa483f08a35a1"
 dependencies = [
  "alloy-primitives",
  "bigdecimal",
@@ -3968,7 +3950,6 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
- "aperture-lens",
  "criterion",
  "ethers",
  "num-bigint",
