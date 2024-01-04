@@ -1,5 +1,6 @@
-use super::{mul_div, mul_div_96, u256_to_big_uint, Q96};
+use super::u256_to_big_uint;
 use alloy_primitives::U256;
+use num_bigint::BigUint;
 
 /// Returns an imprecise maximum amount of liquidity received for a given amount of token 0.
 /// This function is available to accommodate LiquidityAmounts#getLiquidityForAmount0 in the v3 periphery,
@@ -19,13 +20,15 @@ pub fn max_liquidity_for_amount0_imprecise(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
     amount0: U256,
-) -> U256 {
+) -> BigUint {
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
+    let sqrt_ratio_a_x96 = u256_to_big_uint(sqrt_ratio_a_x96);
+    let sqrt_ratio_b_x96 = u256_to_big_uint(sqrt_ratio_b_x96);
 
-    let intermediate = mul_div_96(sqrt_ratio_a_x96, sqrt_ratio_b_x96).unwrap();
-    mul_div(amount0, intermediate, sqrt_ratio_b_x96 - sqrt_ratio_a_x96).unwrap_or(U256::MAX)
+    let intermediate = (&sqrt_ratio_a_x96 * &sqrt_ratio_b_x96) >> 96;
+    u256_to_big_uint(amount0) * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
 /// Returns a precise maximum amount of liquidity received for a given amount of token 0 by dividing by Q64 instead of
@@ -43,19 +46,17 @@ pub fn max_liquidity_for_amount0_precise(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
     amount0: U256,
-) -> U256 {
+) -> BigUint {
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
     let sqrt_ratio_a_x96 = u256_to_big_uint(sqrt_ratio_a_x96);
     let sqrt_ratio_b_x96 = u256_to_big_uint(sqrt_ratio_b_x96);
-    let amount0 = u256_to_big_uint(amount0);
 
-    let numerator = amount0 * sqrt_ratio_a_x96.clone() * sqrt_ratio_b_x96.clone();
-    let denominator = u256_to_big_uint(Q96) * (sqrt_ratio_b_x96 - sqrt_ratio_a_x96);
+    let numerator = u256_to_big_uint(amount0) * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
+    let denominator = (sqrt_ratio_b_x96 - sqrt_ratio_a_x96) << 96;
 
-    let res = numerator / denominator;
-    U256::from_be_slice(&res.to_bytes_be())
+    numerator / denominator
 }
 
 /// Computes the maximum amount of liquidity received for a given amount of token1
@@ -72,12 +73,14 @@ pub fn max_liquidity_for_amount1(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
     amount1: U256,
-) -> U256 {
+) -> BigUint {
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
+    let sqrt_ratio_a_x96 = u256_to_big_uint(sqrt_ratio_a_x96);
+    let sqrt_ratio_b_x96 = u256_to_big_uint(sqrt_ratio_b_x96);
 
-    mul_div(amount1, Q96, sqrt_ratio_b_x96 - sqrt_ratio_a_x96).unwrap_or(U256::MAX)
+    (u256_to_big_uint(amount1) << 96) / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
 /// Computes the maximum amount of liquidity received for a given amount of token0, token1,
@@ -102,7 +105,7 @@ pub fn max_liquidity_for_amounts(
     amount0: U256,
     amount1: U256,
     use_full_precision: bool,
-) -> U256 {
+) -> BigUint {
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
@@ -136,6 +139,7 @@ pub fn max_liquidity_for_amounts(
 mod tests {
     use super::*;
     use crate::utils::encode_sqrt_ratio_x96;
+    use num_traits::Num;
 
     #[test]
     fn imprecise_price_inside_100_token0_200_token1() {
@@ -148,7 +152,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::from(2148)
+            2148u64.into()
         );
     }
 
@@ -162,7 +166,7 @@ mod tests {
             U256::MAX,
             false,
         );
-        assert_eq!(res, U256::from(2148));
+        assert_eq!(res, 2148u64.into());
     }
 
     #[test]
@@ -176,7 +180,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::from(4297)
+            4297u64.into()
         );
     }
 
@@ -191,7 +195,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::from(1048)
+            1048u64.into()
         );
     }
 
@@ -206,7 +210,7 @@ mod tests {
                 U256::MAX,
                 false
             ),
-            U256::from(1048)
+            1048u64.into()
         );
     }
 
@@ -221,7 +225,11 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::MAX
+            BigUint::from_str_radix(
+                "1214437677402050006470401421068302637228917309992228326090730924516431320489727",
+                10
+            )
+            .unwrap()
         );
     }
 
@@ -236,7 +244,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::from(2097)
+            2097u64.into()
         );
     }
 
@@ -251,7 +259,11 @@ mod tests {
                 U256::MAX,
                 false
             ),
-            U256::MAX
+            BigUint::from_str_radix(
+                "1214437677402050006470401421098959354205873606971497132040612572422243086574654",
+                10
+            )
+            .unwrap()
         );
     }
 
@@ -266,7 +278,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            U256::from(2097)
+            2097u64.into()
         );
     }
 
@@ -281,7 +293,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(2148)
+            2148u64.into()
         );
     }
 
@@ -296,12 +308,11 @@ mod tests {
                 U256::MAX,
                 true
             ),
-            U256::from(2148)
+            2148u64.into()
         );
     }
 
     #[test]
-    #[ignore]
     fn precise_price_inside_max_token0_200_token1() {
         assert_eq!(
             max_liquidity_for_amounts(
@@ -312,7 +323,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(4297)
+            4297u64.into()
         );
     }
 
@@ -327,7 +338,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(1048)
+            1048u64.into()
         );
     }
 
@@ -342,12 +353,11 @@ mod tests {
                 U256::MAX,
                 true
             ),
-            U256::from(1048)
+            1048u64.into()
         );
     }
 
     #[test]
-    #[ignore]
     fn precise_price_below_max_token0_200_token1() {
         assert_eq!(
             max_liquidity_for_amounts(
@@ -358,7 +368,11 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(4297)
+            BigUint::from_str_radix(
+                "1214437677402050006470401421082903520362793114274352355276488318240158678126184",
+                10
+            )
+            .unwrap()
         );
     }
 
@@ -373,7 +387,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(2097)
+            2097u64.into()
         );
     }
 
@@ -388,7 +402,11 @@ mod tests {
                 U256::MAX,
                 true
             ),
-            U256::MAX
+            BigUint::from_str_radix(
+                "1214437677402050006470401421098959354205873606971497132040612572422243086574654",
+                10
+            )
+            .unwrap()
         );
     }
 
@@ -403,7 +421,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            U256::from(2097)
+            2097u64.into()
         );
     }
 }
