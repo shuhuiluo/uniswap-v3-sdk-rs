@@ -3953,6 +3953,7 @@ dependencies = [
  "criterion",
  "ethers",
  "num-bigint",
+ "num-integer",
  "num-traits",
  "once_cell",
  "ruint",

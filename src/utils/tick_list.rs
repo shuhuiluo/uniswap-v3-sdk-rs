@@ -1,4 +1,5 @@
 use crate::entities::TickTrait;
+use num_integer::Integer;
 
 /// Utility methods for interacting with sorted lists of self
 pub trait TickList<T: TickTrait> {
@@ -37,7 +38,11 @@ impl<T: TickTrait> TickList<T> for [T] {
             self.iter().all(|x| x.index() % tick_spacing == 0),
             "TICK_SPACING"
         );
-        assert!(self.is_sorted(), "SORTED");
+        for i in 1..self.len() {
+            if self[i] < self[i - 1] {
+                panic!("SORTED");
+            }
+        }
         assert_eq!(
             self.iter().fold(0, |acc, x| acc + x.liquidity_net()),
             0,
@@ -107,7 +112,7 @@ impl<T: TickTrait> TickList<T> for [T] {
         lte: bool,
         tick_spacing: i32,
     ) -> (i32, bool) {
-        let compressed = tick.div_floor(tick_spacing);
+        let (compressed, _) = tick.div_mod_floor(&tick_spacing);
         if lte {
             let word_pos = compressed >> 8;
             let minimum = (word_pos << 8) * tick_spacing;

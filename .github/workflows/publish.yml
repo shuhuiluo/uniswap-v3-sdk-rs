@@ -1,0 +1,20 @@
+name: Publish package
+
+on:
+  release:
+    types: [ published ]
+
+env:
+  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+jobs:
+  cargo_publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Publish to crates.io
+        run: cargo publish
