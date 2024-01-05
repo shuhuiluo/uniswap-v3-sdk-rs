@@ -1,4 +1,5 @@
 use super::tick_math::{MAX_TICK, MIN_TICK};
+use num_integer::Integer;
 
 /// Returns the closest tick that is nearest a given tick and usable for the given tick spacing
 ///
@@ -9,11 +10,11 @@ use super::tick_math::{MAX_TICK, MIN_TICK};
 ///
 /// returns: i32
 ///
-pub const fn nearest_usable_tick(tick: i32, tick_spacing: i32) -> i32 {
+pub fn nearest_usable_tick(tick: i32, tick_spacing: i32) -> i32 {
     assert!(tick_spacing > 0, "TICK_SPACING");
-    assert!(tick >= MIN_TICK && tick <= MAX_TICK, "TICK_BOUND");
-    let rounded = tick.div_floor(tick_spacing) * tick_spacing;
-    let rounded = rounded + (tick - rounded + tick_spacing / 2) / tick_spacing * tick_spacing;
+    assert!((MIN_TICK..=MAX_TICK).contains(&tick), "TICK_BOUND");
+    let (quotient, remainder) = tick.div_mod_floor(&tick_spacing);
+    let rounded = (quotient + (remainder + tick_spacing / 2) / tick_spacing) * tick_spacing;
     if rounded < MIN_TICK {
         rounded + tick_spacing
     } else if rounded > MAX_TICK {

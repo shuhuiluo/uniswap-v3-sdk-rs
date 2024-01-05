@@ -19,6 +19,7 @@ anyhow = "1.0"
 #aperture-lens = { git = "https://github.com/Aperture-Finance/Aperture-Lens", branch = "main" }
 ethers = { version = "2.0", features = ["default"] }
 num-bigint = "0.4.4"
+num-integer = "0.1.45"
 num-traits = "0.2.17"
 once_cell = "1.19.0"
 ruint = "1.11.1"

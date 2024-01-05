@@ -1,5 +1,3 @@
-#![feature(int_roundings)]
-#![feature(is_sorted)]
 //! # uniswap-v3-sdk
 //!
 //! A Rust SDK for building applications on top of Uniswap V3.
