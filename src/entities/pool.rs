@@ -1,7 +1,4 @@
-use crate::{
-    constants::{FeeAmount, FACTORY_ADDRESS},
-    utils::{compute_pool_address, get_tick_at_sqrt_ratio, u256_to_big_uint, Q192},
-};
+use crate::prelude::*;
 use alloy_primitives::{Address, B256, U256};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
@@ -10,6 +7,7 @@ use uniswap_sdk_core::prelude::*;
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
 /// Represents a V3 pool
+#[derive(Clone)]
 pub struct Pool {
     pub token0: Token,
     pub token1: Token,
@@ -77,7 +75,7 @@ impl Pool {
         self.token0.chain_id()
     }
 
-    pub fn tick_spacing(&self) -> i32 {
+    pub const fn tick_spacing(&self) -> i32 {
         self.fee.tick_spacing()
     }
 

@@ -29,7 +29,7 @@ pub use tick_list::TickList;
 pub use tick_math::*;
 
 use alloy_primitives::U256;
-use num_bigint::{BigInt, BigUint};
+use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::ToBytes;
 
 pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
@@ -38,6 +38,10 @@ pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
 
 pub fn u256_to_big_uint(x: U256) -> BigUint {
     BigUint::from_bytes_be(&x.to_be_bytes::<32>())
+}
+
+pub fn u256_to_big_int(x: U256) -> BigInt {
+    BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<32>())
 }
 
 pub fn big_uint_to_u256(x: BigUint) -> U256 {
