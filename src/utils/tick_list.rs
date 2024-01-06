@@ -2,14 +2,16 @@ use crate::entities::TickTrait;
 use num_integer::Integer;
 
 /// Utility methods for interacting with sorted lists of self
-pub trait TickList<T: TickTrait> {
+pub trait TickList {
+    type Tick;
+
     fn validate_list(&self, tick_spacing: i32);
 
     fn is_below_smallest(&self, tick: i32) -> bool;
 
     fn is_at_or_above_largest(&self, tick: i32) -> bool;
 
-    fn get_tick(&self, index: i32) -> &T;
+    fn get_tick(&self, index: i32) -> &Self::Tick;
 
     /// Finds the largest tick in the list of ticks that is less than or equal to tick
     ///
@@ -21,7 +23,7 @@ pub trait TickList<T: TickTrait> {
     ///
     fn binary_search_by_tick(&self, tick: i32) -> usize;
 
-    fn next_initialized_tick(&self, tick: i32, lte: bool) -> &T;
+    fn next_initialized_tick(&self, tick: i32, lte: bool) -> &Self::Tick;
 
     fn next_initialized_tick_within_one_word(
         &self,
@@ -31,7 +33,9 @@ pub trait TickList<T: TickTrait> {
     ) -> (i32, bool);
 }
 
-impl<T: TickTrait> TickList<T> for [T] {
+impl<T: TickTrait> TickList for [T] {
+    type Tick = T;
+
     fn validate_list(&self, tick_spacing: i32) {
         assert!(tick_spacing > 0, "TICK_SPACING_NONZERO");
         assert!(

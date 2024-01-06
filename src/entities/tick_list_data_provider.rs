@@ -5,20 +5,20 @@ use crate::{
 use anyhow::Result;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
-pub struct TickListDataProvider {
-    ticks: Vec<Tick>,
-}
+pub struct TickListDataProvider(Vec<Tick>);
 
 impl TickListDataProvider {
     pub fn new(ticks: Vec<Tick>, tick_spacing: i32) -> Self {
         ticks.validate_list(tick_spacing);
-        Self { ticks }
+        Self(ticks)
     }
 }
 
-impl TickDataProvider<Tick> for TickListDataProvider {
+impl TickDataProvider for TickListDataProvider {
+    type Tick = Tick;
+
     fn get_tick(&self, tick: i32) -> Result<&Tick> {
-        Ok(self.ticks.get_tick(tick))
+        Ok(self.0.get_tick(tick))
     }
 
     fn next_initialized_tick_within_one_word(
@@ -28,7 +28,7 @@ impl TickDataProvider<Tick> for TickListDataProvider {
         tick_spacing: i32,
     ) -> Result<(i32, bool)> {
         Ok(self
-            .ticks
+            .0
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing))
     }
 }
