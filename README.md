@@ -2,6 +2,7 @@
 
 [![Unit Tests](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/workflows/Unit%20Tests/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions?query=workflow%3A%22Unit+Tests%22)
 [![Lint](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/workflows/Lint/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions?query=workflow%3ALint)
+[![crates.io](https://img.shields.io/crates/v/uniswap-v3-sdk.svg)](https://crates.io/crates/uniswap-v3-sdk)
 
 A Rust SDK for building applications on top of Uniswap V3. Migration from the
 TypeScript [Uniswap/v3-sdk](https://github.com/Uniswap/v3-sdk).
@@ -22,7 +23,7 @@ WIP.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { git = "https://github.com/shuhuiluo/uniswap-v3-sdk-rs", branch = "master" }
+uniswap-v3-sdk = "0.7.0"
 ```
 
 ### Usage
