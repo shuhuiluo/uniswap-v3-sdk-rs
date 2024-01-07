@@ -1,7 +1,4 @@
-use crate::{
-    entities::{Tick, TickDataProvider},
-    utils::{TickList, MAX_TICK, MIN_TICK},
-};
+use crate::prelude::*;
 use alloy_primitives::Address;
 use anyhow::Result;
 use aperture_lens::prelude::get_populated_ticks_in_range;
@@ -54,7 +51,9 @@ impl<M: Middleware> EphemeralTickDataProvider<M> {
     }
 }
 
-impl<M: Middleware> TickDataProvider<Tick> for EphemeralTickDataProvider<M> {
+impl<M: Middleware> TickDataProvider for EphemeralTickDataProvider<M> {
+    type Tick = Tick;
+
     fn get_tick(&self, tick: i32) -> Result<&Tick> {
         Ok(self.ticks.get_tick(tick))
     }

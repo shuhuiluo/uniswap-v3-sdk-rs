@@ -1,18 +1,19 @@
-use super::{Tick, TickTrait};
 use anyhow::Result;
 use thiserror::Error;
 
 /// Provides information about ticks
-pub trait TickDataProvider<T: TickTrait> {
+pub trait TickDataProvider {
+    type Tick;
+
     /// Return information corresponding to a specific tick
     ///
     /// # Arguments
     ///
     /// * `tick`: The tick to load
     ///
-    /// returns: Result<impl TickTrait+Sized, Error>
+    /// returns: Result<&Self::Tick, Error>
     ///
-    fn get_tick(&self, tick: i32) -> Result<&T>;
+    fn get_tick(&self, tick: i32) -> Result<&Self::Tick>;
 
     /// Return the next tick that is initialized within a single word
     ///
@@ -40,8 +41,10 @@ pub struct NoTickDataError;
 /// Useful if you do not need to load tick data for your use case.
 pub struct NoTickDataProvider;
 
-impl TickDataProvider<Tick> for NoTickDataProvider {
-    fn get_tick(&self, _: i32) -> Result<&Tick> {
+impl TickDataProvider for NoTickDataProvider {
+    type Tick = ();
+
+    fn get_tick(&self, _: i32) -> Result<&()> {
         Err(NoTickDataError.into())
     }
 
