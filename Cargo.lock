@@ -165,6 +165,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
 
 [[package]]
+name = "aperture-lens"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4471b5af527f2f19b744c1315c93b23f3d750aada997ed9e0418c72b9d52b7d6"
+dependencies = [
+ "anyhow",
+ "ethers",
+ "serde",
+]
+
+[[package]]
 name = "ark-ff"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3928,6 +3939,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
+ "aperture-lens",
  "criterion",
  "ethers",
  "num-bigint",
