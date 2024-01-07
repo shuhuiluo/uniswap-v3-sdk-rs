@@ -202,7 +202,7 @@ impl Position {
     ///
     pub fn mint_amounts_with_slippage(&mut self, slippage_tolerance: &Percent) -> MintAmounts {
         // Get lower/upper prices
-        let (sqrt_ratio_x96_upper, sqrt_ratio_x96_lower) =
+        let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
 
         // Construct counterfactual pools
@@ -266,7 +266,7 @@ impl Position {
     ///
     pub fn burn_amounts_with_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
         // get lower/upper prices
-        let (sqrt_ratio_x96_upper, sqrt_ratio_x96_lower) =
+        let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
 
         // construct counterfactual pools
@@ -428,5 +428,463 @@ impl Position {
     pub fn from_amount1(pool: Pool, tick_lower: i32, tick_upper: i32, amount1: U256) -> Self {
         // this function always uses full precision
         Self::from_amounts(pool, tick_lower, tick_upper, U256::MAX, amount1, true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use once_cell::sync::Lazy;
+    use uniswap_sdk_core::token;
+
+    static USDC: Lazy<Token> = Lazy::new(|| {
+        token!(
+            1,
+            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            6,
+            "USDC",
+            "USD Coin"
+        )
+    });
+    static DAI: Lazy<Token> = Lazy::new(|| {
+        token!(
+            1,
+            "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            18,
+            "DAI",
+            "DAI Stablecoin"
+        )
+    });
+    static POOL_SQRT_RATIO_START: Lazy<U256> =
+        Lazy::new(|| encode_sqrt_ratio_x96(BigInt::from(10).pow(8), BigInt::from(10).pow(20)));
+    static POOL_TICK_CURRENT: Lazy<i32> =
+        Lazy::new(|| get_tick_at_sqrt_ratio(POOL_SQRT_RATIO_START.clone()).unwrap());
+    const TICK_SPACING: i32 = FeeAmount::LOW.tick_spacing();
+    static DAI_USDC_POOL: Lazy<Pool> = Lazy::new(|| {
+        Pool::new(
+            DAI.clone(),
+            USDC.clone(),
+            FeeAmount::LOW,
+            POOL_SQRT_RATIO_START.clone(),
+            0,
+        )
+    });
+
+    #[test]
+    fn can_be_constructed_around_0_tick() {
+        let position = Position::new(DAI_USDC_POOL.clone(), 1, -10, 10);
+        assert_eq!(position.liquidity, 1);
+    }
+
+    #[test]
+    fn can_use_min_and_max_ticks() {
+        let position = Position::new(
+            DAI_USDC_POOL.clone(),
+            1,
+            nearest_usable_tick(MIN_TICK, TICK_SPACING),
+            nearest_usable_tick(MAX_TICK, TICK_SPACING),
+        );
+        assert_eq!(position.liquidity, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_ORDER")]
+    fn tick_lower_must_be_less_than_tick_upper() {
+        Position::new(DAI_USDC_POOL.clone(), 1, 10, -10);
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_ORDER")]
+    fn tick_lower_cannot_equal_tick_upper() {
+        Position::new(DAI_USDC_POOL.clone(), 1, -10, -10);
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_LOWER")]
+    fn tick_lower_must_be_multiple_of_tick_spacing() {
+        Position::new(DAI_USDC_POOL.clone(), 1, -5, 10);
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_LOWER")]
+    fn tick_lower_must_be_greater_than_min_tick() {
+        Position::new(
+            DAI_USDC_POOL.clone(),
+            1,
+            nearest_usable_tick(MIN_TICK, TICK_SPACING) - TICK_SPACING,
+            10,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_UPPER")]
+    fn tick_upper_must_be_multiple_of_tick_spacing() {
+        Position::new(DAI_USDC_POOL.clone(), 1, -10, 15);
+    }
+
+    #[test]
+    #[should_panic(expected = "TICK_UPPER")]
+    fn tick_upper_must_be_less_than_max_tick() {
+        Position::new(
+            DAI_USDC_POOL.clone(),
+            1,
+            -10,
+            nearest_usable_tick(MAX_TICK, TICK_SPACING) + TICK_SPACING,
+        );
+    }
+
+    #[test]
+    fn amount0_is_correct_for_price_above() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e12 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        assert_eq!(
+            position.amount0().quotient().to_string(),
+            "49949961958869841"
+        );
+    }
+
+    #[test]
+    fn amount0_is_correct_for_price_below() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        assert_eq!(position.amount0().quotient().to_string(), "0");
+    }
+
+    #[test]
+    fn amount0_is_correct_for_in_range_position() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        assert_eq!(
+            position.amount0().quotient().to_string(),
+            "120054069145287995769396"
+        );
+    }
+
+    #[test]
+    fn amount1_is_correct_for_price_above() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        assert_eq!(position.amount1().quotient().to_string(), "0");
+    }
+
+    #[test]
+    fn amount1_is_correct_for_price_below() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        assert_eq!(position.amount1().quotient().to_string(), "49970077052");
+    }
+
+    #[test]
+    fn amount1_is_correct_for_in_range_position() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        assert_eq!(position.amount1().quotient().to_string(), "79831926242");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_below() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841738198");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_above() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "49970077053");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_within() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "120054069145287995740584");
+        assert_eq!(amount1.to_string(), "79831926243");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_below_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841738198");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_above_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "49970077053");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_positions_within_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "95063440240746211432007");
+        assert_eq!(amount1.to_string(), "54828800461");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_pool_at_min_price() {
+        let mut position = Position::new(
+            Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 100);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841754181");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_pool_at_max_price() {
+        let mut position = Position::new(
+            Pool::new(
+                DAI.clone(),
+                USDC.clone(),
+                FeeAmount::LOW,
+                MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
+                0,
+            ),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 100);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "50045084659");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_below() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841754181");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_above() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "49970077052");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_within() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(0, 1);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "120054069145287995769396");
+        assert_eq!(amount1.to_string(), "79831926242");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_below_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841754181");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_above_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "49970077052");
+    }
+
+    #[test]
+    fn burn_amounts_with_slippage_is_correct_for_positions_within_05_percent_slippage() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 10000);
+        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "95063440240746211454822");
+        assert_eq!(amount1.to_string(), "54828800460");
+    }
+
+    #[test]
+    fn mint_amounts_is_correct_for_pool_at_min_price() {
+        let mut position = Position::new(
+            Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 100);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "49949961958869841738198");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn mint_amounts_with_slippage_is_correct_for_pool_at_max_price() {
+        let mut position = Position::new(
+            Pool::new(
+                DAI.clone(),
+                USDC.clone(),
+                FeeAmount::LOW,
+                MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
+                0,
+            ),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let slippage_tolerance = Percent::new(5, 100);
+        let MintAmounts { amount0, amount1 } =
+            position.mint_amounts_with_slippage(&slippage_tolerance);
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "50045084660");
+    }
+
+    #[test]
+    fn mint_amounts_is_correct_for_positions_above() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        assert_eq!(amount0.to_string(), "49949961958869841754182");
+        assert_eq!(amount1.to_string(), "0");
+    }
+
+    #[test]
+    fn mint_amounts_is_correct_for_positions_below() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING,
+        );
+        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        assert_eq!(amount0.to_string(), "0");
+        assert_eq!(amount1.to_string(), "49970077053");
+    }
+
+    #[test]
+    fn mint_amounts_is_correct_for_positions_within() {
+        let mut position = Position::new(
+            DAI_USDC_POOL.clone(),
+            100e18 as u128,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) - TICK_SPACING * 2,
+            nearest_usable_tick(POOL_TICK_CURRENT.clone(), TICK_SPACING) + TICK_SPACING * 2,
+        );
+        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        assert_eq!(amount0.to_string(), "120054069145287995769397");
+        assert_eq!(amount1.to_string(), "79831926243");
     }
 }
