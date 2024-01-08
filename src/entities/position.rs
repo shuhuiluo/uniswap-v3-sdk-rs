@@ -157,7 +157,7 @@ impl Position {
     ///
     /// * `slippage_tolerance`: The amount by which the price can 'slip' before the transaction will revert
     ///
-    /// returns: The sqrt ratios after slippage
+    /// returns: (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     ///
     fn ratios_after_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
         let one = Percent::new(1, 1);
