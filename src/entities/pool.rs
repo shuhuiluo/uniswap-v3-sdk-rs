@@ -2,6 +2,7 @@ use crate::prelude::*;
 use alloy_primitives::{Address, B256, U256};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
+use std::sync::Arc;
 use uniswap_sdk_core::prelude::*;
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
@@ -15,6 +16,7 @@ pub struct Pool {
     pub sqrt_ratio_x96: U256,
     pub liquidity: u128,
     pub tick_current: i32,
+    pub tick_data_provider: Arc<dyn TickDataProvider<Tick = Tick>>,
     _token0_price: Option<Price<Token, Token>>,
     _token1_price: Option<Price<Token, Token>>,
 }
@@ -47,12 +49,14 @@ impl Pool {
     /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
+    /// * `tick_data_provider`: A tick data provider that can return tick data
     pub fn new(
         token_a: Token,
         token_b: Token,
         fee: FeeAmount,
         sqrt_ratio_x96: U256,
         liquidity: u128,
+        tick_data_provider: Option<Arc<dyn TickDataProvider<Tick = Tick>>>,
     ) -> Self {
         let (token0, token1) = if token_a.sorts_before(&token_b) {
             (token_a, token_b)
@@ -66,6 +70,7 @@ impl Pool {
             sqrt_ratio_x96,
             liquidity,
             tick_current: get_tick_at_sqrt_ratio(sqrt_ratio_x96).unwrap(),
+            tick_data_provider: tick_data_provider.unwrap_or(Arc::new(NoTickDataProvider)),
             _token0_price: None,
             _token1_price: None,
         }
@@ -194,36 +199,78 @@ mod tests {
     #[should_panic(expected = "CHAIN_IDS")]
     fn test_constructor_cannot_be_used_for_tokens_on_different_chains() {
         let weth9 = WETH9::default().get(3).unwrap().clone();
-        Pool::new(USDC.clone(), weth9.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            weth9.clone(),
+            FeeAmount::MEDIUM,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 
     #[test]
     #[should_panic(expected = "ADDRESSES")]
     fn test_constructor_cannot_be_given_two_of_the_same_token() {
-        Pool::new(USDC.clone(), USDC.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            USDC.clone(),
+            FeeAmount::MEDIUM,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 
     #[test]
     fn test_constructor_works_with_valid_arguments_for_empty_pool_medium_fee() {
         let weth9 = WETH9::default().get(1).unwrap().clone();
-        Pool::new(USDC.clone(), weth9.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            weth9.clone(),
+            FeeAmount::MEDIUM,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 
     #[test]
     fn test_constructor_works_with_valid_arguments_for_empty_pool_low_fee() {
         let weth9 = WETH9::default().get(1).unwrap().clone();
-        Pool::new(USDC.clone(), weth9.clone(), FeeAmount::LOW, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            weth9.clone(),
+            FeeAmount::LOW,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 
     #[test]
     fn test_constructor_works_with_valid_arguments_for_empty_pool_lowest_fee() {
         let weth9 = WETH9::default().get(1).unwrap().clone();
-        Pool::new(USDC.clone(), weth9.clone(), FeeAmount::LOWEST, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            weth9.clone(),
+            FeeAmount::LOWEST,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 
     #[test]
     fn test_constructor_works_with_valid_arguments_for_empty_pool_high_fee() {
         let weth9 = WETH9::default().get(1).unwrap().clone();
-        Pool::new(USDC.clone(), weth9.clone(), FeeAmount::HIGH, ONE_ETHER, 0);
+        Pool::new(
+            USDC.clone(),
+            weth9.clone(),
+            FeeAmount::HIGH,
+            ONE_ETHER,
+            0,
+            None,
+        );
     }
 }

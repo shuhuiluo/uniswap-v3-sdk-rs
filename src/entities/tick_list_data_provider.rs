@@ -5,12 +5,19 @@ use crate::{
 use anyhow::Result;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
+#[derive(Clone)]
 pub struct TickListDataProvider(Vec<Tick>);
 
 impl TickListDataProvider {
     pub fn new(ticks: Vec<Tick>, tick_spacing: i32) -> Self {
         ticks.validate_list(tick_spacing);
         Self(ticks)
+    }
+}
+
+impl Default for TickListDataProvider {
+    fn default() -> Self {
+        Self(vec![])
     }
 }
 
@@ -43,7 +50,7 @@ mod tests {
 
     #[test]
     fn can_take_an_empty_list_of_ticks() {
-        TickListDataProvider::new(vec![], 1);
+        TickListDataProvider::default();
     }
 
     #[test]
