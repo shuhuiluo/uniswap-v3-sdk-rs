@@ -7,51 +7,56 @@ use std::sync::Arc;
 
 /// A data provider for ticks that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone)]
-pub struct EphemeralTickDataProvider<M: Middleware> {
+pub struct EphemeralTickDataProvider {
     pub pool: Address,
-    client: Arc<M>,
     pub tick_lower: i32,
     pub tick_upper: i32,
     pub block_id: Option<BlockId>,
     pub ticks: Vec<Tick>,
+    // the minimum distance between two ticks in the list
+    pub tick_spacing: i32,
 }
 
-impl<M: Middleware> EphemeralTickDataProvider<M> {
-    pub fn new(
+impl EphemeralTickDataProvider {
+    pub async fn new<M: Middleware>(
         pool: Address,
         client: Arc<M>,
         tick_lower: Option<i32>,
         tick_upper: Option<i32>,
         block_id: Option<BlockId>,
-    ) -> Self {
-        Self {
-            pool,
-            tick_lower: tick_lower.unwrap_or(MIN_TICK),
-            tick_upper: tick_upper.unwrap_or(MAX_TICK),
-            client,
-            block_id,
-            ticks: Vec::new(),
-        }
-    }
-
-    pub async fn fetch(&mut self) -> Result<(), ContractError<M>> {
+    ) -> Result<Self, ContractError<M>> {
+        let tick_lower = tick_lower.unwrap_or(MIN_TICK);
+        let tick_upper = tick_upper.unwrap_or(MAX_TICK);
         let ticks = get_populated_ticks_in_range(
-            self.pool.into_array().into(),
-            self.tick_lower,
-            self.tick_upper,
-            self.client.clone(),
-            self.block_id,
+            pool.into_array().into(),
+            tick_lower,
+            tick_upper,
+            client.clone(),
+            block_id,
         )
         .await?;
-        self.ticks = ticks
+        let ticks: Vec<_> = ticks
             .into_iter()
             .map(|tick| Tick::new(tick.tick, tick.liquidity_gross, tick.liquidity_net))
             .collect();
-        Ok(())
+        let tick_indices: Vec<_> = ticks.iter().map(|tick| tick.index).collect();
+        let tick_spacing = tick_indices
+            .windows(2)
+            .map(|window| window[1] - window[0])
+            .min()
+            .unwrap();
+        Ok(Self {
+            pool,
+            tick_lower,
+            tick_upper,
+            block_id,
+            ticks,
+            tick_spacing,
+        })
     }
 }
 
-impl<M: Middleware> TickDataProvider for EphemeralTickDataProvider<M> {
+impl TickDataProvider for EphemeralTickDataProvider {
     type Tick = Tick;
 
     fn get_tick(&self, tick: i32) -> Result<&Tick> {
@@ -70,29 +75,31 @@ impl<M: Middleware> TickDataProvider for EphemeralTickDataProvider<M> {
     }
 }
 
+impl From<EphemeralTickDataProvider> for TickListDataProvider {
+    fn from(provider: EphemeralTickDataProvider) -> Self {
+        assert!(!provider.ticks.is_empty());
+        Self::new(provider.ticks, provider.tick_spacing)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use alloy_primitives::address;
-    use ethers::prelude::{Http, Provider, MAINNET};
-    use once_cell::sync::Lazy;
+    use ethers::prelude::MAINNET;
 
-    static PROVIDER: Lazy<EphemeralTickDataProvider<Provider<Http>>> = Lazy::new(|| {
-        let provider = Arc::new(MAINNET.provider());
-        EphemeralTickDataProvider::new(
-            address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
-            provider,
-            None,
-            None,
-            Some(BlockId::from(17000000)),
-        )
-    });
     const TICK_SPACING: i32 = 10;
 
     #[tokio::test]
     async fn test_ephemeral_tick_data_provider() -> Result<()> {
-        let mut provider = PROVIDER.clone();
-        provider.fetch().await?;
+        let provider = EphemeralTickDataProvider::new(
+            address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
+            Arc::new(MAINNET.provider()),
+            None,
+            None,
+            Some(BlockId::from(17000000)),
+        )
+        .await?;
         assert!(!provider.ticks.is_empty());
         provider.ticks.validate_list(TICK_SPACING);
         let tick = provider.get_tick(-92110)?;
@@ -109,6 +116,10 @@ mod tests {
             provider.next_initialized_tick_within_one_word(0, false, TICK_SPACING)?;
         assert!(success);
         assert_eq!(tick, 100);
+        let provider: TickListDataProvider = provider.into();
+        let tick = provider.get_tick(-92110)?;
+        assert_eq!(tick.liquidity_gross, 398290794261);
+        assert_eq!(tick.liquidity_net, 398290794261);
         Ok(())
     }
 }

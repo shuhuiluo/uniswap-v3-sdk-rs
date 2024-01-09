@@ -212,6 +212,7 @@ impl Position {
             self.pool.fee,
             sqrt_ratio_x96_lower,
             0, // liquidity doesn't matter
+            None,
         );
         let pool_upper = Pool::new(
             self.pool.token0.clone(),
@@ -219,6 +220,7 @@ impl Position {
             self.pool.fee,
             sqrt_ratio_x96_upper,
             0, // liquidity doesn't matter
+            None,
         );
 
         // Because the router is imprecise, we need to calculate the position that will be created (assuming no slippage)
@@ -276,6 +278,7 @@ impl Position {
             self.pool.fee,
             sqrt_ratio_x96_lower,
             0, // liquidity doesn't matter
+            None,
         );
         let pool_upper = Pool::new(
             self.pool.token0.clone(),
@@ -283,6 +286,7 @@ impl Position {
             self.pool.fee,
             sqrt_ratio_x96_upper,
             0, // liquidity doesn't matter
+            None,
         );
 
         // we want the smaller amounts...
@@ -460,26 +464,28 @@ mod tests {
     static POOL_TICK_CURRENT: Lazy<i32> =
         Lazy::new(|| get_tick_at_sqrt_ratio(*POOL_SQRT_RATIO_START).unwrap());
     const TICK_SPACING: i32 = FeeAmount::LOW.tick_spacing();
-    static DAI_USDC_POOL: Lazy<Pool> = Lazy::new(|| {
+
+    fn dai_usdc_pool() -> Pool {
         Pool::new(
             DAI.clone(),
             USDC.clone(),
             FeeAmount::LOW,
             *POOL_SQRT_RATIO_START,
             0,
+            None,
         )
-    });
+    }
 
     #[test]
     fn can_be_constructed_around_0_tick() {
-        let position = Position::new(DAI_USDC_POOL.clone(), 1, -10, 10);
+        let position = Position::new(dai_usdc_pool(), 1, -10, 10);
         assert_eq!(position.liquidity, 1);
     }
 
     #[test]
     fn can_use_min_and_max_ticks() {
         let position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             1,
             nearest_usable_tick(MIN_TICK, TICK_SPACING),
             nearest_usable_tick(MAX_TICK, TICK_SPACING),
@@ -490,26 +496,26 @@ mod tests {
     #[test]
     #[should_panic(expected = "TICK_ORDER")]
     fn tick_lower_must_be_less_than_tick_upper() {
-        Position::new(DAI_USDC_POOL.clone(), 1, 10, -10);
+        Position::new(dai_usdc_pool(), 1, 10, -10);
     }
 
     #[test]
     #[should_panic(expected = "TICK_ORDER")]
     fn tick_lower_cannot_equal_tick_upper() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -10, -10);
+        Position::new(dai_usdc_pool(), 1, -10, -10);
     }
 
     #[test]
     #[should_panic(expected = "TICK_LOWER")]
     fn tick_lower_must_be_multiple_of_tick_spacing() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -5, 10);
+        Position::new(dai_usdc_pool(), 1, -5, 10);
     }
 
     #[test]
     #[should_panic(expected = "TICK_LOWER")]
     fn tick_lower_must_be_greater_than_min_tick() {
         Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             1,
             nearest_usable_tick(MIN_TICK, TICK_SPACING) - TICK_SPACING,
             10,
@@ -519,14 +525,14 @@ mod tests {
     #[test]
     #[should_panic(expected = "TICK_UPPER")]
     fn tick_upper_must_be_multiple_of_tick_spacing() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -10, 15);
+        Position::new(dai_usdc_pool(), 1, -10, 15);
     }
 
     #[test]
     #[should_panic(expected = "TICK_UPPER")]
     fn tick_upper_must_be_less_than_max_tick() {
         Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             1,
             -10,
             nearest_usable_tick(MAX_TICK, TICK_SPACING) + TICK_SPACING,
@@ -536,7 +542,7 @@ mod tests {
     #[test]
     fn amount0_is_correct_for_price_above() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e12 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -550,7 +556,7 @@ mod tests {
     #[test]
     fn amount0_is_correct_for_price_below() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -561,7 +567,7 @@ mod tests {
     #[test]
     fn amount0_is_correct_for_in_range_position() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -575,7 +581,7 @@ mod tests {
     #[test]
     fn amount1_is_correct_for_price_above() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -586,7 +592,7 @@ mod tests {
     #[test]
     fn amount1_is_correct_for_price_below() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -597,7 +603,7 @@ mod tests {
     #[test]
     fn amount1_is_correct_for_in_range_position() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -608,7 +614,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_below() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -623,7 +629,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_above() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -638,7 +644,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_within() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -653,7 +659,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_below_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -668,7 +674,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_above_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -683,7 +689,7 @@ mod tests {
     #[test]
     fn mint_amounts_with_slippage_is_correct_for_positions_within_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -698,7 +704,14 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_pool_at_min_price() {
         let mut position = Position::new(
-            Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0),
+            Pool::new(
+                DAI.clone(),
+                USDC.clone(),
+                FeeAmount::LOW,
+                MIN_SQRT_RATIO,
+                0,
+                None,
+            ),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -718,6 +731,7 @@ mod tests {
                 FeeAmount::LOW,
                 MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
                 0,
+                None,
             ),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -732,7 +746,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_below() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -746,7 +760,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_above() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -760,7 +774,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_within() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -774,7 +788,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_below_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -788,7 +802,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_above_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -802,7 +816,7 @@ mod tests {
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_within_05_percent_slippage() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -816,7 +830,14 @@ mod tests {
     #[test]
     fn mint_amounts_is_correct_for_pool_at_min_price() {
         let mut position = Position::new(
-            Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0),
+            Pool::new(
+                DAI.clone(),
+                USDC.clone(),
+                FeeAmount::LOW,
+                MIN_SQRT_RATIO,
+                0,
+                None,
+            ),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -837,6 +858,7 @@ mod tests {
                 FeeAmount::LOW,
                 MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
                 0,
+                None,
             ),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -852,7 +874,7 @@ mod tests {
     #[test]
     fn mint_amounts_is_correct_for_positions_above() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
@@ -865,7 +887,7 @@ mod tests {
     #[test]
     fn mint_amounts_is_correct_for_positions_below() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
@@ -878,7 +900,7 @@ mod tests {
     #[test]
     fn mint_amounts_is_correct_for_positions_within() {
         let mut position = Position::new(
-            DAI_USDC_POOL.clone(),
+            dai_usdc_pool(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,

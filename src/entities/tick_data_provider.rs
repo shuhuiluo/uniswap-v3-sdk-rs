@@ -1,3 +1,4 @@
+use crate::entities::Tick;
 use anyhow::Result;
 use thiserror::Error;
 
@@ -33,7 +34,7 @@ pub trait TickDataProvider {
     ) -> Result<(i32, bool)>;
 }
 
-#[derive(Error, Debug)]
+#[derive(Clone, Debug, Error)]
 #[error("No tick data provider was given")]
 pub struct NoTickDataError;
 
@@ -42,9 +43,9 @@ pub struct NoTickDataError;
 pub struct NoTickDataProvider;
 
 impl TickDataProvider for NoTickDataProvider {
-    type Tick = ();
+    type Tick = Tick;
 
-    fn get_tick(&self, _: i32) -> Result<&()> {
+    fn get_tick(&self, _: i32) -> Result<&Tick> {
         Err(NoTickDataError.into())
     }
 

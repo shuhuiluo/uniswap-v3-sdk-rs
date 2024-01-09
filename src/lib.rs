@@ -5,9 +5,14 @@
 
 pub mod constants;
 pub mod entities;
-pub mod extensions;
 pub mod utils;
 
+#[cfg(feature = "extensions")]
+pub mod extensions;
+
 pub mod prelude {
-    pub use crate::{constants::*, entities::*, extensions::*, utils::*};
+    pub use crate::{constants::*, entities::*, utils::*};
+
+    #[cfg(feature = "extensions")]
+    pub use crate::extensions::*;
 }
