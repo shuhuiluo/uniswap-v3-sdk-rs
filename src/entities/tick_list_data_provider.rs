@@ -5,6 +5,7 @@ use crate::{
 use anyhow::Result;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
+#[derive(Clone, Debug, Default)]
 pub struct TickListDataProvider(Vec<Tick>);
 
 impl TickListDataProvider {
@@ -43,7 +44,7 @@ mod tests {
 
     #[test]
     fn can_take_an_empty_list_of_ticks() {
-        TickListDataProvider::new(vec![], 1);
+        TickListDataProvider::default();
     }
 
     #[test]
