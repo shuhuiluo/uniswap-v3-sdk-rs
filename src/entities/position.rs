@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use alloy_primitives::U256;
+use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
@@ -54,101 +55,87 @@ impl Position {
     }
 
     /// Returns the price of token0 at the lower tick
-    pub fn token0_price_lower(&self) -> Price<Token, Token> {
+    pub fn token0_price_lower(&self) -> Result<Price<Token, Token>> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
             self.tick_lower,
         )
-        .unwrap()
     }
 
     /// Returns the price of token0 at the upper tick
-    pub fn token0_price_upper(&self) -> Price<Token, Token> {
+    pub fn token0_price_upper(&self) -> Result<Price<Token, Token>> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
             self.tick_upper,
         )
-        .unwrap()
     }
 
     /// Returns the amount of token0 that this position's liquidity could be burned for at the current pool price
-    pub fn amount0(&mut self) -> &CurrencyAmount<Token> {
+    pub fn amount0(&mut self) -> Result<&CurrencyAmount<Token>> {
         if self._token0_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token0.clone(),
-                    u256_to_big_int(
-                        get_amount_0_delta(
-                            get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
-                            get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
-                            self.liquidity,
-                            false,
-                        )
-                        .unwrap(),
-                    ),
-                ))
+                    u256_to_big_int(get_amount_0_delta(
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
+                        self.liquidity,
+                        false,
+                    )?),
+                )?)
             } else if self.pool.tick_current < self.tick_upper {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token0.clone(),
-                    u256_to_big_int(
-                        get_amount_0_delta(
-                            self.pool.sqrt_ratio_x96,
-                            get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
-                            self.liquidity,
-                            false,
-                        )
-                        .unwrap(),
-                    ),
-                ))
+                    u256_to_big_int(get_amount_0_delta(
+                        self.pool.sqrt_ratio_x96,
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
+                        self.liquidity,
+                        false,
+                    )?),
+                )?)
             } else {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token0.clone(),
                     BigInt::zero(),
-                ))
+                )?)
             }
         }
-        self._token0_amount.as_ref().unwrap()
+        Ok(self._token0_amount.as_ref().unwrap())
     }
 
     /// Returns the amount of token1 that this position's liquidity could be burned for at the current pool price
-    pub fn amount1(&mut self) -> &CurrencyAmount<Token> {
+    pub fn amount1(&mut self) -> Result<&CurrencyAmount<Token>> {
         if self._token1_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token1.clone(),
                     BigInt::zero(),
-                ))
+                )?)
             } else if self.pool.tick_current < self.tick_upper {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token1.clone(),
-                    u256_to_big_int(
-                        get_amount_1_delta(
-                            get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
-                            self.pool.sqrt_ratio_x96,
-                            self.liquidity,
-                            false,
-                        )
-                        .unwrap(),
-                    ),
-                ))
+                    u256_to_big_int(get_amount_1_delta(
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
+                        self.pool.sqrt_ratio_x96,
+                        self.liquidity,
+                        false,
+                    )?),
+                )?)
             } else {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token1.clone(),
-                    u256_to_big_int(
-                        get_amount_1_delta(
-                            get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
-                            get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
-                            self.liquidity,
-                            false,
-                        )
-                        .unwrap(),
-                    ),
-                ))
+                    u256_to_big_int(get_amount_1_delta(
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
+                        self.liquidity,
+                        false,
+                    )?),
+                )?)
             }
         }
-        self._token1_amount.as_ref().unwrap()
+        Ok(self._token1_amount.as_ref().unwrap())
     }
 
     /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance percentage
@@ -161,30 +148,20 @@ impl Position {
     ///
     fn ratios_after_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
         let one = Percent::new(1, 1);
-        let price_lower = self
-            .pool
-            .token0_price()
-            .as_fraction()
-            .multiply(&one.subtract(slippage_tolerance).as_fraction());
-        let price_upper = self
-            .pool
-            .token0_price()
-            .as_fraction()
-            .multiply(&one.add(slippage_tolerance).as_fraction());
+        let price_lower = self.pool.token0_price().as_fraction()
+            * ((one.clone() - slippage_tolerance.clone()).as_fraction());
+        let price_upper = self.pool.token0_price().as_fraction()
+            * ((one + slippage_tolerance.clone()).as_fraction());
 
         const ONE: U256 = U256::from_limbs([1, 0, 0, 0]);
-        let mut sqrt_ratio_x96_lower = encode_sqrt_ratio_x96(
-            price_lower.numerator().clone(),
-            price_lower.denominator().clone(),
-        );
+        let mut sqrt_ratio_x96_lower =
+            encode_sqrt_ratio_x96(price_lower.numerator(), price_lower.denominator());
         if sqrt_ratio_x96_lower <= MIN_SQRT_RATIO {
             sqrt_ratio_x96_lower = MIN_SQRT_RATIO + ONE;
         }
 
-        let mut sqrt_ratio_x96_upper = encode_sqrt_ratio_x96(
-            price_upper.numerator().clone(),
-            price_upper.denominator().clone(),
-        );
+        let mut sqrt_ratio_x96_upper =
+            encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator());
         if sqrt_ratio_x96_upper >= MAX_SQRT_RATIO {
             sqrt_ratio_x96_upper = MAX_SQRT_RATIO - ONE;
         }
@@ -200,7 +177,10 @@ impl Position {
     ///
     /// returns: The amounts, with slippage
     ///
-    pub fn mint_amounts_with_slippage(&mut self, slippage_tolerance: &Percent) -> MintAmounts {
+    pub fn mint_amounts_with_slippage(
+        &mut self,
+        slippage_tolerance: &Percent,
+    ) -> Result<MintAmounts> {
         // Get lower/upper prices
         let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
@@ -213,7 +193,7 @@ impl Position {
             sqrt_ratio_x96_lower,
             0, // liquidity doesn't matter
             None,
-        );
+        )?;
         let pool_upper = Pool::new(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
@@ -221,10 +201,10 @@ impl Position {
             sqrt_ratio_x96_upper,
             0, // liquidity doesn't matter
             None,
-        );
+        )?;
 
         // Because the router is imprecise, we need to calculate the position that will be created (assuming no slippage)
-        let MintAmounts { amount0, amount1 } = self.mint_amounts();
+        let MintAmounts { amount0, amount1 } = self.mint_amounts()?;
         let position_that_will_be_created = Position::from_amounts(
             self.pool.clone(),
             self.tick_lower,
@@ -232,7 +212,7 @@ impl Position {
             amount0,
             amount1,
             false,
-        );
+        )?;
 
         // We want the smaller amounts...
         // ...which occurs at the upper price for amount0...
@@ -242,7 +222,7 @@ impl Position {
             self.tick_lower,
             self.tick_upper,
         )
-        .mint_amounts()
+        .mint_amounts()?
         .amount0;
         // ...and the lower for amount1
         let amount1 = Position::new(
@@ -251,10 +231,10 @@ impl Position {
             self.tick_lower,
             self.tick_upper,
         )
-        .mint_amounts()
+        .mint_amounts()?
         .amount1;
 
-        MintAmounts { amount0, amount1 }
+        Ok(MintAmounts { amount0, amount1 })
     }
 
     /// Returns the minimum amounts that should be requested in order to safely burn the amount of liquidity held by the
@@ -266,7 +246,10 @@ impl Position {
     ///
     /// returns: The amounts, with slippage
     ///
-    pub fn burn_amounts_with_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
+    pub fn burn_amounts_with_slippage(
+        &mut self,
+        slippage_tolerance: &Percent,
+    ) -> Result<(U256, U256)> {
         // get lower/upper prices
         let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
@@ -279,7 +262,7 @@ impl Position {
             sqrt_ratio_x96_lower,
             0, // liquidity doesn't matter
             None,
-        );
+        )?;
         let pool_upper = Pool::new(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
@@ -287,67 +270,63 @@ impl Position {
             sqrt_ratio_x96_upper,
             0, // liquidity doesn't matter
             None,
-        );
+        )?;
 
         // we want the smaller amounts...
         // ...which occurs at the upper price for amount0...
         let amount0 = Position::new(pool_upper, self.liquidity, self.tick_lower, self.tick_upper)
-            .amount0()
+            .amount0()?
             .quotient();
         // ...and the lower for amount1
         let amount1 = Position::new(pool_lower, self.liquidity, self.tick_lower, self.tick_upper)
-            .amount1()
+            .amount1()?
             .quotient();
 
-        (big_int_to_u256(amount0), big_int_to_u256(amount1))
+        Ok((big_int_to_u256(amount0), big_int_to_u256(amount1)))
     }
 
     /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held by the position at
     /// the current price for the pool
-    pub fn mint_amounts(&mut self) -> MintAmounts {
+    pub fn mint_amounts(&mut self) -> Result<MintAmounts> {
         if self._mint_amounts.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._mint_amounts = Some(MintAmounts {
                     amount0: get_amount_0_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
-                        get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         true,
-                    )
-                    .unwrap(),
+                    )?,
                     amount1: U256::ZERO,
                 })
             } else if self.pool.tick_current < self.tick_upper {
                 self._mint_amounts = Some(MintAmounts {
                     amount0: get_amount_0_delta(
                         self.pool.sqrt_ratio_x96,
-                        get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         true,
-                    )
-                    .unwrap(),
+                    )?,
                     amount1: get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
                         self.pool.sqrt_ratio_x96,
                         self.liquidity,
                         true,
-                    )
-                    .unwrap(),
+                    )?,
                 })
             } else {
                 self._mint_amounts = Some(MintAmounts {
                     amount0: U256::ZERO,
                     amount1: get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower).unwrap(),
-                        get_sqrt_ratio_at_tick(self.tick_upper).unwrap(),
+                        get_sqrt_ratio_at_tick(self.tick_lower)?,
+                        get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         true,
-                    )
-                    .unwrap(),
+                    )?,
                 })
             }
         }
-        self._mint_amounts.clone().unwrap()
+        Ok(self._mint_amounts.clone().unwrap())
     }
 
     /// Computes the maximum amount of liquidity received for a given amount of token0, token1,
@@ -372,9 +351,9 @@ impl Position {
         amount0: U256,
         amount1: U256,
         use_full_precision: bool,
-    ) -> Self {
-        let sqrt_ratio_a_x96 = get_sqrt_ratio_at_tick(tick_lower).unwrap();
-        let sqrt_ratio_b_x96 = get_sqrt_ratio_at_tick(tick_upper).unwrap();
+    ) -> Result<Self> {
+        let sqrt_ratio_a_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
+        let sqrt_ratio_b_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
         let liquidity = max_liquidity_for_amounts(
             pool.sqrt_ratio_x96,
             sqrt_ratio_a_x96,
@@ -383,7 +362,12 @@ impl Position {
             amount1,
             use_full_precision,
         );
-        Self::new(pool, liquidity.to_u128().unwrap(), tick_lower, tick_upper)
+        Ok(Self::new(
+            pool,
+            liquidity.to_u128().unwrap(),
+            tick_lower,
+            tick_upper,
+        ))
     }
 
     /// Computes a position with the maximum amount of liquidity received for a given amount of token0,
@@ -406,7 +390,7 @@ impl Position {
         tick_upper: i32,
         amount0: U256,
         use_full_precision: bool,
-    ) -> Self {
+    ) -> Result<Self> {
         Self::from_amounts(
             pool,
             tick_lower,
@@ -429,7 +413,12 @@ impl Position {
     ///
     /// returns: Position
     ///
-    pub fn from_amount1(pool: Pool, tick_lower: i32, tick_upper: i32, amount1: U256) -> Self {
+    pub fn from_amount1(
+        pool: Pool,
+        tick_lower: i32,
+        tick_upper: i32,
+        amount1: U256,
+    ) -> Result<Self> {
         // this function always uses full precision
         Self::from_amounts(pool, tick_lower, tick_upper, U256::MAX, amount1, true)
     }
@@ -474,6 +463,7 @@ mod tests {
             0,
             None,
         )
+        .unwrap()
     }
 
     #[test]
@@ -548,7 +538,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         assert_eq!(
-            position.amount0().quotient().to_string(),
+            position.amount0().unwrap().quotient().to_string(),
             "49949961958869841"
         );
     }
@@ -561,7 +551,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        assert_eq!(position.amount0().quotient().to_string(), "0");
+        assert_eq!(position.amount0().unwrap().quotient().to_string(), "0");
     }
 
     #[test]
@@ -573,7 +563,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         assert_eq!(
-            position.amount0().quotient().to_string(),
+            position.amount0().unwrap().quotient().to_string(),
             "120054069145287995769396"
         );
     }
@@ -586,7 +576,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
-        assert_eq!(position.amount1().quotient().to_string(), "0");
+        assert_eq!(position.amount1().unwrap().quotient().to_string(), "0");
     }
 
     #[test]
@@ -597,7 +587,10 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        assert_eq!(position.amount1().quotient().to_string(), "49970077052");
+        assert_eq!(
+            position.amount1().unwrap().quotient().to_string(),
+            "49970077052"
+        );
     }
 
     #[test]
@@ -608,7 +601,10 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
-        assert_eq!(position.amount1().quotient().to_string(), "79831926242");
+        assert_eq!(
+            position.amount1().unwrap().quotient().to_string(),
+            "79831926242"
+        );
     }
 
     #[test]
@@ -620,8 +616,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841738198");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -635,8 +632,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "49970077053");
     }
@@ -650,8 +648,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "120054069145287995740584");
         assert_eq!(amount1.to_string(), "79831926243");
     }
@@ -665,8 +664,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841738198");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -680,8 +680,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "49970077053");
     }
@@ -695,8 +696,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "95063440240746211432007");
         assert_eq!(amount1.to_string(), "54828800461");
     }
@@ -711,13 +713,16 @@ mod tests {
                 MIN_SQRT_RATIO,
                 0,
                 None,
-            ),
+            )
+            .unwrap(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 100);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841754181");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -732,13 +737,16 @@ mod tests {
                 MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
                 0,
                 None,
-            ),
+            )
+            .unwrap(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 100);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "50045084659");
     }
@@ -752,7 +760,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841754181");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -766,7 +776,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "49970077052");
     }
@@ -780,7 +792,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(0, 1);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "120054069145287995769396");
         assert_eq!(amount1.to_string(), "79831926242");
     }
@@ -794,7 +808,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841754181");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -808,7 +824,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "49970077052");
     }
@@ -822,7 +840,9 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 10000);
-        let (amount0, amount1) = position.burn_amounts_with_slippage(&slippage_tolerance);
+        let (amount0, amount1) = position
+            .burn_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "95063440240746211454822");
         assert_eq!(amount1.to_string(), "54828800460");
     }
@@ -837,14 +857,16 @@ mod tests {
                 MIN_SQRT_RATIO,
                 0,
                 None,
-            ),
+            )
+            .unwrap(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 100);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841738198");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -859,14 +881,16 @@ mod tests {
                 MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
                 0,
                 None,
-            ),
+            )
+            .unwrap(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
         let slippage_tolerance = Percent::new(5, 100);
-        let MintAmounts { amount0, amount1 } =
-            position.mint_amounts_with_slippage(&slippage_tolerance);
+        let MintAmounts { amount0, amount1 } = position
+            .mint_amounts_with_slippage(&slippage_tolerance)
+            .unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "50045084660");
     }
@@ -879,7 +903,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
-        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841754182");
         assert_eq!(amount1.to_string(), "0");
     }
@@ -892,7 +916,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "0");
         assert_eq!(amount1.to_string(), "49970077053");
     }
@@ -905,7 +929,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * 2,
         );
-        let MintAmounts { amount0, amount1 } = position.mint_amounts();
+        let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "120054069145287995769397");
         assert_eq!(amount1.to_string(), "79831926243");
     }

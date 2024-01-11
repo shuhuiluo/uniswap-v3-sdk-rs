@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use alloy_primitives::{Address, B256, I256, U256};
+use anyhow::Result;
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
 use std::{ops::Neg, sync::Arc};
@@ -75,23 +76,23 @@ impl Pool {
         sqrt_ratio_x96: U256,
         liquidity: u128,
         tick_data_provider: Option<Arc<dyn TickDataProvider<Tick = Tick>>>,
-    ) -> Self {
-        let (token0, token1) = if token_a.sorts_before(&token_b) {
+    ) -> Result<Self> {
+        let (token0, token1) = if token_a.sorts_before(&token_b)? {
             (token_a, token_b)
         } else {
             (token_b, token_a)
         };
-        Self {
+        Ok(Self {
             token0,
             token1,
             fee,
             sqrt_ratio_x96,
             liquidity,
-            tick_current: get_tick_at_sqrt_ratio(sqrt_ratio_x96).unwrap(),
+            tick_current: get_tick_at_sqrt_ratio(sqrt_ratio_x96)?,
             tick_data_provider: tick_data_provider.unwrap_or(Arc::new(NoTickDataProvider)),
             _token0_price: None,
             _token1_price: None,
-        }
+        })
     }
 
     pub fn chain_id(&self) -> u32 {
@@ -174,7 +175,7 @@ impl Pool {
         &self,
         input_amount: CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U256>,
-    ) -> (CurrencyAmount<Token>, Self) {
+    ) -> Result<(CurrencyAmount<Token>, Self)> {
         assert!(self.involves_token(&input_amount.meta.currency), "TOKEN");
 
         let zero_for_one = input_amount.meta.currency.equals(&self.token0);
@@ -183,14 +184,14 @@ impl Pool {
             zero_for_one,
             big_int_to_i256(input_amount.quotient()),
             sqrt_price_limit_x96,
-        );
+        )?;
         let output_token = if zero_for_one {
             self.token1.clone()
         } else {
             self.token0.clone()
         };
-        (
-            CurrencyAmount::from_raw_amount(output_token, i256_to_big_int(output_amount.neg())),
+        Ok((
+            CurrencyAmount::from_raw_amount(output_token, i256_to_big_int(output_amount.neg()))?,
             Pool::new(
                 self.token0.clone(),
                 self.token1.clone(),
@@ -198,8 +199,8 @@ impl Pool {
                 sqrt_ratio_x96,
                 liquidity,
                 Some(self.tick_data_provider.clone()),
-            ),
-        )
+            )?,
+        ))
     }
 
     /// Given a desired output amount of a token, return the computed input amount and a pool with state updated after the trade
@@ -216,7 +217,7 @@ impl Pool {
         &self,
         output_amount: CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U256>,
-    ) -> (CurrencyAmount<Token>, Self) {
+    ) -> Result<(CurrencyAmount<Token>, Self)> {
         assert!(self.involves_token(&output_amount.meta.currency), "TOKEN");
 
         let zero_for_one = output_amount.meta.currency.equals(&self.token1);
@@ -225,14 +226,14 @@ impl Pool {
             zero_for_one,
             big_int_to_i256(output_amount.quotient()).neg(),
             sqrt_price_limit_x96,
-        );
+        )?;
         let input_token = if zero_for_one {
             self.token0.clone()
         } else {
             self.token1.clone()
         };
-        (
-            CurrencyAmount::from_raw_amount(input_token, i256_to_big_int(input_amount)),
+        Ok((
+            CurrencyAmount::from_raw_amount(input_token, i256_to_big_int(input_amount))?,
             Pool::new(
                 self.token0.clone(),
                 self.token1.clone(),
@@ -240,8 +241,8 @@ impl Pool {
                 sqrt_ratio_x96,
                 liquidity,
                 Some(self.tick_data_provider.clone()),
-            ),
-        )
+            )?,
+        ))
     }
 
     fn _swap(
@@ -249,7 +250,7 @@ impl Pool {
         zero_for_one: bool,
         amount_specified: I256,
         sqrt_price_limit_x96: Option<U256>,
-    ) -> (I256, U256, u128, i32) {
+    ) -> Result<(I256, U256, u128, i32)> {
         const ONE: U256 = U256::from_limbs([1, 0, 0, 0]);
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
@@ -301,8 +302,7 @@ impl Pool {
                     state.tick,
                     zero_for_one,
                     self.tick_spacing(),
-                )
-                .unwrap();
+                )?;
 
             if step.tick_next < MIN_TICK {
                 step.tick_next = MIN_TICK;
@@ -310,7 +310,7 @@ impl Pool {
                 step.tick_next = MAX_TICK;
             }
 
-            step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next).unwrap();
+            step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next)?;
             (
                 state.sqrt_price_x96,
                 step.amount_in,
@@ -326,8 +326,7 @@ impl Pool {
                 state.liquidity,
                 state.amount_specified_remaining,
                 self.fee as u32,
-            )
-            .unwrap();
+            )?;
 
             if exact_input {
                 state.amount_specified_remaining = I256::from_raw(
@@ -348,29 +347,28 @@ impl Pool {
                 if step.initialized {
                     let mut liquidity_net = self
                         .tick_data_provider
-                        .get_tick(step.tick_next)
-                        .unwrap()
+                        .get_tick(step.tick_next)?
                         .liquidity_net;
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
                     if zero_for_one {
                         liquidity_net = liquidity_net.neg();
                     }
-                    state.liquidity = add_delta(state.liquidity, liquidity_net).unwrap();
+                    state.liquidity = add_delta(state.liquidity, liquidity_net)?;
                 }
                 state.tick = step.tick_next - zero_for_one as i32;
             } else {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96).unwrap();
+                state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96)?;
             }
         }
 
-        (
+        Ok((
             state.amount_calculated,
             state.sqrt_price_x96,
             state.liquidity,
             state.tick,
-        )
+        ))
     }
 }
 
@@ -414,7 +412,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .expect("CHAIN_IDS");
         }
 
         #[test]
@@ -427,7 +426,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .expect("ADDRESSES");
         }
 
         #[test]
@@ -440,7 +440,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .unwrap();
         }
 
         #[test]
@@ -453,7 +454,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .unwrap();
         }
 
         #[test]
@@ -466,7 +468,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .unwrap();
         }
 
         #[test]
@@ -479,7 +482,8 @@ mod tests {
                 ONE_ETHER,
                 0,
                 None,
-            );
+            )
+            .unwrap();
         }
     }
 
@@ -498,7 +502,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert!(pool.token0.equals(&DAI.clone()));
         let pool = Pool::new(
             DAI.clone(),
@@ -507,7 +512,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert!(pool.token0.equals(&DAI.clone()));
     }
 
@@ -520,7 +526,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert!(pool.token1.equals(&USDC.clone()));
         let pool = Pool::new(
             DAI.clone(),
@@ -529,12 +536,13 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert!(pool.token1.equals(&USDC.clone()));
     }
 
     #[test]
-    fn token0_price_returns_price_of_token0_in_terms_of_token1() {
+    fn token0_price_returns_price_of_token0_in_terms_of_token1() -> Result<()> {
         let mut pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
@@ -542,9 +550,10 @@ mod tests {
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
             None,
-        );
+        )?;
         assert_eq!(
-            pool.token0_price().to_significant(5, Rounding::RoundHalfUp),
+            pool.token0_price()
+                .to_significant(5, Rounding::RoundHalfUp)?,
             "1.01"
         );
         let mut pool = Pool::new(
@@ -554,15 +563,17 @@ mod tests {
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
             None,
-        );
+        )?;
         assert_eq!(
-            pool.token0_price().to_significant(5, Rounding::RoundHalfUp),
+            pool.token0_price()
+                .to_significant(5, Rounding::RoundHalfUp)?,
             "1.01"
         );
+        Ok(())
     }
 
     #[test]
-    fn token1_price_returns_price_of_token1_in_terms_of_token0() {
+    fn token1_price_returns_price_of_token1_in_terms_of_token0() -> Result<()> {
         let mut pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
@@ -570,9 +581,10 @@ mod tests {
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
             None,
-        );
+        )?;
         assert_eq!(
-            pool.token1_price().to_significant(5, Rounding::RoundHalfUp),
+            pool.token1_price()
+                .to_significant(5, Rounding::RoundHalfUp)?,
             "0.9901"
         );
         let mut pool = Pool::new(
@@ -582,11 +594,13 @@ mod tests {
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
             None,
-        );
+        )?;
         assert_eq!(
-            pool.token1_price().to_significant(5, Rounding::RoundHalfUp),
+            pool.token1_price()
+                .to_significant(5, Rounding::RoundHalfUp)?,
             "0.9901"
         );
+        Ok(())
     }
 
     #[test]
@@ -598,9 +612,10 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
-        assert!(pool.price_of(&DAI.clone()).equal_to(&pool.token0_price()));
-        assert!(pool.price_of(&USDC.clone()).equal_to(&pool.token1_price()));
+        )
+        .unwrap();
+        assert_eq!(pool.price_of(&DAI.clone()), pool.token0_price());
+        assert_eq!(pool.price_of(&USDC.clone()), pool.token1_price());
     }
 
     #[test]
@@ -613,7 +628,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         pool.price_of(&WETH9::default().get(1).unwrap().clone());
     }
 
@@ -626,7 +642,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert_eq!(pool.chain_id(), 1);
         let pool = Pool::new(
             DAI.clone(),
@@ -635,7 +652,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert_eq!(pool.chain_id(), 1);
     }
 
@@ -648,7 +666,8 @@ mod tests {
             encode_sqrt_ratio_x96(1, 1),
             0,
             None,
-        );
+        )
+        .unwrap();
         assert!(pool.involves_token(&USDC.clone()));
         assert!(pool.involves_token(&DAI.clone()));
         assert!(!pool.involves_token(&WETH9::default().get(1).unwrap().clone()));
@@ -680,38 +699,43 @@ mod tests {
                     FeeAmount::LOW.tick_spacing(),
                 ))),
             )
+            .unwrap()
         }
 
         #[test]
-        fn get_output_amount_usdc_to_dai() {
-            let (output_amount, _) =
-                pool().get_output_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 100), None);
+        fn get_output_amount_usdc_to_dai() -> Result<()> {
+            let (output_amount, _) = pool()
+                .get_output_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 100)?, None)?;
             assert!(output_amount.meta.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
+            Ok(())
         }
 
         #[test]
-        fn get_output_amount_dai_to_usdc() {
-            let (output_amount, _) =
-                pool().get_output_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 100), None);
+        fn get_output_amount_dai_to_usdc() -> Result<()> {
+            let (output_amount, _) = pool()
+                .get_output_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 100)?, None)?;
             assert!(output_amount.meta.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
+            Ok(())
         }
 
         #[test]
-        fn get_input_amount_usdc_to_dai() {
+        fn get_input_amount_usdc_to_dai() -> Result<()> {
             let (input_amount, _) =
-                pool().get_input_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 98), None);
+                pool().get_input_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 98)?, None)?;
             assert!(input_amount.meta.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
+            Ok(())
         }
 
         #[test]
-        fn get_input_amount_dai_to_usdc() {
-            let (input_amount, _) =
-                pool().get_input_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 98), None);
+        fn get_input_amount_dai_to_usdc() -> Result<()> {
+            let (input_amount, _) = pool()
+                .get_input_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 98)?, None)?;
             assert!(input_amount.meta.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
+            Ok(())
         }
     }
 }
