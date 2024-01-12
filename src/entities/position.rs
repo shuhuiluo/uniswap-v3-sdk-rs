@@ -153,7 +153,6 @@ impl Position {
         let price_upper = self.pool.token0_price().as_fraction()
             * ((one + slippage_tolerance.clone()).as_fraction());
 
-        const ONE: U256 = U256::from_limbs([1, 0, 0, 0]);
         let mut sqrt_ratio_x96_lower =
             encode_sqrt_ratio_x96(price_lower.numerator(), price_lower.denominator());
         if sqrt_ratio_x96_lower <= MIN_SQRT_RATIO {
@@ -427,6 +426,7 @@ impl Position {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloy_primitives::uint;
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::token;
 
@@ -734,7 +734,7 @@ mod tests {
                 DAI.clone(),
                 USDC.clone(),
                 FeeAmount::LOW,
-                MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
+                MAX_SQRT_RATIO - uint!(1_U256),
                 0,
                 None,
             )
@@ -878,7 +878,7 @@ mod tests {
                 DAI.clone(),
                 USDC.clone(),
                 FeeAmount::LOW,
-                MAX_SQRT_RATIO - U256::from_limbs([1, 0, 0, 0]),
+                MAX_SQRT_RATIO - uint!(1_U256),
                 0,
                 None,
             )

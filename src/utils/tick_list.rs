@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_impl_for_vec() {
-        let ticks = vec![LOW_TICK, MID_TICK, HIGH_TICK];
+        let ticks = [LOW_TICK, MID_TICK, HIGH_TICK];
         assert_eq!(ticks.binary_search_by_tick(-1), 0);
         assert_eq!(ticks.binary_search_by_tick(0), 1);
         assert_eq!(ticks.binary_search_by_tick(1), 1);

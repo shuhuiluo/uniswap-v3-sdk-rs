@@ -251,7 +251,6 @@ impl Pool {
         amount_specified: I256,
         sqrt_price_limit_x96: Option<U256>,
     ) -> Result<(I256, U256, u128, i32)> {
-        const ONE: U256 = U256::from_limbs([1, 0, 0, 0]);
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
                 MIN_SQRT_RATIO + ONE
