@@ -1,6 +1,4 @@
-use super::{
-    encode_sqrt_ratio_x96, get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, u256_to_big_uint, Q192,
-};
+use crate::prelude::*;
 use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
@@ -22,7 +20,7 @@ pub fn tick_to_price(
     let sqrt_ratio_x96 = u256_to_big_uint(sqrt_ratio_x96);
     let ratio_x192 = &sqrt_ratio_x96 * &sqrt_ratio_x96;
     let q192 = u256_to_big_uint(Q192);
-    Ok(if base_token.sorts_before(&quote_token) {
+    Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
     } else {
         Price::new(base_token, quote_token, ratio_x192, q192)
@@ -40,7 +38,7 @@ pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
     let sorted = price
         .meta
         .base_currency
-        .sorts_before(&price.meta.quote_currency);
+        .sorts_before(&price.meta.quote_currency)?;
     let sqrt_ratio_x96 = if sorted {
         encode_sqrt_ratio_x96(price.numerator().clone(), price.denominator().clone())
     } else {
@@ -53,12 +51,12 @@ pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
         tick + 1,
     )?;
     Ok(if sorted {
-        if !price.less_than(&next_tick_price) {
+        if price >= next_tick_price {
             tick + 1
         } else {
             tick
         }
-    } else if !price.greater_than(&next_tick_price) {
+    } else if price <= next_tick_price {
         tick + 1
     } else {
         tick
@@ -104,7 +102,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -74959)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1800"
         );
     }
@@ -114,7 +113,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -74959)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.00055556"
         );
     }
@@ -124,7 +124,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN1.clone(), 74959)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1800"
         );
     }
@@ -134,7 +135,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN1.clone(), TOKEN0.clone(), 74959)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.00055556"
         );
     }
@@ -144,7 +146,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1.01"
         );
     }
@@ -154,7 +157,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.99015"
         );
     }
@@ -164,7 +168,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276423)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.99015"
         );
     }
@@ -174,7 +179,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276423)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1.0099"
         );
     }
@@ -184,7 +190,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1.01"
         );
     }
@@ -194,7 +201,8 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225)
                 .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp),
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.99015"
         );
     }
