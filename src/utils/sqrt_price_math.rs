@@ -2,12 +2,11 @@
 //! This library is a Rust port of the [SqrtPriceMath library](https://github.com/uniswap/v3-core/blob/main/contracts/libraries/SqrtPriceMath.sol) in Solidity,
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/SqrtPriceMath.sol).
 
-use super::{mul_div, mul_div_96, mul_div_rounding_up, Q96};
-use alloy_primitives::{I256, U256};
+use crate::prelude::*;
+use alloy_primitives::{uint, I256, U256};
 use uniswap_v3_math::error::UniswapV3MathError;
 
-const MAX_U160: U256 =
-    U256::from_limbs([18446744073709551615, 18446744073709551615, 4294967295, 0]);
+const MAX_U160: U256 = uint!(1461501637330902918203684832716283019655932542975_U256);
 
 fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
     if x > MAX_U160 {
@@ -15,10 +14,6 @@ fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
     } else {
         Ok(x)
     }
-}
-
-const fn to_uint256(x: u128) -> U256 {
-    U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
 }
 
 /// Gets the next sqrt price given a delta of token0
@@ -47,7 +42,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
     if amount.is_zero() {
         return Ok(sqrt_price_x96);
     }
-    let numerator_1 = to_uint256(liquidity) << 96;
+    let numerator_1 = u128_to_uint256(liquidity) << 96;
 
     if add {
         let product = amount * sqrt_price_x96;
@@ -100,18 +95,18 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
 ) -> Result<U256, UniswapV3MathError> {
     if add {
         let quotient = if amount <= MAX_U160 {
-            (amount << 96) / to_uint256(liquidity)
+            (amount << 96) / u128_to_uint256(liquidity)
         } else {
-            mul_div(amount, Q96, to_uint256(liquidity))?
+            mul_div(amount, Q96, u128_to_uint256(liquidity))?
         };
         let next_sqrt_price = sqrt_price_x96 + quotient;
 
         to_uint160(next_sqrt_price)
     } else {
         let quotient = if amount <= MAX_U160 {
-            (amount << 96_i32).div_ceil(to_uint256(liquidity))
+            (amount << 96_i32).div_ceil(u128_to_uint256(liquidity))
         } else {
-            mul_div_rounding_up(amount, Q96, to_uint256(liquidity))?
+            mul_div_rounding_up(amount, Q96, u128_to_uint256(liquidity))?
         };
 
         if sqrt_price_x96 > quotient {
@@ -215,7 +210,7 @@ pub fn get_amount_0_delta(
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
 
-    let numerator_1 = to_uint256(liquidity) << 96;
+    let numerator_1 = u128_to_uint256(liquidity) << 96;
     let numerator_2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
 
     if sqrt_ratio_a_x96.is_zero() {
@@ -255,7 +250,7 @@ pub fn get_amount_1_delta(
     let numerator = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
     let denominator = Q96;
 
-    let liquidity = to_uint256(liquidity);
+    let liquidity = u128_to_uint256(liquidity);
     let amount_1 = mul_div_96(liquidity, numerator)?;
     let carry = liquidity.mul_mod(numerator, denominator).gt(&U256::ZERO) && round_up;
     Ok(amount_1 + U256::from_limbs([carry as u64, 0, 0, 0]))

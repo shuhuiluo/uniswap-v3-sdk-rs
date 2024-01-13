@@ -129,7 +129,9 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3Math
 
     // 2**(msb - 95) > sqrt_ratio >= 2**(msb - 96)
     // the integer part of log_2(sqrt_ratio) * 2**64 = (msb - 96) << 64, 8.64 number
-    let mut log_2_x64: U256 = U256::from(msb).sub(uint!(96_U256)).shl(64);
+    let mut log_2_x64: U256 = U256::from_limbs([msb as u64, 0, 0, 0])
+        .sub(uint!(96_U256))
+        .shl(64);
 
     // Get the first 128 significant figures of `sqrt_ratio_x96`.
     // r = sqrt_ratio_x96 / 2**(msb - 127), where 2**128 > r >= 2**127

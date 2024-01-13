@@ -1,10 +1,6 @@
-use super::Q96;
+use super::{ONE, Q96, THREE, TWO};
 use alloy_primitives::U256;
 use uniswap_v3_math::error::UniswapV3MathError;
-
-const ONE: U256 = U256::from_limbs([1, 0, 0, 0]);
-const TWO: U256 = U256::from_limbs([2, 0, 0, 0]);
-const THREE: U256 = U256::from_limbs([3, 0, 0, 0]);
 
 /// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
 ///

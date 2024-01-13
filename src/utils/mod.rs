@@ -28,11 +28,14 @@ pub use swap_math::compute_swap_step;
 pub use tick_list::TickList;
 pub use tick_math::*;
 
-use alloy_primitives::{I256, U256};
+use alloy_primitives::{uint, I256, U256};
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::{Signed, ToBytes};
 use std::ops::Neg;
 
+pub const ONE: U256 = uint!(1_U256);
+pub const TWO: U256 = uint!(2_U256);
+pub const THREE: U256 = uint!(3_U256);
 pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
@@ -67,4 +70,8 @@ pub fn big_int_to_i256(x: BigInt) -> I256 {
     } else {
         I256::from_raw(big_int_to_u256(x.neg())).neg()
     }
+}
+
+pub const fn u128_to_uint256(x: u128) -> U256 {
+    U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
 }
