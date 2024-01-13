@@ -31,7 +31,7 @@ uniswap-sdk-core = "0.10.0"
 uniswap_v3_math = "0.4.1"
 
 [features]
-extensions = ["aperture-lens", "ethers"]
+extensions = ["aperture-lens", "ethers", "regex"]
 
 [dev-dependencies]
 criterion = "0.5.1"
