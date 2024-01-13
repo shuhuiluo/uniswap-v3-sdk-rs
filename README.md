@@ -16,14 +16,14 @@ WIP.
 - Reimplementation of the math libraries in [Uniswap V3 Math In Rust](https://github.com/0xKitsune/uniswap-v3-math)
   based on optimizations presented in [Uni V3 Lib](https://github.com/Aperture-Finance/uni-v3-lib)
 - Extensive unit tests and benchmarks
-- An `extensions` module for additional functionality related to Uniswap V3
+- An `extensions` feature for additional functionality related to Uniswap V3
 
 ## Getting started
 
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = "0.8.0"
+uniswap-v3-sdk = { version = "0.11.0", features = ["extensions"] }
 ```
 
 ### Usage
@@ -46,8 +46,12 @@ Tests are run with `cargo test`. To test a specific module, use `cargo test --te
 
 ### Linting
 
-Linting is done with `clippy` and `rustfmt`. To run the linter,
-use `cargo clippy --all-targets --all-features -- -D warnings` and `cargo fmt --all -- --check`.
+Linting is done with `clippy` and `rustfmt`. To run the linter, use:
+
+```shell
+cargo clippy --all-targets --all-features -- -D warnings
+cargo fmt --all -- --check
+```
 
 ### Benchmarking
 
@@ -65,3 +69,4 @@ This project is inspired by and adapted from the following projects:
 - [Uniswap SDK Core Rust](https://github.com/malik672/uniswap-sdk-core-rust)
 - [Uniswap V3 Math In Rust](https://github.com/0xKitsune/uniswap-v3-math)
 - [Uni V3 Lib](https://github.com/Aperture-Finance/uni-v3-lib)
+- [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk)
