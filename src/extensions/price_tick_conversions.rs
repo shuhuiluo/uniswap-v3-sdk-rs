@@ -222,7 +222,127 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
     }
 }
 
+/// For a given tick range from `tick_lower` to `tick_upper`, and a given proportion of the position value that is held in
+/// token0, calculate the price of token0 denominated in token1.
+///
+/// ## Arguments
+///
+/// * `token0_ratio`: The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and 1, inclusive.
+/// * `tick_lower`: The lower tick of the range.
+/// * `tick_upper`: The upper tick of the range.
+///
+/// ## Returns
+///
+/// The price of token0 denominated in token1 for the specified tick range and token0 value proportion.
+///
+pub fn token0_ratio_to_price(
+    token0_ratio: BigDecimal,
+    tick_lower: i32,
+    tick_upper: i32,
+) -> Result<BigDecimal> {
+    if tick_upper <= tick_lower {
+        bail!("Invalid tick range: tickUpper must be greater than tickLower");
+    }
+    if token0_ratio < BigDecimal::zero() || token0_ratio > BigDecimal::from(1) {
+        bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
+    }
+    if token0_ratio.is_zero() {
+        return Ok(tick_to_big_price(tick_upper)?);
+    }
+    if token0_ratio == BigDecimal::from(1) {
+        return Ok(tick_to_big_price(tick_lower)?);
+    }
+    let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
+    let sqrt_ratio_upper_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
+    let l = u256_to_big_decimal(sqrt_ratio_lower_x96) / u256_to_big_decimal(Q96);
+    let u = u256_to_big_decimal(sqrt_ratio_upper_x96) / u256_to_big_decimal(Q96);
+    let r = token0_ratio;
+    let a = &r - BigDecimal::from(1);
+    let b = &u * (BigDecimal::from(1) - BigDecimal::from(2) * &r);
+    let c = r * l * u;
+    let numerator = &b + (b.square() - BigDecimal::from(4) * &a * c).sqrt().unwrap();
+    let denominator = BigDecimal::from(-2) * a;
+    Ok((numerator / denominator).square())
+}
+
+/// Given a price ratio of token1/token0, calculate the proportion of the position value that is held in token0 for a
+/// given tick range. Inverse of [`token0_ratio_to_price`].
+///
+/// ## Arguments
+///
+/// * `price`: The price ratio of token1/token0, as a [`BigDecimal`].
+/// * `tick_lower`: The lower tick of the range.
+/// * `tick_upper`: The upper tick of the range.
+///
+/// ## Returns
+///
+/// The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and 1, inclusive.
+///
+pub fn token0_price_to_ratio(
+    price: BigDecimal,
+    tick_lower: i32,
+    tick_upper: i32,
+) -> Result<BigDecimal> {
+    if tick_upper <= tick_lower {
+        bail!("Invalid tick range: tickUpper must be greater than tickLower");
+    }
+    let sqrt_price_x96 = price_to_sqrt_ratio_x96(&price);
+    let tick = get_tick_at_sqrt_ratio(sqrt_price_x96)?;
+    // only token0
+    if tick < tick_lower {
+        return Ok(BigDecimal::from(1));
+    }
+    // only token1
+    else if tick >= tick_upper {
+        return Ok(BigDecimal::zero());
+    } else {
+        let liquidity = 2u128 << 96;
+        let amount0 = get_amount_0_delta(
+            sqrt_price_x96,
+            get_sqrt_ratio_at_tick(tick_upper)?,
+            liquidity,
+            false,
+        )?;
+        let amount1 = get_amount_1_delta(
+            get_sqrt_ratio_at_tick(tick_lower)?,
+            sqrt_price_x96,
+            liquidity,
+            false,
+        )?;
+        let value0 = u256_to_big_decimal(amount0) * price;
+        Ok(&value0 / (&value0 + u256_to_big_decimal(amount1)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    // TODO: Add tests.
+    use super::*;
+
+    #[test]
+    fn test_token0_ratio_to_price_conversion() {
+        let tick_lower = 253320;
+        let tick_upper = 264600;
+        assert_eq!(
+            token0_ratio_to_price(BigDecimal::from(0), tick_lower, tick_upper).unwrap(),
+            tick_to_big_price(tick_upper).unwrap()
+        );
+        assert_eq!(
+            token0_ratio_to_price(BigDecimal::from(1), tick_lower, tick_upper).unwrap(),
+            tick_to_big_price(tick_lower).unwrap()
+        );
+        let price =
+            token0_ratio_to_price(BigDecimal::from_str("0.3").unwrap(), tick_lower, tick_upper)
+                .unwrap();
+        assert_eq!(
+            price.with_scale_round(30, RoundingMode::HalfUp).to_string(),
+            "226996287752.678057810335753063814266625941"
+        );
+        let token0_ratio = token0_price_to_ratio(price, tick_lower, tick_upper).unwrap();
+        assert_eq!(
+            token0_ratio
+                .with_scale_round(30, RoundingMode::HalfUp)
+                .to_string(),
+            "0.299999999999999999999998780740"
+        );
+    }
 }
