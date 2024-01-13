@@ -1,3 +1,6 @@
+//! ## Price and tick conversions
+//! Utility functions for converting between [`i32`] ticks and SDK Core [`Price`] prices.
+
 use crate::prelude::*;
 use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
@@ -5,7 +8,7 @@ use uniswap_sdk_core::prelude::*;
 /// Returns a price object corresponding to the input tick and the base/quote token.
 /// Inputs must be tokens because the address order is used to interpret the price represented by the tick.
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `base_token`: the base token of the price
 /// * `quote_token`: the quote token of the price
@@ -17,8 +20,7 @@ pub fn tick_to_price(
     tick: i32,
 ) -> Result<Price<Token, Token>> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    let sqrt_ratio_x96 = u256_to_big_uint(sqrt_ratio_x96);
-    let ratio_x192 = &sqrt_ratio_x96 * &sqrt_ratio_x96;
+    let ratio_x192 = u256_to_big_uint(sqrt_ratio_x96).pow(2);
     let q192 = u256_to_big_uint(Q192);
     Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
@@ -29,12 +31,12 @@ pub fn tick_to_price(
 
 /// Returns the first tick for which the given price is greater than or equal to the tick price
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `price`: for which to return the closest tick that represents a price less than or equal to
 /// the input price, i.e. the price of the returned tick is less than or equal to the input price
 ///
-pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
+pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<i32> {
     let sorted = price
         .meta
         .base_currency
@@ -51,12 +53,12 @@ pub fn price_to_closest_tick(price: Price<Token, Token>) -> Result<i32> {
         tick + 1,
     )?;
     Ok(if sorted {
-        if price >= next_tick_price {
+        if price >= &next_tick_price {
             tick + 1
         } else {
             tick
         }
-    } else if price <= next_tick_price {
+    } else if price <= &next_tick_price {
         tick + 1
     } else {
         tick
@@ -210,7 +212,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_1() {
         assert_eq!(
-            price_to_closest_tick(Price::new(TOKEN1.clone(), TOKEN0.clone(), 1, 1800)).unwrap(),
+            price_to_closest_tick(&Price::new(TOKEN1.clone(), TOKEN0.clone(), 1, 1800)).unwrap(),
             -74960
         );
     }
@@ -218,7 +220,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_2() {
         assert_eq!(
-            price_to_closest_tick(Price::new(TOKEN0.clone(), TOKEN1.clone(), 1800, 1)).unwrap(),
+            price_to_closest_tick(&Price::new(TOKEN0.clone(), TOKEN1.clone(), 1800, 1)).unwrap(),
             -74960
         );
     }
@@ -226,7 +228,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_3() {
         assert_eq!(
-            price_to_closest_tick(Price::new(
+            price_to_closest_tick(&Price::new(
                 TOKEN0.clone(),
                 TOKEN2_6DECIMALS.clone(),
                 BigInt::from(100) * BigInt::from(10).pow(18),
@@ -240,7 +242,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_4() {
         assert_eq!(
-            price_to_closest_tick(Price::new(
+            price_to_closest_tick(&Price::new(
                 TOKEN2_6DECIMALS.clone(),
                 TOKEN0.clone(),
                 BigInt::from(101) * BigInt::from(10).pow(6),
@@ -254,7 +256,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_5() {
         assert_eq!(
-            price_to_closest_tick(tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -74960).unwrap())
+            price_to_closest_tick(&tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -74960).unwrap())
                 .unwrap(),
             -74960
         );
@@ -263,7 +265,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_6() {
         assert_eq!(
-            price_to_closest_tick(tick_to_price(TOKEN1.clone(), TOKEN0.clone(), 74960).unwrap())
+            price_to_closest_tick(&tick_to_price(TOKEN1.clone(), TOKEN0.clone(), 74960).unwrap())
                 .unwrap(),
             74960
         );
@@ -272,7 +274,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_7() {
         assert_eq!(
-            price_to_closest_tick(tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -74960).unwrap())
+            price_to_closest_tick(&tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -74960).unwrap())
                 .unwrap(),
             -74960
         );
@@ -281,7 +283,7 @@ mod tests {
     #[test]
     fn price_to_closest_tick_test_8() {
         assert_eq!(
-            price_to_closest_tick(tick_to_price(TOKEN0.clone(), TOKEN1.clone(), 74960).unwrap())
+            price_to_closest_tick(&tick_to_price(TOKEN0.clone(), TOKEN1.clone(), 74960).unwrap())
                 .unwrap(),
             74960
         );
@@ -291,7 +293,7 @@ mod tests {
     fn price_to_closest_tick_test_9() {
         assert_eq!(
             price_to_closest_tick(
-                tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225).unwrap(),
+                &tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225).unwrap(),
             )
             .unwrap(),
             -276225
@@ -302,7 +304,7 @@ mod tests {
     fn price_to_closest_tick_test_10() {
         assert_eq!(
             price_to_closest_tick(
-                tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225).unwrap(),
+                &tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225).unwrap(),
             )
             .unwrap(),
             -276225
