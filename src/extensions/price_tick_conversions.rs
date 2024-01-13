@@ -247,10 +247,10 @@ pub fn token0_ratio_to_price(
         bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
     }
     if token0_ratio.is_zero() {
-        return Ok(tick_to_big_price(tick_upper)?);
+        return tick_to_big_price(tick_upper);
     }
     if token0_ratio == BigDecimal::from(1) {
-        return Ok(tick_to_big_price(tick_lower)?);
+        return tick_to_big_price(tick_lower);
     }
     let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
     let sqrt_ratio_upper_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
@@ -290,11 +290,11 @@ pub fn token0_price_to_ratio(
     let tick = get_tick_at_sqrt_ratio(sqrt_price_x96)?;
     // only token0
     if tick < tick_lower {
-        return Ok(BigDecimal::from(1));
+        Ok(BigDecimal::from(1))
     }
     // only token1
     else if tick >= tick_upper {
-        return Ok(BigDecimal::zero());
+        Ok(BigDecimal::zero())
     } else {
         let liquidity = 2u128 << 96;
         let amount0 = get_amount_0_delta(
