@@ -9,13 +9,13 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use uniswap_sdk_core::prelude::*;
 
-static MIN_PRICE: Lazy<Fraction> = Lazy::new(|| {
+pub static MIN_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
         u256_to_big_int(MIN_SQRT_RATIO).pow(2),
         u256_to_big_int(Q192),
     )
 });
-static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
+pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
         u256_to_big_int(MAX_SQRT_RATIO).pow(2) - u256_to_big_int(ONE),
         u256_to_big_int(Q192),
@@ -41,9 +41,9 @@ static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
 /// use uniswap_v3_sdk::prelude::parse_price;
 ///
 /// let price = parse_price(
-///    token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC"),
-///    token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH"),
-///    "10.23",
+///     token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC"),
+///     token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH"),
+///     "10.23",
 /// ).unwrap();
 /// ```
 pub fn parse_price<TBase, TQuote>(
@@ -85,6 +85,21 @@ where
 ///
 /// The price of the base token in terms of the quote token as an instance of [`Price`] in [`uniswap_sdk_core`].
 ///
+/// ## Examples
+///
+/// ```
+/// use uniswap_sdk_core::{prelude::Token, token};
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let token0 = token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
+/// let token1 = token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
+/// let min_price = tick_to_price(
+///     token0.clone(),
+///     token1.clone(),
+///     MIN_TICK,
+/// ).unwrap();
+/// assert_eq!(sqrt_ratio_x96_to_price(MIN_SQRT_RATIO, token0, token1).unwrap(), min_price);
+/// ```
 pub fn sqrt_ratio_x96_to_price(
     sqrt_ratio_x96: U256,
     base_token: Token,
@@ -125,6 +140,22 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
 ///
 /// The closest usable tick.
 ///
+/// ## Examples
+///
+/// ```
+/// use uniswap_sdk_core::{prelude::*, token};
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let token0 = token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
+/// let token1 = token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
+/// let fee = FeeAmount::MEDIUM;
+/// let min_price = Price::new(token0.clone(), token1.clone(), MIN_PRICE.denominator(), 1);
+/// let max_price = Price::new(token0.clone(), token1.clone(), MAX_PRICE.denominator(), MAX_PRICE.numerator());
+///
+/// assert_eq!(price_to_closest_usable_tick(&min_price, fee).unwrap(), nearest_usable_tick(MIN_TICK, fee.tick_spacing()));
+/// assert_eq!(price_to_closest_usable_tick(&min_price.invert(), fee).unwrap(), nearest_usable_tick(MIN_TICK, fee.tick_spacing()));
+/// assert_eq!(price_to_closest_usable_tick(&max_price.invert(), fee).unwrap(), nearest_usable_tick(MAX_TICK, fee.tick_spacing()));
+/// ```
 pub fn price_to_closest_usable_tick(price: &Price<Token, Token>, fee: FeeAmount) -> Result<i32> {
     Ok(nearest_usable_tick(
         price_to_closest_tick_safe(price)?,
@@ -138,6 +169,15 @@ pub fn price_to_closest_usable_tick(price: &Price<Token, Token>, fee: FeeAmount)
 ///
 /// * `tick`: The tick for which to return the price.
 ///
+/// ## Examples
+///
+/// ```
+/// use bigdecimal::BigDecimal;
+/// use num_traits::{FromPrimitive, Pow, ToPrimitive};
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// assert_eq!(tick_to_big_price(100).unwrap().to_f32().unwrap(), 1.0001f64.pow(100i32).to_f32().unwrap());
+/// ```
 pub fn tick_to_big_price(tick: i32) -> Result<BigDecimal> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
     Ok(BigDecimal::from(u256_to_big_int(sqrt_ratio_x96).pow(2)) / u256_to_big_decimal(Q192))
@@ -158,6 +198,15 @@ pub fn fraction_to_big_decimal<M>(price: &impl FractionBase<M>) -> BigDecimal {
 ///
 /// The sqrt ratio of token1/token0, as a [`U256`].
 ///
+/// ## Examples
+///
+/// ```
+/// use bigdecimal::BigDecimal;
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let price: BigDecimal = tick_to_big_price(MAX_TICK).unwrap();
+/// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
+/// ```
 pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
     if price < &BigDecimal::zero() {
         panic!("Invalid price: must be non-negative");
@@ -166,8 +215,8 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
     let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
     if sqrt_ratio_x96 < u256_to_big_int(MIN_SQRT_RATIO) {
         MIN_SQRT_RATIO
-    } else if sqrt_ratio_x96 >= u256_to_big_int(MAX_SQRT_RATIO) {
-        MAX_SQRT_RATIO - ONE
+    } else if sqrt_ratio_x96 > u256_to_big_int(MAX_SQRT_RATIO) {
+        MAX_SQRT_RATIO
     } else {
         big_int_to_u256(sqrt_ratio_x96)
     }
