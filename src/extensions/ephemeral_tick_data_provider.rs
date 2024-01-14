@@ -1,3 +1,6 @@
+//! ## Ephemeral Tick Data Provider
+//! A data provider that fetches ticks using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol) in a single `eth_call`.
+
 use crate::prelude::*;
 use alloy_primitives::Address;
 use anyhow::Result;
@@ -5,7 +8,7 @@ use aperture_lens::prelude::get_populated_ticks_in_range;
 use ethers::prelude::{BlockId, ContractError, Middleware};
 use std::sync::Arc;
 
-/// A data provider for ticks that fetches ticks using an ephemeral contract in a single `eth_call`.
+/// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone)]
 pub struct EphemeralTickDataProvider {
     pub pool: Address,
