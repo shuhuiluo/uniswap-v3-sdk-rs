@@ -1,9 +1,11 @@
 //! Extensions to the core library.
 
 mod ephemeral_tick_data_provider;
+mod pool;
 mod price_tick_conversions;
 
 pub use ephemeral_tick_data_provider::EphemeralTickDataProvider;
+pub use pool::*;
 pub use price_tick_conversions::*;
 
 use crate::prelude::*;
