@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{Address, B256, I256, U256};
+use alloy_primitives::{Address, ChainId, B256, I256, U256};
 use anyhow::Result;
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
@@ -110,7 +110,7 @@ impl Pool {
         )
     }
 
-    pub fn chain_id(&self) -> u32 {
+    pub fn chain_id(&self) -> ChainId {
         self.token0.chain_id()
     }
 

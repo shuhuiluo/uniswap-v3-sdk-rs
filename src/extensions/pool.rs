@@ -64,14 +64,14 @@ pub async fn get_pool<M: Middleware>(
     }
     Ok(Pool::new(
         token!(
-            chain_id as u32,
+            chain_id,
             token_a,
             token_a_decimals,
             token_a_symbol,
             token_a_name
         ),
         token!(
-            chain_id as u32,
+            chain_id,
             token_b,
             token_b_decimals,
             token_b_symbol,
