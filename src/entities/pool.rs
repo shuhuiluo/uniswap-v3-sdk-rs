@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{Address, B256, I256, U256};
+use alloy_primitives::{Address, ChainId, B256, I256, U256};
 use anyhow::Result;
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
@@ -95,7 +95,22 @@ impl Pool {
         })
     }
 
-    pub fn chain_id(&self) -> u32 {
+    /// Returns the pool address
+    pub fn address(
+        &self,
+        init_code_hash_manual_override: Option<B256>,
+        factory_address_override: Option<Address>,
+    ) -> Address {
+        Self::get_address(
+            &self.token0,
+            &self.token1,
+            self.fee,
+            init_code_hash_manual_override,
+            factory_address_override,
+        )
+    }
+
+    pub fn chain_id(&self) -> ChainId {
         self.token0.chain_id()
     }
 
