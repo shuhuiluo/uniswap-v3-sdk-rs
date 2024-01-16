@@ -25,6 +25,18 @@ pub fn get_pool_contract<M: Middleware>(
     )
 }
 
+/// Get a [`Pool`] struct from pool key
+///
+/// ## Arguments
+///
+/// * `chain_id`: The chain id
+/// * `factory`: The factory address
+/// * `token_a`: One of the tokens in the pool
+/// * `token_b`: The other token in the pool
+/// * `fee`: Fee tier of the pool
+/// * `client`: The client
+/// * `block_id`: Optional block number to query.
+///
 pub async fn get_pool<M: Middleware>(
     chain_id: ChainId,
     factory: Address,
@@ -100,6 +112,7 @@ fn normalize_ticks(
     (tick_current_aligned, tick_lower, tick_upper)
 }
 
+/// Reconstructs the liquidity array from the tick array and the current liquidity.
 fn reconstruct_liquidity_array(
     tick_array: Vec<(i32, i128)>,
     tick_current_aligned: i32,
@@ -128,6 +141,22 @@ fn reconstruct_liquidity_array(
     Ok(liquidity_array)
 }
 
+/// Fetches the liquidity within the tick range for the specified pool.
+///
+/// ## Arguments
+///
+/// * `pool`: The liquidity pool to fetch the tick to liquidity map for.
+/// * `tick_lower`: The lower tick to fetch liquidity for.
+/// * `tick_upper`: The upper tick to fetch liquidity for.
+/// * `client`: The client.
+/// * `block_id`: Optional block number to query.
+/// * `init_code_hash_manual_override`: Optional init code hash override.
+/// * `factory_address_override`: Optional factory address override.
+///
+/// ## Returns
+///
+/// An array of ticks and corresponding cumulative liquidity.
+///
 pub async fn get_liquidity_array_for_pool<M: Middleware>(
     pool: Pool,
     tick_lower: i32,

@@ -28,6 +28,18 @@ impl FeeAmount {
     }
 }
 
+impl From<u32> for FeeAmount {
+    fn from(fee: u32) -> Self {
+        match fee {
+            100 => Self::LOWEST,
+            500 => Self::LOW,
+            3000 => Self::MEDIUM,
+            10000 => Self::HIGH,
+            _ => panic!("Invalid fee amount"),
+        }
+    }
+}
+
 impl From<i32> for FeeAmount {
     fn from(tick_spacing: i32) -> Self {
         match tick_spacing {
