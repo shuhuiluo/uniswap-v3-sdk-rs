@@ -8,6 +8,7 @@ use aperture_lens::{
         shared_types::PositionState,
     },
 };
+use base64::{engine::general_purpose, Engine};
 use ethers::prelude::*;
 use std::sync::Arc;
 use uniswap_v3_math::utils::{ruint_to_u256, u256_to_ruint};
@@ -36,16 +37,13 @@ pub async fn get_position<M: Middleware>(
     client: Arc<M>,
     block_id: Option<BlockId>,
 ) -> Result<Position, MulticallError<M>> {
-    let nonfungible_position_manager_contract =
+    let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, client.clone());
     let mut multicall = Multicall::new_with_chain_id(client.clone(), None, Some(chain_id)).unwrap();
     multicall.block = block_id;
     multicall
-        .add_call(
-            nonfungible_position_manager_contract.positions(ruint_to_u256(token_id)),
-            false,
-        )
-        .add_call(nonfungible_position_manager_contract.factory(), false);
+        .add_call(npm_contract.positions(ruint_to_u256(token_id)), false)
+        .add_call(npm_contract.factory(), false);
     let (position, factory): (PositionsReturn, types::Address) = multicall.call().await?;
     let PositionsReturn {
         token_0,
@@ -119,16 +117,13 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
     client: Arc<M>,
     block_id: Option<BlockId>,
 ) -> Result<(U256, U256), MulticallError<M>> {
-    let nonfungible_position_manager_contract =
+    let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, client.clone());
     let mut multicall = Multicall::new_with_chain_id(client.clone(), None, Some(chain_id)).unwrap();
     multicall.block = block_id;
     multicall
-        .add_call(
-            nonfungible_position_manager_contract.positions(ruint_to_u256(token_id)),
-            false,
-        )
-        .add_call(nonfungible_position_manager_contract.factory(), false);
+        .add_call(npm_contract.positions(ruint_to_u256(token_id)), false)
+        .add_call(npm_contract.factory(), false);
     let (position, factory): (PositionsReturn, types::Address) = multicall.call().await?;
     let pool_contract = get_pool_contract(
         factory.to_fixed_bytes().into(),
@@ -198,4 +193,60 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
         u128_to_uint256(position.tokens_owed_0) + tokens_owed_0,
         u128_to_uint256(position.tokens_owed_1) + tokens_owed_1,
     ))
+}
+
+/// Get the token SVG URL of the specified position.
+///
+/// ## Arguments
+///
+/// * `nonfungible_position_manager`: The nonfungible position manager address
+/// * `token_id`: The token id
+/// * `client`: The client
+/// * `block_id`: Optional block number to query.
+///
+pub async fn get_token_svg<M: Middleware>(
+    nonfungible_position_manager: Address,
+    token_id: U256,
+    client: Arc<M>,
+    block_id: Option<BlockId>,
+) -> Result<String, ContractError<M>> {
+    let uri =
+        get_nonfungible_position_manager_contract(nonfungible_position_manager, client.clone())
+            .token_uri(ruint_to_u256(token_id))
+            .call_raw()
+            .block(block_id.unwrap_or(BlockId::Number(BlockNumber::Latest)))
+            .await?;
+    let json_uri = general_purpose::URL_SAFE
+        .decode(uri.replace("data:application/json;base64,", ""))
+        .map_err(|e| abi::Error::Other(e.to_string().into()))
+        .map_err(ContractError::DecodingError)?;
+    let image = serde_json::from_slice::<serde_json::Value>(&json_uri)
+        .map_err(abi::Error::SerdeJson)
+        .map_err(ContractError::DecodingError)?
+        .get("image")
+        .unwrap()
+        .to_string();
+    Ok(image[1..image.len() - 1].to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_primitives::{address, uint};
+
+    #[tokio::test]
+    async fn test_get_token_svg() {
+        let svg = get_token_svg(
+            address!("C36442b4a4522E871399CD717aBDD847Ab11FE88"),
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            svg[..60].to_string(),
+            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjkwIiBoZWlnaHQ9Ij"
+        );
+    }
 }
