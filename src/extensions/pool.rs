@@ -10,7 +10,6 @@ use ethers::prelude::*;
 use num_integer::Integer;
 use std::sync::Arc;
 use uniswap_sdk_core::{prelude::Token, token};
-use uniswap_v3_math::utils::u256_to_ruint;
 
 pub fn get_pool_contract<M: Middleware>(
     factory: Address,
@@ -90,7 +89,7 @@ pub async fn get_pool<M: Middleware>(
             token_b_name
         ),
         fee,
-        u256_to_ruint(sqrt_price_x96),
+        sqrt_price_x96.to_alloy(),
         liquidity,
         None,
     )
@@ -174,8 +173,7 @@ pub async fn get_liquidity_array_for_pool<M: Middleware>(
     );
     let ticks = get_populated_ticks_in_range(
         pool.address(init_code_hash_manual_override, factory_address_override)
-            .into_array()
-            .into(),
+            .to_ethers(),
         tick_lower,
         tick_upper,
         client,

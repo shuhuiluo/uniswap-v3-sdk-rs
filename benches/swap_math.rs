@@ -1,8 +1,8 @@
 use alloy_primitives::{keccak256, I256, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
-use uniswap_v3_math::{swap_math, utils::ruint_to_u256};
-use uniswap_v3_sdk::utils::compute_swap_step;
+use uniswap_v3_math::swap_math;
+use uniswap_v3_sdk::prelude::*;
 
 fn pseudo_random(seed: u64) -> U256 {
     keccak256(seed.abi_encode()).into()
@@ -58,10 +58,10 @@ fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
         .into_iter()
         .map(|i| {
             (
-                ruint_to_u256(i.0),
-                ruint_to_u256(i.1),
+                i.0.to_ethers(),
+                i.1.to_ethers(),
                 i.2,
-                I256::from_raw(ruint_to_u256(i.3.into_raw())),
+                I256::from_raw(i.3.into_raw().to_ethers()),
                 i.4,
             )
         })

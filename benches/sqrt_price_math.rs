@@ -1,11 +1,8 @@
 use alloy_primitives::{keccak256, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
-use uniswap_v3_math::{sqrt_price_math, utils::ruint_to_u256};
-use uniswap_v3_sdk::utils::{
-    get_amount_0_delta, get_amount_0_delta_signed, get_amount_1_delta, get_amount_1_delta_signed,
-    get_next_sqrt_price_from_input, get_next_sqrt_price_from_output,
-};
+use uniswap_v3_math::sqrt_price_math;
+use uniswap_v3_sdk::prelude::*;
 
 fn pseudo_random(seed: u64) -> U256 {
     keccak256(seed.abi_encode()).into()
@@ -46,9 +43,9 @@ fn get_next_sqrt_price_from_input_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
                 let _ = sqrt_price_math::get_next_sqrt_price_from_input(
-                    ruint_to_u256(*sqrt_price_x_96),
+                    sqrt_price_x_96.to_ethers(),
                     *liquidity,
-                    ruint_to_u256(*amount),
+                    amount.to_ethers(),
                     *add,
                 );
             }
@@ -74,9 +71,9 @@ fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
                 let _ = sqrt_price_math::get_next_sqrt_price_from_output(
-                    ruint_to_u256(*sqrt_price_x_96),
+                    sqrt_price_x_96.to_ethers(),
                     *liquidity,
-                    ruint_to_u256(*amount),
+                    amount.to_ethers(),
                     *add,
                 );
             }
@@ -102,8 +99,8 @@ fn get_amount_0_delta_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_0_delta(
-                    ruint_to_u256(*sqrt_ratio_a_x96),
-                    ruint_to_u256(*sqrt_ratio_b_x96),
+                    sqrt_ratio_a_x96.to_ethers(),
+                    sqrt_ratio_b_x96.to_ethers(),
                     *liquidity,
                     *round_up,
                 );
@@ -130,8 +127,8 @@ fn get_amount_1_delta_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_1_delta(
-                    ruint_to_u256(*sqrt_ratio_a_x96),
-                    ruint_to_u256(*sqrt_ratio_b_x96),
+                    sqrt_ratio_a_x96.to_ethers(),
+                    sqrt_ratio_b_x96.to_ethers(),
                     *liquidity,
                     *round_up,
                 );
@@ -161,8 +158,8 @@ fn get_amount_0_delta_signed_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
                 let _ = sqrt_price_math::get_amount_0_delta(
-                    ruint_to_u256(*sqrt_ratio_a_x96),
-                    ruint_to_u256(*sqrt_ratio_b_x96),
+                    sqrt_ratio_a_x96.to_ethers(),
+                    sqrt_ratio_b_x96.to_ethers(),
                     *liquidity as i128,
                 );
             }
@@ -191,8 +188,8 @@ fn get_amount_1_delta_signed_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
                 let _ = sqrt_price_math::get_amount_1_delta(
-                    ruint_to_u256(*sqrt_ratio_a_x96),
-                    ruint_to_u256(*sqrt_ratio_b_x96),
+                    sqrt_ratio_a_x96.to_ethers(),
+                    sqrt_ratio_b_x96.to_ethers(),
                     *liquidity as i128,
                 );
             }

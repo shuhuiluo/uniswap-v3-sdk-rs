@@ -1,8 +1,8 @@
 use alloy_primitives::U256;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::ops::Shl;
-use uniswap_v3_math::{tick_math, utils::ruint_to_u256};
-use uniswap_v3_sdk::utils::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio};
+use uniswap_v3_math::tick_math;
+use uniswap_v3_sdk::prelude::*;
 
 fn get_sqrt_ratio_at_tick_benchmark(c: &mut Criterion) {
     c.bench_function("get_sqrt_ratio_at_tick", |b| {
@@ -38,7 +38,7 @@ fn get_tick_at_sqrt_ratio_benchmark_ref(c: &mut Criterion) {
     c.bench_function("get_tick_at_sqrt_ratio_ref", |b| {
         b.iter(|| {
             for i in 33u8..=191 {
-                let _ = tick_math::get_tick_at_sqrt_ratio(ruint_to_u256(U256::from(1).shl(i)));
+                let _ = tick_math::get_tick_at_sqrt_ratio(U256::from(1).shl(i).to_ethers());
             }
         });
     });
