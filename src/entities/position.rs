@@ -24,14 +24,12 @@ pub struct MintAmounts {
 impl Position {
     /// Constructs a position for a given pool with the given liquidity
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `pool`: For which pool the liquidity is assigned
     /// * `liquidity`: The amount of liquidity that is in the position
     /// * `tick_lower`: The lower tick of the position
     /// * `tick_upper`: The upper tick of the position
-    ///
-    /// returns: Position
     ///
     pub const fn new(pool: Pool, liquidity: u128, tick_lower: i32, tick_upper: i32) -> Self {
         assert!(tick_lower < tick_upper, "TICK_ORDER");
@@ -140,11 +138,13 @@ impl Position {
 
     /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance percentage
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `slippage_tolerance`: The amount by which the price can 'slip' before the transaction will revert
     ///
-    /// returns: (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
+    /// ## Returns
+    ///
+    /// (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     ///
     fn ratios_after_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
         let one = Percent::new(1, 1);
@@ -170,11 +170,13 @@ impl Position {
 
     /// Returns the minimum amounts that must be sent in order to safely mint the amount of liquidity held by the position
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `slippage_tolerance`: Tolerance of unfavorable slippage from the current price
     ///
-    /// returns: The amounts, with slippage
+    /// ## Returns
+    ///
+    /// The amounts, with slippage
     ///
     pub fn mint_amounts_with_slippage(
         &mut self,
@@ -239,11 +241,13 @@ impl Position {
     /// Returns the minimum amounts that should be requested in order to safely burn the amount of liquidity held by the
     /// position with the given slippage tolerance
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `slippage_tolerance`: tolerance of unfavorable slippage from the current price
     ///
-    /// returns: The amounts, with slippage
+    /// ## Returns
+    ///
+    /// The amounts, with slippage
     ///
     pub fn burn_amounts_with_slippage(
         &mut self,
@@ -331,7 +335,7 @@ impl Position {
     /// Computes the maximum amount of liquidity received for a given amount of token0, token1,
     /// and the prices at the tick boundaries.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `pool`: The pool for which the position should be created
     /// * `tick_lower`: The lower tick of the position
@@ -341,7 +345,9 @@ impl Position {
     /// * `use_full_precision`: If false, liquidity will be maximized according to what the router can calculate,
     /// not what core can theoretically support
     ///
-    /// returns: The position with the maximum amount of liquidity received
+    /// ## Returns
+    ///
+    /// The position with the maximum amount of liquidity received
     ///
     pub fn from_amounts(
         pool: Pool,
@@ -372,7 +378,7 @@ impl Position {
     /// Computes a position with the maximum amount of liquidity received for a given amount of token0,
     /// assuming an unlimited amount of token1
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `pool`: The pool for which the position is created
     /// * `tick_lower`: The lower tick
@@ -380,8 +386,6 @@ impl Position {
     /// * `amount0`: The desired amount of token0
     /// * `use_full_precision`: If true, liquidity will be maximized according to what the router can calculate,
     /// not what core can theoretically support
-    ///
-    /// returns: Position
     ///
     pub fn from_amount0(
         pool: Pool,
@@ -403,14 +407,12 @@ impl Position {
     /// Computes a position with the maximum amount of liquidity received for a given amount of token1,
     /// assuming an unlimited amount of token0
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `pool`: The pool for which the position is created
     /// * `tick_lower`: The lower tick
     /// * `tick_upper`: The upper tick
     /// * `amount1`: The desired amount of token1
-    ///
-    /// returns: Position
     ///
     pub fn from_amount1(
         pool: Pool,

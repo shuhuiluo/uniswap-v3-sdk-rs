@@ -1,4 +1,6 @@
-use crate::prelude::{get_pool, get_pool_contract, get_tokens_owed, u128_to_uint256, Position};
+use crate::prelude::{
+    get_pool, get_pool_contract, get_tokens_owed, u128_to_uint256, Pool, Position,
+};
 use alloy_primitives::{Address, ChainId, U256};
 use aperture_lens::{
     position_lens,
@@ -11,6 +13,7 @@ use aperture_lens::{
 use base64::{engine::general_purpose, Engine};
 use ethers::prelude::*;
 use std::sync::Arc;
+use uniswap_sdk_core::{prelude::Token, token};
 use uniswap_v3_math::utils::{ruint_to_u256, u256_to_ruint};
 
 pub fn get_nonfungible_position_manager_contract<M: Middleware>(
@@ -65,6 +68,58 @@ pub async fn get_position<M: Middleware>(
     )
     .await?;
     Ok(Position::new(pool, liquidity, tick_lower, tick_upper))
+}
+
+impl Position {
+    /// Get a [`Position`] struct from the token id in a single call by deploying an ephemeral contract via `eth_call`
+    ///
+    /// ## Arguments
+    ///
+    /// * `chain_id`: The chain id
+    /// * `nonfungible_position_manager`: The nonfungible position manager address
+    /// * `token_id`: The token id
+    /// * `client`: The client
+    /// * `block_id`: Optional block number to query.
+    ///
+    pub async fn from_token_id<M: Middleware>(
+        chain_id: ChainId,
+        nonfungible_position_manager: Address,
+        token_id: U256,
+        client: Arc<M>,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, ContractError<M>> {
+        let PositionState {
+            position,
+            slot_0,
+            active_liquidity,
+            decimals_0,
+            decimals_1,
+            ..
+        } = position_lens::get_position_details(
+            nonfungible_position_manager.into_array().into(),
+            ruint_to_u256(token_id),
+            client,
+            block_id,
+        )
+        .await?;
+        let token_0: Address = position.token_0.to_fixed_bytes().into();
+        let token_1: Address = position.token_1.to_fixed_bytes().into();
+        let pool = Pool::new(
+            token!(chain_id, token_0, decimals_0),
+            token!(chain_id, token_1, decimals_1),
+            position.fee.into(),
+            u256_to_ruint(slot_0.sqrt_price_x96),
+            active_liquidity,
+            None,
+        )
+        .unwrap();
+        Ok(Position::new(
+            pool,
+            position.liquidity,
+            position.tick_lower,
+            position.tick_upper,
+        ))
+    }
 }
 
 /// Get the state and pool for all positions of the specified owner by deploying an ephemeral contract via `eth_call`.
@@ -234,10 +289,75 @@ mod tests {
     use super::*;
     use alloy_primitives::{address, uint};
 
+    const NPM: Address = address!("C36442b4a4522E871399CD717aBDD847Ab11FE88");
+
+    #[tokio::test]
+    async fn test_from_token_id() {
+        let position = Position::from_token_id(
+            1,
+            NPM,
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        assert_eq!(position.liquidity, 34399999543676);
+        assert_eq!(position.tick_lower, 253320);
+        assert_eq!(position.tick_upper, 264600);
+    }
+
+    #[tokio::test]
+    async fn test_get_all_positions_by_owner() {
+        let client = Arc::new(MAINNET.provider());
+        let block_id = BlockId::from(17188000);
+        let owner = address!("4bD047CA72fa05F0B89ad08FE5Ba5ccdC07DFFBF");
+        let positions = get_all_positions_by_owner(NPM, owner, client.clone(), Some(block_id))
+            .await
+            .unwrap();
+        let npm_contract = get_nonfungible_position_manager_contract(NPM, client.clone());
+        let balance = npm_contract
+            .balance_of(owner.into_array().into())
+            .call_raw()
+            .block(block_id)
+            .await
+            .unwrap()
+            .as_usize();
+        assert_eq!(positions.len(), balance);
+        let mut multicall = Multicall::new_with_chain_id(client, None, Some(1u64)).unwrap();
+        multicall.block = Some(block_id);
+        multicall.add_calls(
+            false,
+            (0..balance).map(|i| {
+                npm_contract
+                    .token_of_owner_by_index(owner.into_array().into(), types::U256::from(i))
+            }),
+        );
+        let token_ids: Vec<types::U256> = multicall.call_array().await.unwrap();
+        token_ids.into_iter().enumerate().for_each(|(i, token_id)| {
+            assert_eq!(token_id, positions[i].token_id);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_get_collectable_token_amounts() {
+        let (tokens_owed_0, tokens_owed_1) = get_collectable_token_amounts(
+            1,
+            NPM,
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        assert_eq!(tokens_owed_0, uint!(3498422_U256));
+        assert_eq!(tokens_owed_1, uint!(516299277575296150_U256));
+    }
+
     #[tokio::test]
     async fn test_get_token_svg() {
         let svg = get_token_svg(
-            address!("C36442b4a4522E871399CD717aBDD847Ab11FE88"),
+            NPM,
             uint!(4_U256),
             Arc::new(MAINNET.provider()),
             Some(BlockId::from(17188000)),
