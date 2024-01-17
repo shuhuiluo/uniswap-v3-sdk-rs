@@ -1,6 +1,4 @@
-use crate::prelude::{
-    get_pool, get_pool_contract, get_tokens_owed, u128_to_uint256, Pool, Position,
-};
+use crate::prelude::*;
 use alloy_primitives::{Address, ChainId, U256};
 use aperture_lens::{
     position_lens,
@@ -14,7 +12,6 @@ use base64::{engine::general_purpose, Engine};
 use ethers::prelude::*;
 use std::sync::Arc;
 use uniswap_sdk_core::{prelude::Token, token};
-use uniswap_v3_math::utils::{ruint_to_u256, u256_to_ruint};
 
 pub fn get_nonfungible_position_manager_contract<M: Middleware>(
     nonfungible_position_manager: Address,
@@ -45,7 +42,7 @@ pub async fn get_position<M: Middleware>(
     let mut multicall = Multicall::new_with_chain_id(client.clone(), None, Some(chain_id)).unwrap();
     multicall.block = block_id;
     multicall
-        .add_call(npm_contract.positions(ruint_to_u256(token_id)), false)
+        .add_call(npm_contract.positions(token_id.to_ethers()), false)
         .add_call(npm_contract.factory(), false);
     let (position, factory): (PositionsReturn, types::Address) = multicall.call().await?;
     let PositionsReturn {
@@ -59,9 +56,9 @@ pub async fn get_position<M: Middleware>(
     } = position;
     let pool = get_pool(
         chain_id,
-        factory.to_fixed_bytes().into(),
-        token_0.to_fixed_bytes().into(),
-        token_1.to_fixed_bytes().into(),
+        factory.to_alloy(),
+        token_0.to_alloy(),
+        token_1.to_alloy(),
         fee.into(),
         client,
         block_id,
@@ -96,19 +93,19 @@ impl Position {
             decimals_1,
             ..
         } = position_lens::get_position_details(
-            nonfungible_position_manager.into_array().into(),
-            ruint_to_u256(token_id),
+            nonfungible_position_manager.to_ethers(),
+            token_id.to_ethers(),
             client,
             block_id,
         )
         .await?;
-        let token_0: Address = position.token_0.to_fixed_bytes().into();
-        let token_1: Address = position.token_1.to_fixed_bytes().into();
+        let token_0: Address = position.token_0.to_alloy();
+        let token_1: Address = position.token_1.to_alloy();
         let pool = Pool::new(
             token!(chain_id, token_0, decimals_0),
             token!(chain_id, token_1, decimals_1),
             position.fee.into(),
-            u256_to_ruint(slot_0.sqrt_price_x96),
+            slot_0.sqrt_price_x96.to_alloy(),
             active_liquidity,
             None,
         )
@@ -143,8 +140,8 @@ pub async fn get_all_positions_by_owner<M: Middleware>(
     block_id: Option<BlockId>,
 ) -> Result<Vec<PositionState>, ContractError<M>> {
     position_lens::get_all_positions_by_owner(
-        nonfungible_position_manager.into_array().into(),
-        owner.into_array().into(),
+        nonfungible_position_manager.to_ethers(),
+        owner.to_ethers(),
         client,
         block_id,
     )
@@ -177,13 +174,13 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
     let mut multicall = Multicall::new_with_chain_id(client.clone(), None, Some(chain_id)).unwrap();
     multicall.block = block_id;
     multicall
-        .add_call(npm_contract.positions(ruint_to_u256(token_id)), false)
+        .add_call(npm_contract.positions(token_id.to_ethers()), false)
         .add_call(npm_contract.factory(), false);
     let (position, factory): (PositionsReturn, types::Address) = multicall.call().await?;
     let pool_contract = get_pool_contract(
-        factory.to_fixed_bytes().into(),
-        position.token_0.to_fixed_bytes().into(),
-        position.token_1.to_fixed_bytes().into(),
+        factory.to_alloy(),
+        position.token_0.to_alloy(),
+        position.token_1.to_alloy(),
         position.fee.into(),
         client.clone(),
     );
@@ -238,11 +235,11 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
         )
     };
     let (tokens_owed_0, tokens_owed_1) = get_tokens_owed(
-        u256_to_ruint(position.fee_growth_inside_0_last_x128),
-        u256_to_ruint(position.fee_growth_inside_1_last_x128),
+        position.fee_growth_inside_0_last_x128.to_alloy(),
+        position.fee_growth_inside_1_last_x128.to_alloy(),
         position.liquidity,
-        u256_to_ruint(fee_growth_inside_0x128),
-        u256_to_ruint(fee_growth_inside_1x128),
+        fee_growth_inside_0x128.to_alloy(),
+        fee_growth_inside_1x128.to_alloy(),
     );
     Ok((
         u128_to_uint256(position.tokens_owed_0) + tokens_owed_0,
@@ -267,7 +264,7 @@ pub async fn get_token_svg<M: Middleware>(
 ) -> Result<String, ContractError<M>> {
     let uri =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, client.clone())
-            .token_uri(ruint_to_u256(token_id))
+            .token_uri(token_id.to_ethers())
             .call_raw()
             .block(block_id.unwrap_or(BlockId::Number(BlockNumber::Latest)))
             .await?;
@@ -317,7 +314,7 @@ mod tests {
             .unwrap();
         let npm_contract = get_nonfungible_position_manager_contract(NPM, client.clone());
         let balance = npm_contract
-            .balance_of(owner.into_array().into())
+            .balance_of(owner.to_ethers())
             .call_raw()
             .block(block_id)
             .await
@@ -329,8 +326,7 @@ mod tests {
         multicall.add_calls(
             false,
             (0..balance).map(|i| {
-                npm_contract
-                    .token_of_owner_by_index(owner.into_array().into(), types::U256::from(i))
+                npm_contract.token_of_owner_by_index(owner.to_ethers(), types::U256::from(i))
             }),
         );
         let token_ids: Vec<types::U256> = multicall.call_array().await.unwrap();

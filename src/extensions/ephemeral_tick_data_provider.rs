@@ -31,7 +31,7 @@ impl EphemeralTickDataProvider {
         let tick_lower = tick_lower.unwrap_or(MIN_TICK);
         let tick_upper = tick_upper.unwrap_or(MAX_TICK);
         let ticks = get_populated_ticks_in_range(
-            pool.into_array().into(),
+            pool.to_ethers(),
             tick_lower,
             tick_upper,
             client.clone(),

@@ -319,10 +319,7 @@ mod tests {
     use super::*;
     use alloy_primitives::keccak256;
     use alloy_sol_types::SolValue;
-    use uniswap_v3_math::{
-        sqrt_price_math,
-        utils::{ruint_to_u256, u256_to_ruint},
-    };
+    use uniswap_v3_math::sqrt_price_math;
 
     fn pseudo_random(seed: u64) -> U256 {
         keccak256(seed.abi_encode()).into()
@@ -363,12 +360,12 @@ mod tests {
         for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
             let res = get_next_sqrt_price_from_input(*sqrt_price_x_96, *liquidity, *amount, *add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_input(
-                ruint_to_u256(*sqrt_price_x_96),
+                sqrt_price_x_96.to_ethers(),
                 *liquidity,
-                ruint_to_u256(*amount),
+                amount.to_ethers(),
                 *add,
             )
-            .map(u256_to_ruint);
+            .map(ToAlloy::to_alloy);
             match_u256(res, ref_);
         }
     }
@@ -379,12 +376,12 @@ mod tests {
         for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
             let res = get_next_sqrt_price_from_output(*sqrt_price_x_96, *liquidity, *amount, *add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_output(
-                ruint_to_u256(*sqrt_price_x_96),
+                sqrt_price_x_96.to_ethers(),
                 *liquidity,
-                ruint_to_u256(*amount),
+                amount.to_ethers(),
                 *add,
             )
-            .map(u256_to_ruint);
+            .map(ToAlloy::to_alloy);
             match_u256(res, ref_);
         }
     }
@@ -396,12 +393,12 @@ mod tests {
             let res =
                 get_amount_0_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             let ref_ = sqrt_price_math::_get_amount_0_delta(
-                ruint_to_u256(*sqrt_ratio_a_x96),
-                ruint_to_u256(*sqrt_ratio_b_x96),
+                sqrt_ratio_a_x96.to_ethers(),
+                sqrt_ratio_b_x96.to_ethers(),
                 *liquidity,
                 *round_up,
             )
-            .map(u256_to_ruint);
+            .map(ToAlloy::to_alloy);
             match_u256(res, ref_);
         }
     }
@@ -413,12 +410,12 @@ mod tests {
             let res =
                 get_amount_1_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             let ref_ = sqrt_price_math::_get_amount_1_delta(
-                ruint_to_u256(*sqrt_ratio_a_x96),
-                ruint_to_u256(*sqrt_ratio_b_x96),
+                sqrt_ratio_a_x96.to_ethers(),
+                sqrt_ratio_b_x96.to_ethers(),
                 *liquidity,
                 *round_up,
             )
-            .map(u256_to_ruint);
+            .map(ToAlloy::to_alloy);
             match_u256(res, ref_);
         }
     }
@@ -431,13 +428,13 @@ mod tests {
                 get_amount_0_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_0_delta(
-                ruint_to_u256(*sqrt_ratio_a_x96),
-                ruint_to_u256(*sqrt_ratio_b_x96),
+                sqrt_ratio_a_x96.to_ethers(),
+                sqrt_ratio_b_x96.to_ethers(),
                 *liquidity as i128,
             );
             match ref_ {
                 Ok(ref_) => {
-                    assert_eq!(res.unwrap(), u256_to_ruint(ref_.into_raw()));
+                    assert_eq!(res.unwrap(), ref_.into_raw().to_alloy());
                 }
                 Err(e) => {
                     assert_eq!(res.unwrap_err().to_string(), e.to_string());
@@ -454,13 +451,13 @@ mod tests {
                 get_amount_1_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_1_delta(
-                ruint_to_u256(*sqrt_ratio_a_x96),
-                ruint_to_u256(*sqrt_ratio_b_x96),
+                sqrt_ratio_a_x96.to_ethers(),
+                sqrt_ratio_b_x96.to_ethers(),
                 *liquidity as i128,
             );
             match ref_ {
                 Ok(ref_) => {
-                    assert_eq!(res.unwrap(), u256_to_ruint(ref_.into_raw()));
+                    assert_eq!(res.unwrap(), ref_.into_raw().to_alloy());
                 }
                 Err(e) => {
                     assert_eq!(res.unwrap_err().to_string(), e.to_string());

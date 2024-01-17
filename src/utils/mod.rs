@@ -12,6 +12,7 @@ mod sqrt_price_math;
 mod swap_math;
 mod tick_list;
 mod tick_math;
+mod types;
 
 pub use bit_math::*;
 pub use compute_pool_address::compute_pool_address;
@@ -27,11 +28,9 @@ pub use sqrt_price_math::*;
 pub use swap_math::compute_swap_step;
 pub use tick_list::TickList;
 pub use tick_math::*;
+pub use types::*;
 
-use alloy_primitives::{uint, I256, U256};
-use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::{Signed, ToBytes};
-use std::ops::Neg;
+use alloy_primitives::{uint, U256};
 
 pub const ONE: U256 = uint!(1_U256);
 pub const TWO: U256 = uint!(2_U256);
@@ -39,39 +38,3 @@ pub const THREE: U256 = uint!(3_U256);
 pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
-
-pub fn u256_to_big_uint(x: U256) -> BigUint {
-    BigUint::from_bytes_be(&x.to_be_bytes::<32>())
-}
-
-pub fn u256_to_big_int(x: U256) -> BigInt {
-    BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<32>())
-}
-
-pub fn i256_to_big_int(x: I256) -> BigInt {
-    if x.is_positive() {
-        u256_to_big_int(x.into_raw())
-    } else {
-        u256_to_big_int(x.neg().into_raw()).neg()
-    }
-}
-
-pub fn big_uint_to_u256(x: BigUint) -> U256 {
-    U256::from_be_slice(&x.to_be_bytes())
-}
-
-pub fn big_int_to_u256(x: BigInt) -> U256 {
-    U256::from_be_slice(&x.to_be_bytes())
-}
-
-pub fn big_int_to_i256(x: BigInt) -> I256 {
-    if x.is_positive() {
-        I256::from_raw(big_int_to_u256(x))
-    } else {
-        I256::from_raw(big_int_to_u256(x.neg())).neg()
-    }
-}
-
-pub const fn u128_to_uint256(x: u128) -> U256 {
-    U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
-}
