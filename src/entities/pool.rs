@@ -132,8 +132,8 @@ impl Pool {
 
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over token0
     pub fn token0_price(&mut self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         self._token0_price.clone().unwrap_or_else(|| {
+            let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
             let price = Price::new(
                 self.token0.clone(),
                 self.token1.clone(),
@@ -147,8 +147,8 @@ impl Pool {
 
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over token1
     pub fn token1_price(&mut self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         self._token1_price.clone().unwrap_or_else(|| {
+            let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
             let price = Price::new(
                 self.token1.clone(),
                 self.token0.clone(),
