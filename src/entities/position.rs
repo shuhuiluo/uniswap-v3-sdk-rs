@@ -71,7 +71,7 @@ impl Position {
     }
 
     /// Returns the amount of token0 that this position's liquidity could be burned for at the current pool price
-    pub fn amount0(&mut self) -> Result<&CurrencyAmount<Token>> {
+    pub fn amount0(&mut self) -> Result<CurrencyAmount<Token>> {
         if self._token0_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
@@ -100,11 +100,11 @@ impl Position {
                 )?)
             }
         }
-        Ok(self._token0_amount.as_ref().unwrap())
+        Ok(self._token0_amount.clone().unwrap())
     }
 
     /// Returns the amount of token1 that this position's liquidity could be burned for at the current pool price
-    pub fn amount1(&mut self) -> Result<&CurrencyAmount<Token>> {
+    pub fn amount1(&mut self) -> Result<CurrencyAmount<Token>> {
         if self._token1_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
@@ -133,7 +133,7 @@ impl Position {
                 )?)
             }
         }
-        Ok(self._token1_amount.as_ref().unwrap())
+        Ok(self._token1_amount.clone().unwrap())
     }
 
     /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance percentage

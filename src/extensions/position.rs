@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use alloy_primitives::{Address, ChainId, U256};
+use anyhow::Result;
 use aperture_lens::{
     position_lens,
     prelude::{
@@ -9,9 +10,11 @@ use aperture_lens::{
     },
 };
 use base64::{engine::general_purpose, Engine};
+use bigdecimal::BigDecimal;
 use ethers::prelude::*;
+use num_bigint::ToBigInt;
 use std::sync::Arc;
-use uniswap_sdk_core::{prelude::Token, token};
+use uniswap_sdk_core::{prelude::*, token};
 
 pub fn get_nonfungible_position_manager_contract<M: Middleware>(
     nonfungible_position_manager: Address,
@@ -28,7 +31,7 @@ pub fn get_nonfungible_position_manager_contract<M: Middleware>(
 /// * `nonfungible_position_manager`: The nonfungible position manager address
 /// * `token_id`: The token id
 /// * `client`: The client
-/// * `block_id`: Optional block number to query.
+/// * `block_id`: Optional block number to query
 ///
 pub async fn get_position<M: Middleware>(
     chain_id: ChainId,
@@ -76,7 +79,7 @@ impl Position {
     /// * `nonfungible_position_manager`: The nonfungible position manager address
     /// * `token_id`: The token id
     /// * `client`: The client
-    /// * `block_id`: Optional block number to query.
+    /// * `block_id`: Optional block number to query
     ///
     pub async fn from_token_id<M: Middleware>(
         chain_id: ChainId,
@@ -131,7 +134,7 @@ impl Position {
 /// * `nonfungible_position_manager`: The nonfungible position manager address
 /// * `owner`: The owner address
 /// * `client`: The client
-/// * `block_id`: Optional block number to query.
+/// * `block_id`: Optional block number to query
 ///
 pub async fn get_all_positions_by_owner<M: Middleware>(
     nonfungible_position_manager: Address,
@@ -156,7 +159,7 @@ pub async fn get_all_positions_by_owner<M: Middleware>(
 /// * `nonfungible_position_manager`: The nonfungible position manager address
 /// * `token_id`: The token id
 /// * `client`: The client
-/// * `block_id`: Optional block number to query.
+/// * `block_id`: Optional block number to query
 ///
 /// ## Returns
 ///
@@ -254,7 +257,7 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
 /// * `nonfungible_position_manager`: The nonfungible position manager address
 /// * `token_id`: The token id
 /// * `client`: The client
-/// * `block_id`: Optional block number to query.
+/// * `block_id`: Optional block number to query
 ///
 pub async fn get_token_svg<M: Middleware>(
     nonfungible_position_manager: Address,
@@ -281,10 +284,92 @@ pub async fn get_token_svg<M: Middleware>(
     Ok(image[1..image.len() - 1].to_string())
 }
 
+/// Predict the position after rebalance assuming the pool price remains the same.
+///
+/// ## Arguments
+///
+/// * `position`: Position info before rebalance.
+/// * `new_tick_lower`: The new lower tick.
+/// * `new_tick_upper`: The new upper tick.
+///
+pub fn get_rebalanced_position(
+    position: &mut Position,
+    new_tick_lower: i32,
+    new_tick_upper: i32,
+) -> Result<Position> {
+    let price = position.pool.token0_price();
+    // Calculate the position equity denominated in token1 before rebalance.
+    let equity_in_token1_before = price
+        .quote(position.amount0()?)?
+        .add(&position.amount1()?)?;
+    let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
+    let price = fraction_to_big_decimal(&price);
+    let token0_ratio = token0_price_to_ratio(price.clone(), new_tick_lower, new_tick_upper)?;
+    let amount1_after = (BigDecimal::from(1) - token0_ratio) * &equity_before;
+    // token0's equity denominated in token1 divided by the price
+    let amount0_after = (equity_before - &amount1_after) / price;
+    Position::from_amounts(
+        position.pool.clone(),
+        new_tick_lower,
+        new_tick_upper,
+        big_int_to_u256(amount0_after.to_bigint().unwrap()),
+        big_int_to_u256(amount1_after.to_bigint().unwrap()),
+        false,
+    )
+}
+
+/// Predict the position if the pool price becomes the specified price.
+///
+/// ## Arguments
+///
+/// * `position`: Current position
+/// * `new_price`: The new pool price
+///
+pub fn get_position_at_price(position: Position, new_price: BigDecimal) -> Result<Position> {
+    let sqrt_price_x96 = price_to_sqrt_ratio_x96(&new_price);
+    let pool_at_new_price = Pool::new(
+        position.pool.token0,
+        position.pool.token1,
+        position.pool.fee,
+        sqrt_price_x96,
+        position.pool.liquidity,
+        None,
+    )?;
+    Ok(Position::new(
+        pool_at_new_price,
+        position.liquidity,
+        position.tick_lower,
+        position.tick_upper,
+    ))
+}
+
+/// Predict the position after rebalance assuming the pool price becomes the specified price.
+///
+/// ## Arguments
+///
+/// * `position`: Position info before rebalance.
+/// * `new_price`: The new pool price
+/// * `new_tick_lower`: The new lower tick.
+/// * `new_tick_upper`: The new upper tick.
+///
+pub fn get_rebalanced_position_at_price(
+    position: Position,
+    new_price: BigDecimal,
+    new_tick_lower: i32,
+    new_tick_upper: i32,
+) -> Result<Position> {
+    get_rebalanced_position(
+        &mut get_position_at_price(position, new_price)?,
+        new_tick_lower,
+        new_tick_upper,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use alloy_primitives::{address, uint};
+    use num_traits::Signed;
 
     const NPM: Address = address!("C36442b4a4522E871399CD717aBDD847Ab11FE88");
 
@@ -364,5 +449,131 @@ mod tests {
             svg[..60].to_string(),
             "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjkwIiBoZWlnaHQ9Ij"
         );
+    }
+
+    #[tokio::test]
+    async fn test_get_rebalanced_position() {
+        let mut position = get_position(
+            1,
+            NPM,
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        // rebalance to an out of range position
+        let new_tick_lower = position.tick_upper;
+        let new_tick_upper = new_tick_lower + 10 * FeeAmount::MEDIUM.tick_spacing();
+        let mut new_position =
+            get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
+        assert!(new_position.amount1().unwrap().quotient().is_zero());
+        let mut reverted_position =
+            get_rebalanced_position(&mut new_position, position.tick_lower, position.tick_upper)
+                .unwrap();
+        let amount0 = position.amount0().unwrap().quotient();
+        assert!(amount0 - reverted_position.amount0().unwrap().quotient() < BigInt::from(10));
+        let amount1 = position.amount1().unwrap().quotient();
+        assert!(
+            &amount1 - reverted_position.amount1().unwrap().quotient()
+                < amount1 / BigInt::from(1000000)
+        );
+        assert!(position.liquidity - reverted_position.liquidity < position.liquidity / 1000000);
+    }
+
+    #[tokio::test]
+    async fn test_get_position_at_price() {
+        let position = get_position(
+            1,
+            NPM,
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        // corresponds to tick -870686
+        let small_price = BigDecimal::from_str("1.5434597458370203830544e-38").unwrap();
+        let position = Position::new(
+            Pool::new(
+                position.pool.token0,
+                position.pool.token1,
+                FeeAmount::MEDIUM,
+                uint!(797207963837958202618833735859_U256),
+                4923530363713842_u128,
+                None,
+            )
+            .unwrap(),
+            68488980_u128,
+            -887220,
+            52980,
+        );
+        let mut position1 = get_position_at_price(position.clone(), small_price).unwrap();
+        assert!(position1.amount0().unwrap().quotient().is_positive());
+        assert!(position1.amount1().unwrap().quotient().is_zero());
+        let mut position2 = get_position_at_price(
+            position.clone(),
+            fraction_to_big_decimal(
+                &tick_to_price(
+                    position.pool.token0,
+                    position.pool.token1,
+                    position.tick_upper,
+                )
+                .unwrap(),
+            ),
+        )
+        .unwrap();
+        assert!(position2.amount0().unwrap().quotient().is_zero());
+        assert!(position2.amount1().unwrap().quotient().is_positive());
+        let mut rebalanced_position =
+            get_rebalanced_position(&mut position1, 46080, 62160).unwrap();
+        assert!(rebalanced_position
+            .amount0()
+            .unwrap()
+            .quotient()
+            .is_positive());
+        assert!(rebalanced_position.amount1().unwrap().quotient().is_zero());
+    }
+
+    //  it('Test projectRebalancedPositionAtPrice', async function () {
+    #[tokio::test]
+    async fn test_get_rebalanced_position_at_price() {
+        let mut position = get_position(
+            1,
+            NPM,
+            uint!(4_U256),
+            Arc::new(MAINNET.provider()),
+            Some(BlockId::from(17188000)),
+        )
+        .await
+        .unwrap();
+        // rebalance to an out of range position
+        let new_tick_lower = position.tick_upper;
+        let new_tick_upper = new_tick_lower + 10 * FeeAmount::MEDIUM.tick_spacing();
+        let mut position_rebalanced_at_current_price =
+            get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
+        let price_upper = tick_to_price(
+            position.pool.token0.clone(),
+            position.pool.token1.clone(),
+            position.tick_upper,
+        )
+        .unwrap();
+        let mut position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(
+            position.clone(),
+            fraction_to_big_decimal(&price_upper),
+            new_tick_lower,
+            new_tick_upper,
+        )
+        .unwrap();
+        assert!(position_rebalanced_at_tick_upper
+            .amount1()
+            .unwrap()
+            .quotient()
+            .is_zero());
+        // if rebalancing at the upper tick, `token0` are bought back at a higher price, hence `amount0` will be lower
+        assert!((position_rebalanced_at_current_price.amount0().unwrap()
+            - position_rebalanced_at_tick_upper.amount0().unwrap())
+        .quotient()
+        .is_positive());
     }
 }
