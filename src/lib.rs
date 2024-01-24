@@ -5,13 +5,14 @@
 
 pub mod constants;
 pub mod entities;
+pub mod multicall;
 pub mod utils;
 
 #[cfg(feature = "extensions")]
 pub mod extensions;
 
 pub mod prelude {
-    pub use crate::{constants::*, entities::*, utils::*};
+    pub use crate::{constants::*, entities::*, multicall::encode_multicall, utils::*};
 
     #[cfg(feature = "extensions")]
     pub use crate::extensions::*;
