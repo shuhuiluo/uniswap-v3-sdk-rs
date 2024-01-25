@@ -38,3 +38,12 @@ pub const THREE: U256 = uint!(3_U256);
 pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
+
+/// Generated method parameters for executing a call.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MethodParameters {
+    /// The encoded calldata to perform the given operation
+    pub calldata: Vec<u8>,
+    /// The amount of ether (wei) to send.
+    pub value: U256,
+}
