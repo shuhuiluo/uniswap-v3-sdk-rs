@@ -3,9 +3,12 @@
 //! A Rust SDK for building applications on top of Uniswap V3.
 //! Migration from the TypeScript [Uniswap/v3-sdk](https://github.com/Uniswap/v3-sdk).
 
+pub mod abi;
 pub mod constants;
 pub mod entities;
 pub mod multicall;
+pub mod nonfungible_position_manager;
+pub mod payments;
 pub mod self_permit;
 pub mod utils;
 
@@ -14,7 +17,8 @@ pub mod extensions;
 
 pub mod prelude {
     pub use crate::{
-        constants::*, entities::*, multicall::encode_multicall, self_permit::*, utils::*,
+        abi::*, constants::*, entities::*, multicall::encode_multicall,
+        nonfungible_position_manager::*, payments::*, self_permit::*, utils::*,
     };
 
     #[cfg(feature = "extensions")]

@@ -1,15 +1,11 @@
-use alloy_sol_types::{sol, SolCall};
-
-sol! {
-    function multicall(bytes[] data) external payable returns (bytes[] results);
-}
+use super::abi::IMulticall;
+use alloy_sol_types::SolCall;
 
 pub fn encode_multicall(data: Vec<Vec<u8>>) -> Vec<u8> {
     if data.len() == 1 {
         data[0].clone()
     } else {
-        let multicall = multicallCall { data };
-        multicall.abi_encode()
+        IMulticall::multicallCall { data }.abi_encode()
     }
 }
 

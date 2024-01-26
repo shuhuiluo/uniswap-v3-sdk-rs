@@ -1,11 +1,7 @@
+use super::abi::ISelfPermit;
 use alloy_primitives::{Signature, U256};
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::SolCall;
 use uniswap_sdk_core::prelude::{CurrencyTrait, Token};
-
-sol! {
-    function selfPermit(address token, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external payable;
-    function selfPermitAllowed(address token, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external payable;
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StandardPermitArguments {
@@ -49,28 +45,24 @@ impl AllowedPermitArguments {
 
 pub fn encode_permit(token: Token, options: PermitOptions) -> Vec<u8> {
     match options {
-        PermitOptions::Standard(args) => {
-            let self_permit = selfPermitCall {
-                token: token.address(),
-                value: args.amount,
-                deadline: args.deadline,
-                v: args.signature.v().y_parity_byte(),
-                r: args.signature.r().into(),
-                s: args.signature.s().into(),
-            };
-            self_permit.abi_encode()
+        PermitOptions::Standard(args) => ISelfPermit::selfPermitCall {
+            token: token.address(),
+            value: args.amount,
+            deadline: args.deadline,
+            v: args.signature.v().y_parity_byte(),
+            r: args.signature.r().into(),
+            s: args.signature.s().into(),
         }
-        PermitOptions::Allowed(args) => {
-            let self_permit_allowed = selfPermitAllowedCall {
-                token: token.address(),
-                nonce: args.nonce,
-                expiry: args.expiry,
-                v: args.signature.v().y_parity_byte(),
-                r: args.signature.r().into(),
-                s: args.signature.s().into(),
-            };
-            self_permit_allowed.abi_encode()
+        .abi_encode(),
+        PermitOptions::Allowed(args) => ISelfPermit::selfPermitAllowedCall {
+            token: token.address(),
+            nonce: args.nonce,
+            expiry: args.expiry,
+            v: args.signature.v().y_parity_byte(),
+            r: args.signature.r().into(),
+            s: args.signature.s().into(),
         }
+        .abi_encode(),
     }
 }
 
