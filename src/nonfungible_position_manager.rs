@@ -442,7 +442,7 @@ mod tests {
         .unwrap()
     }
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
-    const SENDER: Address = address!("0000000000000000000000000000000000000004");
+    const _SENDER: Address = address!("0000000000000000000000000000000000000004");
     const TOKEN_ID: U256 = uint!(1_U256);
     static SLIPPAGE_TOLERANCE: Lazy<Percent> = Lazy::new(|| Percent::new(1, 100));
     const DEADLINE: U256 = uint!(123_U256);

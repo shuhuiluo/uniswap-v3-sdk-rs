@@ -75,7 +75,7 @@ mod tests {
 
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
     const AMOUNT: U256 = uint!(123_U256);
-    const FEE_OPTIONS: Lazy<FeeOptions> = Lazy::new(|| FeeOptions {
+    static FEE_OPTIONS: Lazy<FeeOptions> = Lazy::new(|| FeeOptions {
         fee: Percent::new(1, 1000),
         recipient: address!("0000000000000000000000000000000000000009"),
     });
