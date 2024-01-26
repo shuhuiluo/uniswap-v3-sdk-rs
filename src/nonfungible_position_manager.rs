@@ -1,8 +1,8 @@
 use super::abi::INonfungiblePositionManager;
 use crate::{
     prelude::{
-        encode_multicall, encode_permit, MethodParameters, MintAmounts, PermitOptions, Pool,
-        Position,
+        encode_multicall, encode_permit, encode_refund_eth, encode_sweep_token,
+        encode_unwrap_weth9, MethodParameters, MintAmounts, PermitOptions, Pool, Position,
     },
     utils::{big_int_to_u256, u256_to_big_int},
 };
@@ -208,8 +208,7 @@ pub fn add_call_parameters(
 
         // we only need to refund if we're actually sending ETH
         if wrapped_value > U256::ZERO {
-            // TODO: refund eth
-            // calldatas.push(encode_refund_eth());
+            calldatas.push(encode_refund_eth());
         }
 
         value = wrapped_value;
@@ -244,22 +243,26 @@ fn encode_collect(options: CollectOptions) -> Vec<Vec<u8>> {
     );
 
     if involves_eth {
-        let _eth_amount: U256;
-        let _token: Token;
-        let _token_amount: U256;
+        let eth_amount: U256;
+        let token: Token;
+        let token_amount: U256;
         if options.expected_currency_owed0.meta.currency.is_native() {
-            _eth_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
-            _token = options.expected_currency_owed1.meta.currency.wrapped();
-            _token_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
+            eth_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
+            token = options.expected_currency_owed1.meta.currency.wrapped();
+            token_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
         } else {
-            _eth_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
-            _token = options.expected_currency_owed0.meta.currency.wrapped();
-            _token_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
+            eth_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
+            token = options.expected_currency_owed0.meta.currency.wrapped();
+            token_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
         }
 
-        // TODO: unwrap weth
-        // calldatas.push(encode_unwrap_weth9(eth_amount, options.recipient).abi_encode());
-        // calldatas.push(encode_sweep_token(token, token_amount, options.recipient).abi_encode());
+        calldatas.push(encode_unwrap_weth9(eth_amount, options.recipient, None));
+        calldatas.push(encode_sweep_token(
+            token.address(),
+            token_amount,
+            options.recipient,
+            None,
+        ));
     }
     calldatas
 }
@@ -387,5 +390,287 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
     MethodParameters {
         calldata,
         value: U256::ZERO,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::*;
+    use alloy_primitives::{hex, uint};
+    use once_cell::sync::Lazy;
+    use uniswap_sdk_core::token;
+
+    static TOKEN0: Lazy<Token> = Lazy::new(|| {
+        token!(
+            1,
+            "0x0000000000000000000000000000000000000001",
+            18,
+            "t0",
+            "token0"
+        )
+    });
+    static TOKEN1: Lazy<Token> = Lazy::new(|| {
+        token!(
+            1,
+            "0x0000000000000000000000000000000000000002",
+            18,
+            "t1",
+            "token1"
+        )
+    });
+    fn pool_0_1() -> Pool {
+        Pool::new(
+            TOKEN0.clone(),
+            TOKEN1.clone(),
+            FeeAmount::MEDIUM,
+            encode_sqrt_ratio_x96(1, 1),
+            0,
+            None,
+        )
+        .unwrap()
+    }
+    fn pool_1_weth() -> Pool {
+        Pool::new(
+            TOKEN1.clone(),
+            WETH9::new().get(1).unwrap().clone(),
+            FeeAmount::MEDIUM,
+            encode_sqrt_ratio_x96(1, 1),
+            0,
+            None,
+        )
+        .unwrap()
+    }
+    const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
+    const SENDER: Address = address!("0000000000000000000000000000000000000004");
+    const TOKEN_ID: U256 = uint!(1_U256);
+    static SLIPPAGE_TOLERANCE: Lazy<Percent> = Lazy::new(|| Percent::new(1, 100));
+    const DEADLINE: U256 = uint!(123_U256);
+
+    #[test]
+    fn test_create_call_parameters() {
+        let MethodParameters { calldata, value } = create_call_parameters(&pool_0_1());
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("13ead562000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb80000000000000000000000000000000000000001000000000000000000000000")
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "ZERO_LIQUIDITY")]
+    fn test_add_call_parameters_zero_liquidity() {
+        let mut position = Position::new(
+            pool_0_1(),
+            0,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: None,
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
+                    recipient: RECIPIENT,
+                    create_pool: false,
+                }),
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "NO_WETH")]
+    fn test_add_call_parameters_no_weth() {
+        let mut position = Position::new(
+            pool_0_1(),
+            1,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: Some(Ether::on_chain(1)),
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
+                    recipient: RECIPIENT,
+                    create_pool: false,
+                }),
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_add_call_parameters_mint() {
+        let mut position = Position::new(
+            pool_0_1(),
+            1,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        let MethodParameters { calldata, value } = add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: None,
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
+                    recipient: RECIPIENT,
+                    create_pool: false,
+                }),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("88316456000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc4000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000007b")
+        );
+    }
+
+    #[test]
+    fn test_add_call_parameters_increase() {
+        let mut position = Position::new(
+            pool_0_1(),
+            1,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        let MethodParameters { calldata, value } = add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: None,
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Increase(IncreaseSpecificOptions {
+                    token_id: TOKEN_ID,
+                }),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("219f5d1700000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007b")
+        );
+    }
+
+    #[test]
+    fn test_add_call_parameters_create_pool() {
+        let mut position = Position::new(
+            pool_0_1(),
+            1,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        let MethodParameters { calldata, value } = add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: None,
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
+                    recipient: RECIPIENT,
+                    create_pool: true,
+                }),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000008413ead562000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb8000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016488316456000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc4000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000007b00000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_add_call_parameters_use_native() {
+        let mut position = Position::new(
+            pool_1_weth(),
+            1,
+            -FeeAmount::MEDIUM.tick_spacing(),
+            FeeAmount::MEDIUM.tick_spacing(),
+        );
+        let MethodParameters { calldata, value } = add_call_parameters(
+            &mut position,
+            AddLiquidityOptions {
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                use_native: Some(Ether::on_chain(1)),
+                token0_permit: None,
+                token1_permit: None,
+                specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
+                    recipient: RECIPIENT,
+                    create_pool: false,
+                }),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, uint!(1_U256));
+        assert_eq!(
+            calldata,
+            hex!("ac9650d800000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000164883164560000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000bb8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc4000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000007b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000412210e8a00000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_collect_call_parameters() {
+        let MethodParameters { calldata, value } = collect_call_parameters(CollectOptions {
+            token_id: TOKEN_ID,
+            expected_currency_owed0: CurrencyAmount::from_raw_amount(
+                Currency::Token(TOKEN0.clone()),
+                0,
+            )
+            .unwrap(),
+            expected_currency_owed1: CurrencyAmount::from_raw_amount(
+                Currency::Token(TOKEN1.clone()),
+                0,
+            )
+            .unwrap(),
+            recipient: RECIPIENT,
+        });
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff")
+        );
+    }
+
+    #[test]
+    fn test_collect_call_parameters_eth() {
+        let MethodParameters { calldata, value } = collect_call_parameters(CollectOptions {
+            token_id: TOKEN_ID,
+            expected_currency_owed0: CurrencyAmount::from_raw_amount(
+                Currency::Token(TOKEN1.clone()),
+                0,
+            )
+            .unwrap(),
+            expected_currency_owed1: CurrencyAmount::from_raw_amount(
+                Currency::NativeCurrency(Ether::on_chain(1)),
+                0,
+            )
+            .unwrap(),
+            recipient: RECIPIENT,
+        });
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d8000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004449404b7c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064df2ab5bb00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000")
+        );
     }
 }
