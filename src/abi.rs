@@ -97,4 +97,31 @@ sol! {
         function selfPermit(address token, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external payable;
         function selfPermitAllowed(address token, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external payable;
     }
+
+    interface IPeripheryPaymentsWithFee {
+        function unwrapWETH9(uint256 amountMinimum, address recipient) external payable;
+
+        function refundETH() external payable;
+
+        function sweepToken(
+            address token,
+            uint256 amountMinimum,
+            address recipient
+        ) external payable;
+
+        function unwrapWETH9WithFee(
+            uint256 amountMinimum,
+            address recipient,
+            uint256 feeBips,
+            address feeRecipient
+        ) external payable;
+
+        function sweepTokenWithFee(
+            address token,
+            uint256 amountMinimum,
+            address recipient,
+            uint256 feeBips,
+            address feeRecipient
+        ) external payable;
+    }
 }
