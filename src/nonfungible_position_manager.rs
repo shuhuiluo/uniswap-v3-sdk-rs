@@ -463,6 +463,28 @@ mod tests {
         .unwrap(),
         recipient: RECIPIENT,
     });
+    static COLLECT_OPTIONS2: Lazy<CollectOptions> = Lazy::new(|| {
+        let eth_amount =
+            CurrencyAmount::from_raw_amount(Currency::NativeCurrency(Ether::on_chain(1)), 0)
+                .unwrap();
+        let token_amount =
+            CurrencyAmount::from_raw_amount(Currency::Token(TOKEN1.clone()), 0).unwrap();
+        let condition = pool_1_weth().token0.equals(&TOKEN1.clone());
+        CollectOptions {
+            token_id: TOKEN_ID,
+            expected_currency_owed0: if condition {
+                token_amount.clone()
+            } else {
+                eth_amount.clone()
+            },
+            expected_currency_owed1: if condition {
+                eth_amount.clone()
+            } else {
+                token_amount.clone()
+            },
+            recipient: RECIPIENT,
+        }
+    });
 
     #[test]
     fn test_create_call_parameters() {
@@ -803,12 +825,6 @@ mod tests {
 
     #[test]
     fn test_remove_call_parameters_eth() {
-        let eth_amount =
-            CurrencyAmount::from_raw_amount(Currency::NativeCurrency(Ether::on_chain(1)), 0)
-                .unwrap();
-        let token_amount =
-            CurrencyAmount::from_raw_amount(Currency::Token(TOKEN1.clone()), 0).unwrap();
-
         let MethodParameters { calldata, value } = remove_call_parameters(
             &Position::new(
                 pool_1_weth(),
@@ -823,20 +839,7 @@ mod tests {
                 deadline: DEADLINE,
                 burn_token: false,
                 permit: None,
-                collect_options: CollectOptions {
-                    token_id: TOKEN_ID,
-                    expected_currency_owed0: if pool_1_weth().token0.equals(&TOKEN1.clone()) {
-                        token_amount.clone()
-                    } else {
-                        eth_amount.clone()
-                    },
-                    expected_currency_owed1: if pool_1_weth().token0.equals(&TOKEN1.clone()) {
-                        eth_amount.clone()
-                    } else {
-                        token_amount.clone()
-                    },
-                    recipient: RECIPIENT,
-                },
+                collect_options: COLLECT_OPTIONS2.clone(),
             },
         )
         .unwrap();
@@ -849,12 +852,6 @@ mod tests {
 
     #[test]
     fn test_remove_call_parameters_partial_eth() {
-        let eth_amount =
-            CurrencyAmount::from_raw_amount(Currency::NativeCurrency(Ether::on_chain(1)), 0)
-                .unwrap();
-        let token_amount =
-            CurrencyAmount::from_raw_amount(Currency::Token(TOKEN1.clone()), 0).unwrap();
-
         let MethodParameters { calldata, value } = remove_call_parameters(
             &Position::new(
                 pool_1_weth(),
@@ -869,20 +866,7 @@ mod tests {
                 deadline: DEADLINE,
                 burn_token: false,
                 permit: None,
-                collect_options: CollectOptions {
-                    token_id: TOKEN_ID,
-                    expected_currency_owed0: if pool_1_weth().token0.equals(&TOKEN1.clone()) {
-                        token_amount.clone()
-                    } else {
-                        eth_amount.clone()
-                    },
-                    expected_currency_owed1: if pool_1_weth().token0.equals(&TOKEN1.clone()) {
-                        eth_amount.clone()
-                    } else {
-                        token_amount.clone()
-                    },
-                    recipient: RECIPIENT,
-                },
+                collect_options: COLLECT_OPTIONS2.clone(),
             },
         )
         .unwrap();
