@@ -44,7 +44,7 @@ pub async fn get_pool<M: Middleware>(
     fee: FeeAmount,
     client: Arc<M>,
     block_id: Option<BlockId>,
-) -> Result<Pool, MulticallError<M>> {
+) -> Result<Pool<NoTickDataProvider>, MulticallError<M>> {
     let pool_contract = get_pool_contract(factory, token_a, token_b, fee, client.clone());
     let token_a_contract = IERC20Metadata::new(token_a.into_array(), client.clone());
     let token_b_contract = IERC20Metadata::new(token_b.into_array(), client.clone());
@@ -91,7 +91,6 @@ pub async fn get_pool<M: Middleware>(
         fee,
         sqrt_price_x96.to_alloy(),
         liquidity,
-        None,
     )
     .unwrap())
 }
@@ -156,8 +155,8 @@ fn reconstruct_liquidity_array(
 ///
 /// An array of ticks and corresponding cumulative liquidity.
 ///
-pub async fn get_liquidity_array_for_pool<M: Middleware>(
-    pool: Pool,
+pub async fn get_liquidity_array_for_pool<M: Middleware, P>(
+    pool: Pool<P>,
     tick_lower: i32,
     tick_upper: i32,
     client: Arc<M>,
@@ -196,7 +195,7 @@ mod tests {
     use super::*;
     use alloy_primitives::address;
 
-    async fn pool() -> Pool {
+    async fn pool() -> Pool<NoTickDataProvider> {
         get_pool(
             1,
             FACTORY_ADDRESS,
