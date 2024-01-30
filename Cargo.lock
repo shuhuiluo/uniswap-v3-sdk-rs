@@ -3910,7 +3910,7 @@ dependencies = [
 
 [[package]]
 name = "uniswap-v3-sdk"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",

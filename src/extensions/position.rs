@@ -39,7 +39,7 @@ pub async fn get_position<M: Middleware>(
     token_id: U256,
     client: Arc<M>,
     block_id: Option<BlockId>,
-) -> Result<Position, MulticallError<M>> {
+) -> Result<Position<NoTickDataProvider>, MulticallError<M>> {
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, client.clone());
     let mut multicall = Multicall::new_with_chain_id(client.clone(), None, Some(chain_id)).unwrap();
@@ -70,7 +70,7 @@ pub async fn get_position<M: Middleware>(
     Ok(Position::new(pool, liquidity, tick_lower, tick_upper))
 }
 
-impl Position {
+impl Position<NoTickDataProvider> {
     /// Get a [`Position`] struct from the token id in a single call by deploying an ephemeral contract via `eth_call`
     ///
     /// ## Arguments
@@ -110,7 +110,6 @@ impl Position {
             position.fee.into(),
             slot_0.sqrt_price_x96.to_alloy(),
             active_liquidity,
-            None,
         )
         .unwrap();
         Ok(Position::new(
@@ -292,11 +291,11 @@ pub async fn get_token_svg<M: Middleware>(
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
 ///
-pub fn get_rebalanced_position(
-    position: &mut Position,
+pub fn get_rebalanced_position<P: Clone>(
+    position: &mut Position<P>,
     new_tick_lower: i32,
     new_tick_upper: i32,
-) -> Result<Position> {
+) -> Result<Position<P>> {
     let price = position.pool.token0_price();
     // Calculate the position equity denominated in token1 before rebalance.
     let equity_in_token1_before = price
@@ -325,15 +324,22 @@ pub fn get_rebalanced_position(
 /// * `position`: Current position
 /// * `new_price`: The new pool price
 ///
-pub fn get_position_at_price(position: Position, new_price: BigDecimal) -> Result<Position> {
+pub fn get_position_at_price<T, P>(
+    position: Position<P>,
+    new_price: BigDecimal,
+) -> Result<Position<P>>
+where
+    T: TickTrait,
+    P: TickDataProvider<Tick = T>,
+{
     let sqrt_price_x96 = price_to_sqrt_ratio_x96(&new_price);
-    let pool_at_new_price = Pool::new(
+    let pool_at_new_price = Pool::new_with_tick_data_provider(
         position.pool.token0,
         position.pool.token1,
         position.pool.fee,
         sqrt_price_x96,
         position.pool.liquidity,
-        None,
+        position.pool.tick_data_provider,
     )?;
     Ok(Position::new(
         pool_at_new_price,
@@ -352,12 +358,16 @@ pub fn get_position_at_price(position: Position, new_price: BigDecimal) -> Resul
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
 ///
-pub fn get_rebalanced_position_at_price(
-    position: Position,
+pub fn get_rebalanced_position_at_price<T, P>(
+    position: Position<P>,
     new_price: BigDecimal,
     new_tick_lower: i32,
     new_tick_upper: i32,
-) -> Result<Position> {
+) -> Result<Position<P>>
+where
+    T: TickTrait,
+    P: TickDataProvider<Tick = T>,
+{
     get_rebalanced_position(
         &mut get_position_at_price(position, new_price)?,
         new_tick_lower,
@@ -501,7 +511,6 @@ mod tests {
                 FeeAmount::MEDIUM,
                 uint!(797207963837958202618833735859_U256),
                 4923530363713842_u128,
-                None,
             )
             .unwrap(),
             68488980_u128,

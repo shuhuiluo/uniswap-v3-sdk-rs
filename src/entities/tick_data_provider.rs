@@ -3,7 +3,7 @@ use anyhow::Result;
 use thiserror::Error;
 
 /// Provides information about ticks
-pub trait TickDataProvider {
+pub trait TickDataProvider: Clone {
     type Tick;
 
     /// Return information corresponding to a specific tick
@@ -40,6 +40,7 @@ pub struct NoTickDataError;
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is required.
 /// Useful if you do not need to load tick data for your use case.
+#[derive(Clone, Debug)]
 pub struct NoTickDataProvider;
 
 impl TickDataProvider for NoTickDataProvider {

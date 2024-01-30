@@ -1,11 +1,4 @@
-use super::abi::INonfungiblePositionManager;
-use crate::{
-    prelude::{
-        encode_multicall, encode_permit, encode_refund_eth, encode_sweep_token,
-        encode_unwrap_weth9, MethodParameters, MintAmounts, PermitOptions, Pool, Position,
-    },
-    utils::{big_int_to_u256, u256_to_big_int},
-};
+use crate::prelude::*;
 use alloy_primitives::{Address, Signature, U256};
 use alloy_sol_types::SolCall;
 use anyhow::Result;
@@ -98,7 +91,7 @@ pub struct RemoveLiquidityOptions {
     pub collect_options: CollectOptions,
 }
 
-fn encode_create(pool: &Pool) -> Vec<u8> {
+fn encode_create<P>(pool: &Pool<P>) -> Vec<u8> {
     INonfungiblePositionManager::createAndInitializePoolIfNecessaryCall {
         token0: pool.token0.address(),
         token1: pool.token1.address(),
@@ -108,15 +101,15 @@ fn encode_create(pool: &Pool) -> Vec<u8> {
     .abi_encode()
 }
 
-pub fn create_call_parameters(pool: &Pool) -> MethodParameters {
+pub fn create_call_parameters<P>(pool: &Pool<P>) -> MethodParameters {
     MethodParameters {
         calldata: encode_create(pool),
         value: U256::ZERO,
     }
 }
 
-pub fn add_call_parameters(
-    position: &mut Position,
+pub fn add_call_parameters<P>(
+    position: &mut Position<P>,
     options: AddLiquidityOptions,
 ) -> Result<MethodParameters> {
     assert!(position.liquidity > 0, "ZERO_LIQUIDITY");
@@ -283,8 +276,8 @@ pub fn collect_call_parameters(options: CollectOptions) -> MethodParameters {
 /// * `position`: The position to exit
 /// * `options`: Additional information necessary for generating the calldata
 ///
-pub fn remove_call_parameters(
-    position: &Position,
+pub fn remove_call_parameters<P>(
+    position: &Position<P>,
     options: RemoveLiquidityOptions,
 ) -> Result<MethodParameters> {
     let mut calldatas: Vec<Vec<u8>> = vec![];
@@ -294,7 +287,13 @@ pub fn remove_call_parameters(
 
     // construct a partial position with a percentage of liquidity
     let mut partial_position = Position::new(
-        position.pool.clone(),
+        Pool::new(
+            position.pool.token0.clone(),
+            position.pool.token1.clone(),
+            position.pool.fee,
+            position.pool.sqrt_ratio_x96,
+            position.pool.liquidity,
+        )?,
         (options.liquidity_percentage.clone() * Percent::new(position.liquidity, 1))
             .quotient()
             .to_u128()
@@ -396,7 +395,6 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
     use alloy_primitives::{hex, uint};
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::token;
@@ -419,37 +417,74 @@ mod tests {
             "token1"
         )
     });
-    fn pool_0_1() -> Pool {
+
+    static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
         Pool::new(
             TOKEN0.clone(),
             TOKEN1.clone(),
             FeeAmount::MEDIUM,
             encode_sqrt_ratio_x96(1, 1),
             0,
-            None,
         )
         .unwrap()
-    }
-    fn pool_1_weth() -> Pool {
+    });
+
+    static POOL_1_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
         Pool::new(
             TOKEN1.clone(),
             WETH9::new().get(1).unwrap().clone(),
             FeeAmount::MEDIUM,
             encode_sqrt_ratio_x96(1, 1),
             0,
-            None,
         )
         .unwrap()
-    }
+    });
+
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
-    const _SENDER: Address = address!("0000000000000000000000000000000000000004");
+    const SENDER: Address = address!("0000000000000000000000000000000000000004");
     const TOKEN_ID: U256 = uint!(1_U256);
     static SLIPPAGE_TOLERANCE: Lazy<Percent> = Lazy::new(|| Percent::new(1, 100));
     const DEADLINE: U256 = uint!(123_U256);
+    static COLLECT_OPTIONS: Lazy<CollectOptions> = Lazy::new(|| CollectOptions {
+        token_id: TOKEN_ID,
+        expected_currency_owed0: CurrencyAmount::from_raw_amount(
+            Currency::Token(TOKEN0.clone()),
+            0,
+        )
+        .unwrap(),
+        expected_currency_owed1: CurrencyAmount::from_raw_amount(
+            Currency::Token(TOKEN1.clone()),
+            0,
+        )
+        .unwrap(),
+        recipient: RECIPIENT,
+    });
+    static COLLECT_OPTIONS2: Lazy<CollectOptions> = Lazy::new(|| {
+        let eth_amount =
+            CurrencyAmount::from_raw_amount(Currency::NativeCurrency(Ether::on_chain(1)), 0)
+                .unwrap();
+        let token_amount =
+            CurrencyAmount::from_raw_amount(Currency::Token(TOKEN1.clone()), 0).unwrap();
+        let condition = POOL_1_WETH.token0.equals(&TOKEN1.clone());
+        CollectOptions {
+            token_id: TOKEN_ID,
+            expected_currency_owed0: if condition {
+                token_amount.clone()
+            } else {
+                eth_amount.clone()
+            },
+            expected_currency_owed1: if condition {
+                eth_amount.clone()
+            } else {
+                token_amount.clone()
+            },
+            recipient: RECIPIENT,
+        }
+    });
 
     #[test]
     fn test_create_call_parameters() {
-        let MethodParameters { calldata, value } = create_call_parameters(&pool_0_1());
+        let MethodParameters { calldata, value } = create_call_parameters(&POOL_0_1);
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata,
@@ -461,7 +496,7 @@ mod tests {
     #[should_panic(expected = "ZERO_LIQUIDITY")]
     fn test_add_call_parameters_zero_liquidity() {
         let mut position = Position::new(
-            pool_0_1(),
+            POOL_0_1.clone(),
             0,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -487,7 +522,7 @@ mod tests {
     #[should_panic(expected = "NO_WETH")]
     fn test_add_call_parameters_no_weth() {
         let mut position = Position::new(
-            pool_0_1(),
+            POOL_0_1.clone(),
             1,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -512,7 +547,7 @@ mod tests {
     #[test]
     fn test_add_call_parameters_mint() {
         let mut position = Position::new(
-            pool_0_1(),
+            POOL_0_1.clone(),
             1,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -542,7 +577,7 @@ mod tests {
     #[test]
     fn test_add_call_parameters_increase() {
         let mut position = Position::new(
-            pool_0_1(),
+            POOL_0_1.clone(),
             1,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -571,7 +606,7 @@ mod tests {
     #[test]
     fn test_add_call_parameters_create_pool() {
         let mut position = Position::new(
-            pool_0_1(),
+            POOL_0_1.clone(),
             1,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -601,7 +636,7 @@ mod tests {
     #[test]
     fn test_add_call_parameters_use_native() {
         let mut position = Position::new(
-            pool_1_weth(),
+            POOL_1_WETH.clone(),
             1,
             -FeeAmount::MEDIUM.tick_spacing(),
             FeeAmount::MEDIUM.tick_spacing(),
@@ -630,20 +665,7 @@ mod tests {
 
     #[test]
     fn test_collect_call_parameters() {
-        let MethodParameters { calldata, value } = collect_call_parameters(CollectOptions {
-            token_id: TOKEN_ID,
-            expected_currency_owed0: CurrencyAmount::from_raw_amount(
-                Currency::Token(TOKEN0.clone()),
-                0,
-            )
-            .unwrap(),
-            expected_currency_owed1: CurrencyAmount::from_raw_amount(
-                Currency::Token(TOKEN1.clone()),
-                0,
-            )
-            .unwrap(),
-            recipient: RECIPIENT,
-        });
+        let MethodParameters { calldata, value } = collect_call_parameters(COLLECT_OPTIONS.clone());
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata,
@@ -671,6 +693,215 @@ mod tests {
         assert_eq!(
             calldata,
             hex!("ac9650d8000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004449404b7c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064df2ab5bb00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "ZERO_LIQUIDITY")]
+    fn test_remove_call_parameters_zero_liquidity() {
+        remove_call_parameters(
+            &Position::new(
+                POOL_0_1.clone(),
+                0,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 1),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS.clone(),
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "ZERO_LIQUIDITY")]
+    fn test_remove_call_parameters_small_percentage() {
+        remove_call_parameters(
+            &Position::new(
+                POOL_0_1.clone(),
+                1,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 100),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS.clone(),
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "CANNOT_BURN")]
+    fn test_remove_call_parameters_bad_burn() {
+        remove_call_parameters(
+            &Position::new(
+                POOL_0_1.clone(),
+                50,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(99, 100),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: true,
+                permit: None,
+                collect_options: COLLECT_OPTIONS.clone(),
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_remove_call_parameters_burn() {
+        let MethodParameters { calldata, value } = remove_call_parameters(
+            &Position::new(
+                POOL_0_1.clone(),
+                100,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 1),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d8000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000a40c49ccbe0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_remove_call_parameters_partial() {
+        let MethodParameters { calldata, value } = remove_call_parameters(
+            &Position::new(
+                POOL_0_1.clone(),
+                100,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 2),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d8000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000a40c49ccbe0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_remove_call_parameters_eth() {
+        let MethodParameters { calldata, value } = remove_call_parameters(
+            &Position::new(
+                POOL_1_WETH.clone(),
+                100,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 1),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS2.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000002a000000000000000000000000000000000000000000000000000000000000000a40c49ccbe0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004449404b7c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064df2ab5bb00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_remove_call_parameters_partial_eth() {
+        let MethodParameters { calldata, value } = remove_call_parameters(
+            &Position::new(
+                POOL_1_WETH.clone(),
+                100,
+                -FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing(),
+            ),
+            RemoveLiquidityOptions {
+                token_id: TOKEN_ID,
+                liquidity_percentage: Percent::new(1, 2),
+                slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
+                deadline: DEADLINE,
+                burn_token: false,
+                permit: None,
+                collect_options: COLLECT_OPTIONS2.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("ac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000002a000000000000000000000000000000000000000000000000000000000000000a40c49ccbe0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000084fc6f78650000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004449404b7c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064df2ab5bb00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000")
+        );
+    }
+
+    #[test]
+    fn test_safe_transfer_from_parameters_no_data() {
+        let MethodParameters { calldata, value } =
+            safe_transfer_from_parameters(SafeTransferOptions {
+                sender: SENDER,
+                recipient: RECIPIENT,
+                token_id: TOKEN_ID,
+                data: vec![],
+            });
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("42842e0e000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001")
+        );
+    }
+
+    #[test]
+    fn test_safe_transfer_from_parameters_data() {
+        let MethodParameters { calldata, value } =
+            safe_transfer_from_parameters(SafeTransferOptions {
+                sender: SENDER,
+                recipient: RECIPIENT,
+                token_id: TOKEN_ID,
+                data: hex!("0000000000000000000000000000000000009004").to_vec(),
+            });
+        assert_eq!(value, U256::ZERO);
+        assert_eq!(
+            calldata,
+            hex!("b88d4fde000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000009004000000000000000000000000")
         );
     }
 }
