@@ -544,7 +544,6 @@ mod tests {
         assert!(rebalanced_position.amount1().unwrap().quotient().is_zero());
     }
 
-    //  it('Test projectRebalancedPositionAtPrice', async function () {
     #[tokio::test]
     async fn test_get_rebalanced_position_at_price() {
         let mut position = get_position(

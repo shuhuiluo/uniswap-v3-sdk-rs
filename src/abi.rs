@@ -124,4 +124,30 @@ sol! {
             address feeRecipient
         ) external payable;
     }
+
+    interface IUniswapV3Staker {
+        struct IncentiveKey {
+            address rewardToken;
+            address pool;
+            uint256 startTime;
+            uint256 endTime;
+            address refundee;
+        }
+
+        function withdrawToken(
+            uint256 tokenId,
+            address to,
+            bytes memory data
+        ) external;
+
+        function stakeToken(IncentiveKey memory key, uint256 tokenId) external;
+
+        function unstakeToken(IncentiveKey memory key, uint256 tokenId) external;
+
+        function claimReward(
+            address rewardToken,
+            address to,
+            uint256 amountRequested
+        ) external returns (uint256 reward);
+    }
 }
