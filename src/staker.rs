@@ -70,8 +70,8 @@ fn encode_incentive_key<P>(incentive_key: &IncentiveKey<P>) -> IUniswapV3Staker:
 ///
 /// The calldatas for 'unstakeToken' and 'claimReward'.
 ///
-fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> Vec<Vec<u8>> {
-    vec![
+fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [Vec<u8>; 2] {
+    [
         IUniswapV3Staker::unstakeTokenCall {
             key: encode_incentive_key(incentive_key),
             tokenId: options.token_id,
