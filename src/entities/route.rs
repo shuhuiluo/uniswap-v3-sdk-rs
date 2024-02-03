@@ -25,7 +25,7 @@ impl<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> Route<TInput, TOutput, P>
     /// * `output`: The output token
     ///
     pub fn new(pools: Vec<Pool<P>>, input: TInput, output: TOutput) -> Self {
-        assert!(pools.len() > 0, "POOLS");
+        assert!(!pools.is_empty(), "POOLS");
 
         let chain_id = pools[0].chain_id();
         let all_on_same_chain = pools.iter().all(|pool| pool.chain_id() == chain_id);
