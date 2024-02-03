@@ -23,7 +23,7 @@ WIP.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "0.11.0", features = ["extensions"] }
+uniswap-v3-sdk = { version = "0.20.0", features = ["extensions"] }
 ```
 
 ### Usage
