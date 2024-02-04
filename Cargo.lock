@@ -2094,9 +2094,9 @@ checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "miniz_oxide"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7810e0be55b428ada41041c41f32c9f1a42817901b4ccf45fa3d4b6561e74c7"
+checksum = "9d811f3e15f28568be3407c8e7fdb6514c1cda3cb30683f15b6a1a1dc4ea14a7"
 dependencies = [
  "adler",
 ]
@@ -3325,7 +3325,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "thiserror",
- "time 0.3.33",
+ "time 0.3.34",
 ]
 
 [[package]]
@@ -3586,9 +3586,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.33"
+version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00b24b79b7a07f10209f19e683ca1e289d80b1e76ffa8c2b779718566a083679"
+checksum = "c8248b6521bb14bc45b4067159b9b6ad792e2d6d754d6c41fb50e29fefe38749"
 dependencies = [
  "deranged",
  "itoa",
@@ -3906,9 +3906,9 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 
 [[package]]
 name = "uniswap-sdk-core"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3ff6c55412e9f66e1454c04b8744a3987c9284c9b0286ab059f5dc4e26d0ca5"
+checksum = "0b36075329d71604f738f4e1564cd44f0cf46480eeea2fa5c740b7a270898599"
 dependencies = [
  "alloy-primitives",
  "bigdecimal",
@@ -3924,7 +3924,7 @@ dependencies = [
 
 [[package]]
 name = "uniswap-v3-sdk"
-version = "0.20.0"
+version = "0.21.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -4385,7 +4385,7 @@ dependencies = [
  "hmac",
  "pbkdf2 0.11.0",
  "sha1",
- "time 0.3.33",
+ "time 0.3.34",
  "zstd",
 ]
 
