@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use anyhow::Result;
 use std::{cmp::Ordering, collections::HashSet};
-use uniswap_sdk_core::{constants::TradeType, prelude::*};
+use uniswap_sdk_core::{constants::TradeType, prelude::*, utils::sorted_insert::sorted_insert};
 
 /// Trades comparator, an extension of the input output comparator that also considers other dimensions of the trade in ranking them
 ///
@@ -11,8 +11,8 @@ use uniswap_sdk_core::{constants::TradeType, prelude::*};
 /// * `b`: The second trade to compare
 ///
 pub fn trade_comparator<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>(
-    a: &mut Trade<TInput, TOutput, P>,
-    b: &mut Trade<TInput, TOutput, P>,
+    a: &Trade<TInput, TOutput, P>,
+    b: &Trade<TInput, TOutput, P>,
 ) -> Ordering {
     // must have same input and output token for comparison
     assert!(
@@ -31,10 +31,10 @@ pub fn trade_comparator<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>
             .equals(&b.swaps[0].output_amount.meta.currency),
         "OUTPUT_CURRENCY"
     );
-    let a_input = a.input_amount().unwrap().as_fraction();
-    let b_input = b.input_amount().unwrap().as_fraction();
-    let a_output = a.output_amount().unwrap().as_fraction();
-    let b_output = b.output_amount().unwrap().as_fraction();
+    let a_input = a.input_amount_ref().unwrap().as_fraction();
+    let b_input = b.input_amount_ref().unwrap().as_fraction();
+    let a_output = a.output_amount_ref().unwrap().as_fraction();
+    let b_output = b.output_amount_ref().unwrap().as_fraction();
     if a_output == b_output {
         if a_input == b_input {
             // consider the number of hops since each hop costs gas
@@ -238,7 +238,7 @@ where
                 )?;
             }
         }
-        Trade::new(
+        Self::new(
             vec![Swap {
                 route,
                 input_amount,
@@ -264,7 +264,7 @@ where
             let trade = Self::from_route(route, amount, trade_type)?;
             populated_routes.push(trade.swaps[0].clone());
         }
-        Trade::new(populated_routes, trade_type)
+        Self::new(populated_routes, trade_type)
     }
 
     /// Creates a trade without computing the result of swapping through the route.
@@ -275,7 +275,7 @@ where
         output_amount: CurrencyAmount<TOutput>,
         trade_type: TradeType,
     ) -> Result<Self> {
-        Trade::new(
+        Self::new(
             vec![Swap {
                 route,
                 input_amount,
@@ -291,7 +291,183 @@ where
         swaps: Vec<Swap<TInput, TOutput, P>>,
         trade_type: TradeType,
     ) -> Result<Self> {
-        Trade::new(swaps, trade_type)
+        Self::new(swaps, trade_type)
+    }
+
+    /// Given a list of pools, and a fixed amount in, returns the top `max_num_results` trades that go from an input token
+    /// amount to an output token, making at most `max_hops` hops.
+    ///
+    /// ## Arguments
+    ///
+    /// * `pools`: The pools to consider in finding the best trade
+    /// * `currency_amount_in`: The exact amount of input currency to spend
+    /// * `currency_out`: The desired currency out
+    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a returned trade can make,
+    /// e.g. 1 hop goes through a single pool
+    /// * `current_pools`: Used in recursion; the current list of pools
+    /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in parameter
+    /// * `best_trades`: Used in recursion; the current list of best trades
+    ///
+    pub fn best_trade_exact_in(
+        pools: Vec<Pool<P>>,
+        currency_amount_in: CurrencyAmount<TInput>,
+        currency_out: TOutput,
+        best_trade_options: BestTradeOptions,
+        current_pools: Vec<Pool<P>>,
+        next_amount_in: CurrencyAmount<Token>,
+        mut best_trades: Vec<Self>,
+    ) -> Result<Vec<Self>> {
+        assert!(!pools.is_empty(), "POOLS");
+        let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
+        let max_hops = best_trade_options.max_hops.unwrap_or(3);
+        assert!(max_hops > 0, "MAX_HOPS");
+        assert!(
+            currency_amount_in.as_fraction() == next_amount_in.as_fraction()
+                || currency_amount_in
+                    .meta
+                    .currency
+                    .equals(&next_amount_in.meta.currency)
+                || !current_pools.is_empty(),
+            "INVALID_RECURSION"
+        );
+        let amount_in = next_amount_in.wrapped()?;
+        let token_out = currency_out.wrapped();
+        for pool in &pools {
+            // pool irrelevant
+            if !pool.token0.equals(&amount_in.meta.currency)
+                && !pool.token1.equals(&amount_in.meta.currency)
+            {
+                continue;
+            }
+            let (amount_out, _) = pool.get_output_amount(amount_in.clone(), None)?;
+            // we have arrived at the output token, so this is the final trade of one of the paths
+            if !amount_out.meta.currency.is_native() && amount_out.meta.currency.equals(&token_out)
+            {
+                let mut next_pools = current_pools.clone();
+                next_pools.push(pool.clone());
+                let trade = Self::from_route(
+                    Route::new(
+                        next_pools,
+                        currency_amount_in.meta.currency.clone(),
+                        currency_out.clone(),
+                    ),
+                    currency_amount_in.wrapped()?,
+                    TradeType::ExactInput,
+                )?;
+                sorted_insert(&mut best_trades, trade, max_num_results, trade_comparator)?;
+            } else if max_hops > 1 && pools.len() > 1 {
+                let pools_excluding_this_pool = pools
+                    .iter()
+                    .filter(|p| p.address(None, None) != pool.address(None, None))
+                    .cloned()
+                    .collect();
+                // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
+                let mut next_pools = current_pools.clone();
+                next_pools.push(pool.clone());
+                Self::best_trade_exact_in(
+                    pools_excluding_this_pool,
+                    currency_amount_in.clone(),
+                    currency_out.clone(),
+                    BestTradeOptions {
+                        max_num_results: Some(max_num_results),
+                        max_hops: Some(max_hops - 1),
+                    },
+                    next_pools,
+                    amount_out,
+                    best_trades.clone(),
+                )?;
+            }
+        }
+        Ok(best_trades)
+    }
+
+    /// Given a list of pools, and a fixed amount out, returns the top `max_num_results` trades that go from an input token
+    /// to an output token amount, making at most `max_hops` hops.
+    ///
+    /// Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
+    /// the amount in among multiple routes.
+    ///
+    /// ## Arguments
+    ///
+    /// * `pools`: The pools to consider in finding the best trade
+    /// * `currency_in`: The currency to spend
+    /// * `currency_amount_out`: The desired currency amount out
+    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a returned trade can make,
+    /// e.g. 1 hop goes through a single pool
+    /// * `current_pools`: Used in recursion; the current list of pools
+    /// * `next_amount_out`: Used in recursion; the exact amount of currency out
+    /// * `best_trades`: Used in recursion; the current list of best trades
+    ///
+    pub fn best_trade_exact_out(
+        pools: Vec<Pool<P>>,
+        currency_in: TInput,
+        currency_amount_out: CurrencyAmount<TOutput>,
+        best_trade_options: BestTradeOptions,
+        current_pools: Vec<Pool<P>>,
+        next_amount_out: CurrencyAmount<Token>,
+        mut best_trades: Vec<Self>,
+    ) -> Result<Vec<Self>> {
+        assert!(!pools.is_empty(), "POOLS");
+        let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
+        let max_hops = best_trade_options.max_hops.unwrap_or(3);
+        assert!(max_hops > 0, "MAX_HOPS");
+        assert!(
+            currency_amount_out.as_fraction() == next_amount_out.as_fraction()
+                || currency_amount_out
+                    .meta
+                    .currency
+                    .equals(&next_amount_out.meta.currency)
+                || !current_pools.is_empty(),
+            "INVALID_RECURSION"
+        );
+        let amount_out = next_amount_out.wrapped()?;
+        let token_in = currency_in.wrapped();
+        for pool in &pools {
+            // pool irrelevant
+            if !pool.token0.equals(&amount_out.meta.currency)
+                && !pool.token1.equals(&amount_out.meta.currency)
+            {
+                continue;
+            }
+            let (amount_in, _) = pool.get_input_amount(amount_out.clone(), None)?;
+            // we have arrived at the input token, so this is the first trade of one of the paths
+            if amount_in.meta.currency.equals(&token_in) {
+                let mut next_pools = vec![pool.clone()];
+                next_pools.extend(current_pools.clone());
+                let trade = Self::from_route(
+                    Route::new(
+                        next_pools,
+                        currency_in.clone(),
+                        currency_amount_out.meta.currency.clone(),
+                    ),
+                    currency_amount_out.wrapped()?,
+                    TradeType::ExactOutput,
+                )?;
+                sorted_insert(&mut best_trades, trade, max_num_results, trade_comparator)?;
+            } else if max_hops > 1 && pools.len() > 1 {
+                let pools_excluding_this_pool = pools
+                    .iter()
+                    .filter(|p| p.address(None, None) != pool.address(None, None))
+                    .cloned()
+                    .collect();
+                // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
+                let mut next_pools = vec![pool.clone()];
+                next_pools.extend(current_pools.clone());
+                Self::best_trade_exact_out(
+                    pools_excluding_this_pool,
+                    currency_in.clone(),
+                    currency_amount_out.clone(),
+                    BestTradeOptions {
+                        max_num_results: Some(max_num_results),
+                        max_hops: Some(max_hops - 1),
+                    },
+                    next_pools,
+                    amount_in,
+                    best_trades.clone(),
+                )?;
+            }
+        }
+        Ok(best_trades)
     }
 }
 
@@ -308,7 +484,7 @@ where
     }
 
     /// The input amount for the trade assuming no slippage.
-    pub fn input_amount(&mut self) -> Result<CurrencyAmount<TInput>> {
+    fn input_amount_ref(&self) -> Result<CurrencyAmount<TInput>> {
         if let Some(ref input_amount) = self._input_amount {
             return Ok(input_amount.clone());
         }
@@ -317,12 +493,17 @@ where
         for Swap { input_amount, .. } in &self.swaps {
             total = total.add(input_amount)?;
         }
-        self._input_amount = Some(total.clone());
         Ok(total)
     }
 
+    /// The input amount for the trade assuming no slippage.
+    pub fn input_amount(&mut self) -> Result<CurrencyAmount<TInput>> {
+        self._input_amount = Some(self.input_amount_ref()?);
+        Ok(self._input_amount.clone().unwrap())
+    }
+
     /// The output amount for the trade assuming no slippage.
-    pub fn output_amount(&mut self) -> Result<CurrencyAmount<TOutput>> {
+    fn output_amount_ref(&self) -> Result<CurrencyAmount<TOutput>> {
         if let Some(ref output_amount) = self._output_amount {
             return Ok(output_amount.clone());
         }
@@ -331,8 +512,13 @@ where
         for Swap { output_amount, .. } in &self.swaps {
             total = total.add(output_amount)?;
         }
-        self._output_amount = Some(total.clone());
         Ok(total)
+    }
+
+    /// The output amount for the trade assuming no slippage.
+    pub fn output_amount(&mut self) -> Result<CurrencyAmount<TOutput>> {
+        self._output_amount = Some(self.output_amount_ref()?);
+        Ok(self._output_amount.clone().unwrap())
     }
 
     /// The price expressed in terms of output amount/input amount.
