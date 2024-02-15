@@ -18,6 +18,9 @@ pub mod utils;
 #[cfg(feature = "extensions")]
 pub mod extensions;
 
+#[cfg(test)]
+mod tests;
+
 pub mod prelude {
     pub use crate::{
         abi::*, constants::*, entities::*, multicall::encode_multicall,

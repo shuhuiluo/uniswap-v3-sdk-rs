@@ -395,50 +395,9 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::*;
     use alloy_primitives::{hex, uint};
     use once_cell::sync::Lazy;
-    use uniswap_sdk_core::token;
-
-    static TOKEN0: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000001",
-            18,
-            "t0",
-            "token0"
-        )
-    });
-    static TOKEN1: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000002",
-            18,
-            "t1",
-            "token1"
-        )
-    });
-
-    static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
-        Pool::new(
-            TOKEN0.clone(),
-            TOKEN1.clone(),
-            FeeAmount::MEDIUM,
-            encode_sqrt_ratio_x96(1, 1),
-            0,
-        )
-        .unwrap()
-    });
-
-    static POOL_1_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
-        Pool::new(
-            TOKEN1.clone(),
-            WETH9::new().get(1).unwrap().clone(),
-            FeeAmount::MEDIUM,
-            encode_sqrt_ratio_x96(1, 1),
-            0,
-        )
-        .unwrap()
-    });
 
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
     const SENDER: Address = address!("0000000000000000000000000000000000000004");

@@ -450,28 +450,9 @@ impl<P> PartialEq for Pool<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uniswap_sdk_core::token;
+    use crate::tests::*;
 
     const ONE_ETHER: U256 = U256::from_limbs([10u64.pow(18), 0, 0, 0]);
-
-    static USDC: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-            6,
-            "USDC",
-            "USD Coin"
-        )
-    });
-    static DAI: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-            18,
-            "DAI",
-            "DAI Stablecoin"
-        )
-    });
 
     mod constructor {
         use super::*;

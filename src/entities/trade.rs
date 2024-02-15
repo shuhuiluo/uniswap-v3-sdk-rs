@@ -669,46 +669,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::*;
     use once_cell::sync::Lazy;
-    use uniswap_sdk_core::token;
-
-    static ETHER: Lazy<Ether> = Lazy::new(|| Ether::on_chain(1));
-    static TOKEN0: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000001",
-            18,
-            "t0",
-            "token0"
-        )
-    });
-    static TOKEN1: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000002",
-            18,
-            "t1",
-            "token1"
-        )
-    });
-    static TOKEN2: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000003",
-            18,
-            "t2",
-            "token2"
-        )
-    });
-    static TOKEN3: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000004",
-            18,
-            "t3",
-            "token3"
-        )
-    });
 
     fn v2_style_pool(
         reserve0: CurrencyAmount<Token>,
