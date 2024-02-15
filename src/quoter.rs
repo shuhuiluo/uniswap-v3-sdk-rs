@@ -23,7 +23,7 @@ pub struct QuoteOptions {
 /// * `options`: The optional params including price limit and Quoter contract switch
 ///
 pub fn quote_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P>(
-    route: Route<TInput, TOutput, P>,
+    route: &Route<TInput, TOutput, P>,
     amount: CurrencyAmount<impl CurrencyTrait>,
     trade_type: TradeType,
     options: Option<QuoteOptions>,
@@ -177,12 +177,9 @@ mod tests {
                 TradeType::ExactInput,
             )
             .unwrap();
-            let params = quote_call_parameters(
-                trade.swaps[0].route.clone(),
-                trade.input_amount().unwrap(),
-                trade.trade_type,
-                None,
-            );
+            let input_amount = trade.input_amount().unwrap();
+            let params =
+                quote_call_parameters(&trade.swaps[0].route, input_amount, trade.trade_type, None);
             assert_eq!(
                 params.calldata,
                 hex!("f7729d43000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb800000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000")
@@ -198,12 +195,9 @@ mod tests {
                 TradeType::ExactOutput,
             )
             .unwrap();
-            let params = quote_call_parameters(
-                trade.swaps[0].route.clone(),
-                trade.output_amount().unwrap(),
-                trade.trade_type,
-                None,
-            );
+            let output_amount = trade.output_amount().unwrap();
+            let params =
+                quote_call_parameters(&trade.swaps[0].route, output_amount, trade.trade_type, None);
             assert_eq!(
                 params.calldata,
                 hex!("30d07f21000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb800000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000")
@@ -224,7 +218,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                trade.route(),
+                &trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -249,7 +243,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                trade.route(),
+                &trade.route(),
                 trade.output_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -270,7 +264,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                trade.route(),
+                &trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
@@ -298,9 +292,10 @@ mod tests {
                 TradeType::ExactInput,
             )
             .unwrap();
+            let input_amount = trade.input_amount().unwrap();
             let params = quote_call_parameters(
-                trade.swaps[0].route.clone(),
-                trade.input_amount().unwrap(),
+                &trade.swaps[0].route,
+                input_amount,
                 trade.trade_type,
                 Some(QuoteOptions {
                     sqrt_price_limit_x96: U256::ZERO,
@@ -321,9 +316,10 @@ mod tests {
                 TradeType::ExactOutput,
             )
             .unwrap();
+            let output_amount = trade.output_amount().unwrap();
             let params = quote_call_parameters(
-                trade.swaps[0].route.clone(),
-                trade.output_amount().unwrap(),
+                &trade.swaps[0].route,
+                output_amount,
                 trade.trade_type,
                 Some(QuoteOptions {
                     sqrt_price_limit_x96: U256::ZERO,
