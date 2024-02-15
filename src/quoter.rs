@@ -108,57 +108,8 @@ pub fn quote_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::*;
     use once_cell::sync::Lazy;
-    use uniswap_sdk_core::token;
-
-    static TOKEN0: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000001",
-            18,
-            "t0",
-            "token0"
-        )
-    });
-    static TOKEN1: Lazy<Token> = Lazy::new(|| {
-        token!(
-            1,
-            "0x0000000000000000000000000000000000000002",
-            18,
-            "t1",
-            "token1"
-        )
-    });
-    static WETH: Lazy<Token> = Lazy::new(|| Ether::on_chain(1).wrapped());
-    const FEE_AMOUNT: FeeAmount = FeeAmount::MEDIUM;
-    const SQRT_RATIO_X96: U256 = Q96;
-    const LIQUIDITY: u128 = 1_000_000;
-
-    fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvider> {
-        Pool::new_with_tick_data_provider(
-            token0,
-            token1,
-            FEE_AMOUNT,
-            SQRT_RATIO_X96,
-            LIQUIDITY,
-            TickListDataProvider::new(
-                vec![
-                    Tick::new(
-                        nearest_usable_tick(MIN_TICK, FEE_AMOUNT.tick_spacing()),
-                        LIQUIDITY,
-                        LIQUIDITY as i128,
-                    ),
-                    Tick::new(
-                        nearest_usable_tick(MAX_TICK, FEE_AMOUNT.tick_spacing()),
-                        LIQUIDITY,
-                        -(LIQUIDITY as i128),
-                    ),
-                ],
-                FEE_AMOUNT.tick_spacing(),
-            ),
-        )
-        .unwrap()
-    }
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN1.clone()));

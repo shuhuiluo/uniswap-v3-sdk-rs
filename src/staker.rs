@@ -167,6 +167,7 @@ pub fn encode_deposit<P>(incentive_keys: &[IncentiveKey<P>]) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::*;
     use alloy_primitives::{hex, uint};
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::{prelude::*, token};
@@ -179,29 +180,6 @@ mod tests {
             "r",
             "reward"
         )
-    });
-
-    static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
-        Pool::new(
-            token!(
-                1,
-                "0000000000000000000000000000000000000001",
-                18,
-                "t0",
-                "token0"
-            ),
-            token!(
-                1,
-                "0000000000000000000000000000000000000002",
-                18,
-                "t1",
-                "token1"
-            ),
-            FeeAmount::MEDIUM,
-            encode_sqrt_ratio_x96(1, 1),
-            0,
-        )
-        .unwrap()
     });
 
     static INCENTIVE_KEY: Lazy<IncentiveKey<NoTickDataProvider>> = Lazy::new(|| IncentiveKey {

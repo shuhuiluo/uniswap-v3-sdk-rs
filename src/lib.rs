@@ -12,16 +12,20 @@ pub mod payments;
 pub mod quoter;
 pub mod self_permit;
 pub mod staker;
+pub mod swap_router;
 pub mod utils;
 
 #[cfg(feature = "extensions")]
 pub mod extensions;
 
+#[cfg(test)]
+mod tests;
+
 pub mod prelude {
     pub use crate::{
         abi::*, constants::*, entities::*, multicall::encode_multicall,
         nonfungible_position_manager::*, payments::*, quoter::*, self_permit::*, staker::*,
-        utils::*,
+        swap_router::*, utils::*,
     };
 
     #[cfg(feature = "extensions")]
