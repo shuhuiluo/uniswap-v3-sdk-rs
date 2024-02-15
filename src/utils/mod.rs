@@ -1,5 +1,6 @@
 mod bit_math;
 mod compute_pool_address;
+mod encode_route_to_path;
 mod encode_sqrt_ratio_x96;
 mod full_math;
 mod get_fee_growth_inside;
@@ -16,6 +17,7 @@ mod types;
 
 pub use bit_math::*;
 pub use compute_pool_address::compute_pool_address;
+pub use encode_route_to_path::encode_route_to_path;
 pub use encode_sqrt_ratio_x96::encode_sqrt_ratio_x96;
 pub use full_math::*;
 pub use get_fee_growth_inside::*;

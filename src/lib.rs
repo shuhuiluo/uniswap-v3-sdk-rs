@@ -9,6 +9,7 @@ pub mod entities;
 pub mod multicall;
 pub mod nonfungible_position_manager;
 pub mod payments;
+pub mod quoter;
 pub mod self_permit;
 pub mod staker;
 pub mod utils;
@@ -19,7 +20,8 @@ pub mod extensions;
 pub mod prelude {
     pub use crate::{
         abi::*, constants::*, entities::*, multicall::encode_multicall,
-        nonfungible_position_manager::*, payments::*, self_permit::*, staker::*, utils::*,
+        nonfungible_position_manager::*, payments::*, quoter::*, self_permit::*, staker::*,
+        utils::*,
     };
 
     #[cfg(feature = "extensions")]
