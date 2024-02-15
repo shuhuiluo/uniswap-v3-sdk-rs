@@ -590,16 +590,18 @@ where
     /// ## Arguments
     ///
     /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of this trade
+    /// * `amount_out`: The amount to receive
     ///
     pub fn minimum_amount_out(
         &mut self,
         slippage_tolerance: Percent,
+        amount_out: Option<CurrencyAmount<TOutput>>,
     ) -> Result<CurrencyAmount<TOutput>> {
         assert!(
             slippage_tolerance >= Percent::new(0, 1),
             "SLIPPAGE_TOLERANCE"
         );
-        let output_amount = self.output_amount()?;
+        let output_amount = amount_out.unwrap_or(self.output_amount()?);
         if self.trade_type == TradeType::ExactOutput {
             return self.output_amount();
         }
@@ -658,7 +660,8 @@ where
             self.output_amount()?.meta.currency.clone(),
             self.maximum_amount_in(slippage_tolerance.clone(), None)?
                 .quotient(),
-            self.minimum_amount_out(slippage_tolerance)?.quotient(),
+            self.minimum_amount_out(slippage_tolerance, None)?
+                .quotient(),
         ))
     }
 }
@@ -1967,14 +1970,18 @@ mod tests {
             #[test]
             #[should_panic(expected = "SLIPPAGE_TOLERANCE")]
             fn throws_if_less_than_0() {
-                let _ = EXACT_IN.clone().minimum_amount_out(Percent::new(-1, 100));
+                let _ = EXACT_IN
+                    .clone()
+                    .minimum_amount_out(Percent::new(-1, 100), None);
             }
 
             #[test]
             fn returns_exact_if_0() {
                 let mut trade = EXACT_IN.clone();
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(0, 10000)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(0, 10000), None)
+                        .unwrap(),
                     trade.output_amount().unwrap()
                 );
             }
@@ -1983,15 +1990,21 @@ mod tests {
             fn returns_exact_if_nonzero() {
                 let mut trade = EXACT_IN.clone();
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(0, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(0, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 7004).unwrap()
                 );
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(5, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(5, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 6670).unwrap()
                 );
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(200, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(200, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 2334).unwrap()
                 );
             }
@@ -2016,14 +2029,18 @@ mod tests {
             #[test]
             #[should_panic(expected = "SLIPPAGE_TOLERANCE")]
             fn throws_if_less_than_0() {
-                let _ = EXACT_OUT.clone().minimum_amount_out(Percent::new(-1, 100));
+                let _ = EXACT_OUT
+                    .clone()
+                    .minimum_amount_out(Percent::new(-1, 100), None);
             }
 
             #[test]
             fn returns_exact_if_0() {
                 let mut trade = EXACT_OUT.clone();
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(0, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(0, 100), None)
+                        .unwrap(),
                     trade.output_amount().unwrap()
                 );
             }
@@ -2032,15 +2049,21 @@ mod tests {
             fn returns_exact_if_nonzero() {
                 let mut trade = EXACT_OUT.clone();
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(0, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(0, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap()
                 );
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(5, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(5, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap()
                 );
                 assert_eq!(
-                    trade.minimum_amount_out(Percent::new(200, 100)).unwrap(),
+                    trade
+                        .minimum_amount_out(Percent::new(200, 100), None)
+                        .unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap()
                 );
             }
