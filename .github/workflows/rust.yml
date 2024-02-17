@@ -45,8 +45,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Switch back to stable
-        run: rustup override set stable
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
       - name: Build
         run: cargo build --all-features
       - name: Run tests
