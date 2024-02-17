@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Rust CI
 
 on:
   push:
@@ -10,15 +10,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: Rust Tests
+  lint:
+    name: Rust Lint Check
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-
       - name: Cache Cargo registry
         uses: actions/cache@v3
         with:
@@ -29,9 +28,37 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
+      - name: Install Rust toolchain via rustup
+        run: |
+          rustup toolchain install nightly
+          rustup component add rustfmt --toolchain nightly
+          rustup component add clippy --toolchain nightly
+          rustup override set nightly
+      - name: Check linting
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
+  test:
+    needs: lint
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
       - name: Build
         run: cargo build --all-features
-
       - name: Run tests
         run: cargo test --all-features
