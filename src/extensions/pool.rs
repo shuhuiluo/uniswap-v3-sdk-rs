@@ -1,3 +1,8 @@
+//! ## Pool Extension
+//! This module provides functions to create a [`Pool`] struct from a pool key and to fetch the
+//! liquidity map within a tick range for the specified pool using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
+//! in a single `eth_call`.
+
 use crate::prelude::*;
 use alloy_primitives::{Address, ChainId, B256};
 use anyhow::Result;
@@ -139,7 +144,8 @@ fn reconstruct_liquidity_array(
     Ok(liquidity_array)
 }
 
-/// Fetches the liquidity within the tick range for the specified pool.
+/// Fetches the liquidity within a tick range for the specified pool, using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
+/// in a single `eth_call`.
 ///
 /// ## Arguments
 ///

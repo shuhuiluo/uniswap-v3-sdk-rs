@@ -1,3 +1,7 @@
+//! ## Position Extension
+//! This module provides functions to create a [`Position`] struct from the token id, get the state
+//! and pool for all positions of the specified owner by deploying an ephemeral contract via `eth_call`, etc.
+
 use crate::prelude::*;
 use alloy_primitives::{Address, ChainId, U256};
 use anyhow::Result;
