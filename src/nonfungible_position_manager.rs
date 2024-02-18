@@ -275,7 +275,6 @@ pub fn collect_call_parameters(options: CollectOptions) -> MethodParameters {
 ///
 /// * `position`: The position to exit
 /// * `options`: Additional information necessary for generating the calldata
-///
 pub fn remove_call_parameters<P>(
     position: &Position<P>,
     options: RemoveLiquidityOptions,

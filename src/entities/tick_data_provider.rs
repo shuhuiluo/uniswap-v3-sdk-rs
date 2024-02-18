@@ -8,24 +8,22 @@ pub trait TickDataProvider: Clone {
 
     /// Return information corresponding to a specific tick
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `tick`: The tick to load
     ///
     /// returns: Result<&Self::Tick, Error>
-    ///
     fn get_tick(&self, tick: i32) -> Result<&Self::Tick>;
 
     /// Return the next tick that is initialized within a single word
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `tick`: The current tick
     /// * `lte`: Whether the next tick should be lte the current tick
     /// * `tick_spacing`: The tick spacing of the pool
     ///
     /// returns: Result<(i32, bool), Error>
-    ///
     fn next_initialized_tick_within_one_word(
         &self,
         tick: i32,

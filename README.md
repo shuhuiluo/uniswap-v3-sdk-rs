@@ -1,7 +1,6 @@
 # Uniswap V3 SDK Rust
 
 [![Unit Tests](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml)
-[![Lint](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/lint.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/lint.yml)
 [![crates.io](https://img.shields.io/crates/v/uniswap-v3-sdk.svg)](https://crates.io/crates/uniswap-v3-sdk)
 
 A Rust SDK for building applications on top of Uniswap V3. Migration from the

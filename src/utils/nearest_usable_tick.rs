@@ -3,13 +3,12 @@ use num_integer::Integer;
 
 /// Returns the closest tick that is nearest a given tick and usable for the given tick spacing
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `tick`: the target tick
 /// * `tick_spacing`: the spacing of the pool
 ///
 /// returns: i32
-///
 pub fn nearest_usable_tick(tick: i32, tick_spacing: i32) -> i32 {
     assert!(tick_spacing > 0, "TICK_SPACING");
     assert!((MIN_TICK..=MAX_TICK).contains(&tick), "TICK_BOUND");

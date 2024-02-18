@@ -19,12 +19,11 @@ const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U256 =
 
 /// Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as sqrt(1.0001)^tick
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `tick`: the tick for which to compute the sqrt ratio
 ///
 /// returns: Result<U256, UniswapV3MathError>
-///
 pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
     let abs_tick = tick.abs();
 
@@ -110,12 +109,11 @@ pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
 /// Returns the tick corresponding to a given sqrt ratio,
 /// s.t. get_sqrt_ratio_at_tick(tick) <= sqrt_ratio_x96 and get_sqrt_ratio_at_tick(tick + 1) > sqrt_ratio_x96
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_x96`: the sqrt ratio as a Q64.96 for which to compute the tick
 ///
 /// returns: Result<i32, UniswapV3MathError>
-///
 pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3MathError> {
     // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO) revert("R");
     // if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true

@@ -23,7 +23,6 @@ impl<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> Route<TInput, TOutput, P>
     /// * `pools`: An array of [`Pool`] objects, ordered by the route the swap will take
     /// * `input`: The input token
     /// * `output`: The output token
-    ///
     pub fn new(pools: Vec<Pool<P>>, input: TInput, output: TOutput) -> Self {
         assert!(!pools.is_empty(), "POOLS");
 

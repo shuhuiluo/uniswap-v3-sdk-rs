@@ -21,7 +21,6 @@ pub struct QuoteOptions {
 /// * `amount`: The amount of the quote, either an amount in, or an amount out
 /// * `trade_type`: The trade type, either exact input or exact output
 /// * `options`: The optional params including price limit and Quoter contract switch
-///
 pub fn quote_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P>(
     route: &Route<TInput, TOutput, P>,
     amount: CurrencyAmount<impl CurrencyTrait>,

@@ -4,14 +4,13 @@ use uniswap_v3_math::error::UniswapV3MathError;
 
 /// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `a`: The multiplicand
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
 ///
 /// returns: Result<U256, UniswapV3MathError>
-///
 pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV3MathError> {
     // 512-bit multiply [prod1 prod0] = a * b
     // Compute the product mod 2**256 and mod 2**256 - 1
@@ -97,14 +96,13 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV
 
 /// Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `a`: The multiplicand
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
 ///
 /// returns: Result<U256, UniswapV3MathError>
-///
 pub fn mul_div_rounding_up(
     a: U256,
     b: U256,

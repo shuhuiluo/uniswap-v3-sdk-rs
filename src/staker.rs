@@ -1,9 +1,3 @@
-// import { BigintIsh, Token, validateAndParseAddress } from '@uniswap/sdk-core'
-// import { MethodParameters, toHex } from './utils/calldata'
-// import { defaultAbiCoder, Interface } from '@ethersproject/abi'
-// import IUniswapV3Staker from '@uniswap/v3-staker/artifacts/contracts/UniswapV3Staker.sol/UniswapV3Staker.json'
-// import { Pool } from './entities'
-// import { Multicall } from './multicall'
 use crate::prelude::*;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, SolValue};
@@ -69,7 +63,6 @@ fn encode_incentive_key<P>(incentive_key: &IncentiveKey<P>) -> IUniswapV3Staker:
 /// ## Returns
 ///
 /// The calldatas for 'unstakeToken' and 'claimReward'.
-///
 fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [Vec<u8>; 2] {
     [
         IUniswapV3Staker::unstakeTokenCall {
@@ -95,7 +88,6 @@ fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [V
 ///
 /// * `incentive_keys`: An array of IncentiveKeys that `tokenId` is staked in.
 /// * `options`: ClaimOptions to specify tokenId, recipient, and amount wanting to collect.
-///
 pub fn collect_rewards<P>(
     incentive_keys: &[IncentiveKey<P>],
     options: ClaimOptions,
@@ -126,7 +118,6 @@ pub fn collect_rewards<P>(
 ///
 /// * `incentive_keys`: A list of incentiveKeys to unstake from. Should include all incentiveKeys (unique staking programs) that `options.tokenId` is staked in.
 /// * `withdraw_options`: Options for producing claim calldata and withdraw calldata. Can't withdraw without unstaking all programs for `tokenId`.
-///
 pub fn withdraw_token<P>(
     incentive_keys: &[IncentiveKey<P>],
     withdraw_options: FullWithdrawOptions,
