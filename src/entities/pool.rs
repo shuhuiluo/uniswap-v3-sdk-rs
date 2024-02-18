@@ -51,7 +51,6 @@ impl Pool<NoTickDataProvider> {
     /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
-    ///
     pub fn new(
         token_a: Token,
         token_b: Token,
@@ -118,7 +117,6 @@ impl<P> Pool<P> {
     /// * `token`: The token to check
     ///
     /// returns: bool
-    ///
     pub fn involves_token(&self, token: &Token) -> bool {
         self.token0.equals(token) || self.token1.equals(token)
     }
@@ -160,7 +158,6 @@ impl<P> Pool<P> {
     /// * `token`: The token to return price of
     ///
     /// returns: Price<Token, Token>
-    ///
     pub fn price_of(&mut self, token: &Token) -> Price<Token, Token> {
         assert!(self.involves_token(token), "TOKEN");
         if self.token0.equals(token) {
@@ -187,7 +184,6 @@ where
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
     /// * `tick_data_provider`: A tick data provider that can return tick data
-    ///
     pub fn new_with_tick_data_provider(
         token_a: Token,
         token_b: Token,
@@ -222,7 +218,6 @@ where
     /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit
     ///
     /// returns: The output amount and the pool with updated state
-    ///
     pub fn get_output_amount(
         &self,
         input_amount: CurrencyAmount<Token>,
@@ -264,7 +259,6 @@ where
     /// after the swap. If one for zero, the price cannot be greater than this value after the swap
     ///
     /// returns: The input amount and the pool with updated state
-    ///
     pub fn get_input_amount(
         &self,
         output_amount: CurrencyAmount<Token>,

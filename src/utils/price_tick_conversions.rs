@@ -13,7 +13,6 @@ use uniswap_sdk_core::prelude::*;
 /// * `base_token`: the base token of the price
 /// * `quote_token`: the quote token of the price
 /// * `tick`: the tick for which to return the price
-///
 pub fn tick_to_price(
     base_token: Token,
     quote_token: Token,
@@ -35,7 +34,6 @@ pub fn tick_to_price(
 ///
 /// * `price`: for which to return the closest tick that represents a price less than or equal to
 /// the input price, i.e. the price of the returned tick is less than or equal to the input price
-///
 pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<i32> {
     let sorted = price
         .meta

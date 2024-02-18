@@ -40,7 +40,6 @@ pub fn get_pool_contract<M: Middleware>(
 /// * `fee`: Fee tier of the pool
 /// * `client`: The client
 /// * `block_id`: Optional block number to query.
-///
 pub async fn get_pool<M: Middleware>(
     chain_id: ChainId,
     factory: Address,
@@ -160,7 +159,6 @@ fn reconstruct_liquidity_array(
 /// ## Returns
 ///
 /// An array of ticks and corresponding cumulative liquidity.
-///
 pub async fn get_liquidity_array_for_pool<M: Middleware, P>(
     pool: Pool<P>,
     tick_lower: i32,

@@ -4,7 +4,7 @@ use alloy_sol_types::SolValue;
 
 /// Computes a pool address
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `factory`: The Uniswap V3 factory address
 /// * `token_a`: The first token of the pair, irrespective of sort order

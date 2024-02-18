@@ -9,7 +9,6 @@ use uniswap_sdk_core::{constants::TradeType, prelude::*, utils::sorted_insert::s
 ///
 /// * `a`: The first trade to compare
 /// * `b`: The second trade to compare
-///
 pub fn trade_comparator<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>(
     a: &Trade<TInput, TOutput, P>,
     b: &Trade<TInput, TOutput, P>,
@@ -117,7 +116,6 @@ where
     ///
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
-    ///
     fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self> {
         let input_currency = &swaps[0].input_amount.meta.currency.wrapped();
         let output_currency = &swaps[0].output_amount.meta.currency.wrapped();
@@ -158,7 +156,6 @@ where
     ///
     /// * `route`: The route of the exact in trade
     /// * `amount_in`: The amount being passed in
-    ///
     pub fn exact_in(
         route: Route<TInput, TOutput, P>,
         amount_in: CurrencyAmount<Token>,
@@ -172,7 +169,6 @@ where
     ///
     /// * `route`: The route of the exact out trade
     /// * `amount_out`: The amount returned by the trade
-    ///
     pub fn exact_out(
         route: Route<TInput, TOutput, P>,
         amount_out: CurrencyAmount<Token>,
@@ -187,7 +183,6 @@ where
     /// * `route`: The route to swap through
     /// * `amount`: The amount specified, either input or output, depending on `trade_type`
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
-    ///
     pub fn from_route(
         route: Route<TInput, TOutput, P>,
         amount: CurrencyAmount<impl CurrencyTrait>,
@@ -268,7 +263,6 @@ where
     ///
     /// * `routes`: The routes to swap through and how much of the amount should be routed through each
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
-    ///
     pub fn from_routes(
         routes: Vec<(
             CurrencyAmount<impl CurrencyTrait>,
@@ -324,7 +318,6 @@ where
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in parameter
     /// * `best_trades`: Used in recursion; the current list of best trades
-    ///
     pub fn best_trade_exact_in(
         pools: Vec<Pool<P>>,
         currency_amount_in: CurrencyAmount<TInput>,
@@ -416,7 +409,6 @@ where
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
     /// * `best_trades`: Used in recursion; the current list of best trades
-    ///
     pub fn best_trade_exact_out(
         pools: Vec<Pool<P>>,
         currency_in: TInput,
@@ -591,7 +583,6 @@ where
     ///
     /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of this trade
     /// * `amount_out`: The amount to receive
-    ///
     pub fn minimum_amount_out(
         &mut self,
         slippage_tolerance: Percent,
@@ -621,7 +612,6 @@ where
     ///
     /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of this trade
     /// * `amount_in`: The amount to spend
-    ///
     pub fn maximum_amount_in(
         &mut self,
         slippage_tolerance: Percent,
@@ -650,7 +640,6 @@ where
     /// ## Arguments
     ///
     /// * `slippage_tolerance`: The allowed tolerated slippage
-    ///
     pub fn worst_execution_price(
         &mut self,
         slippage_tolerance: Percent,

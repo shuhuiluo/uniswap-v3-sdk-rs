@@ -8,14 +8,13 @@ use num_bigint::BigUint;
 /// and shifting the subtracted ratio left by 32 bits. This imprecise calculation will likely be replaced in a future
 /// v3 router contract.
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: The price at the lower boundary
 /// * `sqrt_ratio_b_x96`: The price at the upper boundary
 /// * `amount0`: The token0 amount
 ///
 /// returns: liquidity for amount0, imprecise
-///
 pub fn max_liquidity_for_amount0_imprecise(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -34,14 +33,13 @@ pub fn max_liquidity_for_amount0_imprecise(
 /// Returns a precise maximum amount of liquidity received for a given amount of token 0 by dividing by Q64 instead of
 /// Q96 in the intermediate step, and shifting the subtracted ratio left by 32 bits.
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: The price at the lower boundary
 /// * `sqrt_ratio_b_x96`: The price at the upper boundary
 /// * `amount0`: The token0 amount
 ///
 /// returns: liquidity for amount0, precise
-///
 pub fn max_liquidity_for_amount0_precise(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -61,14 +59,13 @@ pub fn max_liquidity_for_amount0_precise(
 
 /// Computes the maximum amount of liquidity received for a given amount of token1
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: The price at the lower boundary
 /// * `sqrt_ratio_b_x96`: The price at the upper boundary
 /// * `amount1`: The token1 amount
 ///
 /// returns: liquidity for amount1
-///
 pub fn max_liquidity_for_amount1(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -86,7 +83,7 @@ pub fn max_liquidity_for_amount1(
 /// Computes the maximum amount of liquidity received for a given amount of token0, token1,
 /// and the prices at the tick boundaries.
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_current_x96`: The current price
 /// * `sqrt_ratio_a_x96`: The price at the lower boundary
@@ -97,7 +94,6 @@ pub fn max_liquidity_for_amount1(
 /// not what core can theoretically support
 ///
 /// returns: maximum liquidity for the given amounts
-///
 pub fn max_liquidity_for_amounts(
     sqrt_ratio_current_x96: U256,
     mut sqrt_ratio_a_x96: U256,

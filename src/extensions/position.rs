@@ -36,7 +36,6 @@ pub fn get_nonfungible_position_manager_contract<M: Middleware>(
 /// * `token_id`: The token id
 /// * `client`: The client
 /// * `block_id`: Optional block number to query
-///
 pub async fn get_position<M: Middleware>(
     chain_id: ChainId,
     nonfungible_position_manager: Address,
@@ -84,7 +83,6 @@ impl Position<NoTickDataProvider> {
     /// * `token_id`: The token id
     /// * `client`: The client
     /// * `block_id`: Optional block number to query
-    ///
     pub async fn from_token_id<M: Middleware>(
         chain_id: ChainId,
         nonfungible_position_manager: Address,
@@ -138,7 +136,6 @@ impl Position<NoTickDataProvider> {
 /// * `owner`: The owner address
 /// * `client`: The client
 /// * `block_id`: Optional block number to query
-///
 pub async fn get_all_positions_by_owner<M: Middleware>(
     nonfungible_position_manager: Address,
     owner: Address,
@@ -167,7 +164,6 @@ pub async fn get_all_positions_by_owner<M: Middleware>(
 /// ## Returns
 ///
 /// A tuple of the collectable token amounts.
-///
 pub async fn get_collectable_token_amounts<M: Middleware>(
     chain_id: ChainId,
     nonfungible_position_manager: Address,
@@ -261,7 +257,6 @@ pub async fn get_collectable_token_amounts<M: Middleware>(
 /// * `token_id`: The token id
 /// * `client`: The client
 /// * `block_id`: Optional block number to query
-///
 pub async fn get_token_svg<M: Middleware>(
     nonfungible_position_manager: Address,
     token_id: U256,
@@ -294,7 +289,6 @@ pub async fn get_token_svg<M: Middleware>(
 /// * `position`: Position info before rebalance.
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
-///
 pub fn get_rebalanced_position<P: Clone>(
     position: &mut Position<P>,
     new_tick_lower: i32,
@@ -327,7 +321,6 @@ pub fn get_rebalanced_position<P: Clone>(
 ///
 /// * `position`: Current position
 /// * `new_price`: The new pool price
-///
 pub fn get_position_at_price<T, P>(
     position: Position<P>,
     new_price: BigDecimal,
@@ -361,7 +354,6 @@ where
 /// * `new_price`: The new pool price
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
-///
 pub fn get_rebalanced_position_at_price<T, P>(
     position: Position<P>,
     new_price: BigDecimal,

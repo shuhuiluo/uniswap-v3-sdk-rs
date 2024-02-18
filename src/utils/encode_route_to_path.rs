@@ -10,7 +10,6 @@ type TokenFee = sol!((address, uint24));
 ///
 /// * `route`: the v3 path to convert to an encoded path
 /// * `exact_output`: whether the route should be encoded in reverse, for making exact output swaps
-///
 pub fn encode_route_to_path<TInput: CurrencyTrait, TOutput: CurrencyTrait, P>(
     route: &Route<TInput, TOutput, P>,
     exact_output: bool,

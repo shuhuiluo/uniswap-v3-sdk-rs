@@ -31,7 +31,6 @@ impl<P> Position<P> {
     /// * `liquidity`: The amount of liquidity that is in the position
     /// * `tick_lower`: The lower tick of the position
     /// * `tick_upper`: The upper tick of the position
-    ///
     pub fn new(pool: Pool<P>, liquidity: u128, tick_lower: i32, tick_upper: i32) -> Self {
         assert!(tick_lower < tick_upper, "TICK_ORDER");
         assert!(
@@ -146,7 +145,6 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
-    ///
     fn ratios_after_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
         let one = Percent::new(1, 1);
         let price_lower = self.pool.token0_price().as_fraction()
@@ -178,7 +176,6 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The amounts, with slippage
-    ///
     pub fn mint_amounts_with_slippage(
         &mut self,
         slippage_tolerance: &Percent,
@@ -253,7 +250,6 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The amounts, with slippage
-    ///
     pub fn burn_amounts_with_slippage(
         &mut self,
         slippage_tolerance: &Percent,
@@ -351,7 +347,6 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The position with the maximum amount of liquidity received
-    ///
     pub fn from_amounts(
         pool: Pool<P>,
         tick_lower: i32,
@@ -389,7 +384,6 @@ impl<P> Position<P> {
     /// * `amount0`: The desired amount of token0
     /// * `use_full_precision`: If true, liquidity will be maximized according to what the router can calculate,
     /// not what core can theoretically support
-    ///
     pub fn from_amount0(
         pool: Pool<P>,
         tick_lower: i32,
@@ -416,7 +410,6 @@ impl<P> Position<P> {
     /// * `tick_lower`: The lower tick
     /// * `tick_upper`: The upper tick
     /// * `amount1`: The desired amount of token1
-    ///
     pub fn from_amount1(
         pool: Pool<P>,
         tick_lower: i32,

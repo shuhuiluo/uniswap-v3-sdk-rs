@@ -24,7 +24,7 @@ fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
 /// The most precise formula for this is liquidity * sqrtPX96 / (liquidity +- amount * sqrtPX96),
 /// if this is impossible because of overflow, we calculate liquidity / (liquidity / sqrtPX96 +- amount).
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_price_x96`: The starting price, i.e. before accounting for the token0 delta
 /// * `liquidity`: The amount of usable liquidity
@@ -32,7 +32,6 @@ fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
 /// * `add`: Whether to add or remove the amount of token0
 ///
 /// returns: The price after adding or removing amount, depending on add
-///
 pub fn get_next_sqrt_price_from_amount_0_rounding_up(
     sqrt_price_x96: U256,
     liquidity: u128,
@@ -78,7 +77,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
 /// price less in order to not send too much output.
 /// The formula we compute is within <1 wei of the lossless version: sqrtPX96 +- amount / liquidity
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_price_x96`: The starting price, i.e., before accounting for the token1 delta
 /// * `liquidity`: The amount of usable liquidity
@@ -86,7 +85,6 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
 /// * `add`: Whether to add, or remove, the amount of token1
 ///
 /// returns: The price after adding or removing `amount`
-///
 pub fn get_next_sqrt_price_from_amount_1_rounding_down(
     sqrt_price_x96: U256,
     liquidity: u128,
@@ -121,7 +119,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
 ///
 /// Throws if price or liquidity are 0, or if the next price is out of bounds
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_price_x96`: The starting price, i.e., before accounting for the input amount
 /// * `liquidity`: The amount of usable liquidity
@@ -129,7 +127,6 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
 /// * `zero_for_one`: Whether the amount in is token0 or token1
 ///
 /// returns: The price after adding the input amount to token0 or token1
-///
 pub fn get_next_sqrt_price_from_input(
     sqrt_price_x96: U256,
     liquidity: u128,
@@ -153,7 +150,7 @@ pub fn get_next_sqrt_price_from_input(
 ///
 /// Throws if price or liquidity are 0 or the next price is out of bounds
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_price_x96`: The starting price before accounting for the output amount
 /// * `liquidity`: The amount of usable liquidity
@@ -161,7 +158,6 @@ pub fn get_next_sqrt_price_from_input(
 /// * `zero_for_one`: Whether the amount out is token0 or token1
 ///
 /// returns: The price after removing the output amount of token0 or token1
-///
 pub fn get_next_sqrt_price_from_output(
     sqrt_price_x96: U256,
     liquidity: u128,
@@ -191,7 +187,7 @@ pub fn get_next_sqrt_price_from_output(
 /// Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
 /// i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: A sqrt price assumed to be lower otherwise swapped
 /// * `sqrt_ratio_b_x96`: Another sqrt price
@@ -199,7 +195,6 @@ pub fn get_next_sqrt_price_from_output(
 /// * `round_up`: Whether to round the amount up or down
 ///
 /// returns: Amount of token0 required to cover a position of size liquidity between the two passed prices
-///
 pub fn get_amount_0_delta(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -228,7 +223,7 @@ pub fn get_amount_0_delta(
 ///
 /// Calculates liquidity * (sqrt(upper) - sqrt(lower))
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: A sqrt price assumed to be lower otherwise swapped
 /// * `sqrt_ratio_b_x96`: Another sqrt price
@@ -236,7 +231,6 @@ pub fn get_amount_0_delta(
 /// * `round_up`: Whether to round the amount up, or down
 ///
 /// returns: Amount of token1 required to cover a position of size liquidity between the two passed prices
-///
 pub fn get_amount_1_delta(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -258,14 +252,13 @@ pub fn get_amount_1_delta(
 
 /// Helper that gets signed token0 delta
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: A sqrt price
 /// * `sqrt_ratio_b_x96`: Another sqrt price
 /// * `liquidity`: The change in liquidity for which to compute the amount0 delta
 ///
 /// returns: Amount of token0 corresponding to the passed liquidityDelta between the two prices
-///
 pub fn get_amount_0_delta_signed(
     sqrt_ratio_a_x96: U256,
     sqrt_ratio_b_x96: U256,
@@ -287,14 +280,13 @@ pub fn get_amount_0_delta_signed(
 
 /// Helper that gets signed token1 delta
 ///
-/// # Arguments
+/// ## Arguments
 ///
 /// * `sqrt_ratio_a_x96`: A sqrt price
 /// * `sqrt_ratio_b_x96`: Another sqrt price
 /// * `liquidity`: The change in liquidity for which to compute the amount1 delta
 ///
 /// returns: Amount of token1 corresponding to the passed liquidityDelta between the two prices
-///
 pub fn get_amount_1_delta_signed(
     sqrt_ratio_a_x96: U256,
     sqrt_ratio_b_x96: U256,

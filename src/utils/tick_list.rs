@@ -15,12 +15,11 @@ pub trait TickList {
 
     /// Finds the largest tick in the list of ticks that is less than or equal to tick
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `tick`: tick to find the largest tick that is less than or equal to tick
     ///
     /// returns: usize
-    ///
     fn binary_search_by_tick(&self, tick: i32) -> usize;
 
     fn next_initialized_tick(&self, tick: i32, lte: bool) -> &Self::Tick;
