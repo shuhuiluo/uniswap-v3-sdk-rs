@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use alloy_primitives::U256;
 use alloy_sol_types::SolCall;
-use uniswap_sdk_core::{constants::TradeType, prelude::*};
+use uniswap_sdk_core::prelude::*;
 
 /// Optional arguments to send to the quoter.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

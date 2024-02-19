@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use anyhow::Result;
-use std::{cell::RefCell, cmp::Ordering, collections::HashSet};
-use uniswap_sdk_core::{constants::TradeType, prelude::*, utils::sorted_insert::sorted_insert};
+use std::{cell::RefCell, collections::HashSet};
+use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 
 /// Trades comparator, an extension of the input output comparator that also considers other dimensions of the trade in ranking them
 ///

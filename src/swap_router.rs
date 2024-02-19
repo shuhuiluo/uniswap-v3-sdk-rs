@@ -1,8 +1,8 @@
 use crate::prelude::*;
-use alloy_primitives::{Address, U256};
+use alloy_primitives::U256;
 use alloy_sol_types::SolCall;
 use anyhow::Result;
-use uniswap_sdk_core::{constants::TradeType, prelude::*};
+use uniswap_sdk_core::prelude::*;
 
 /// Options for producing the arguments to send calls to the router.
 #[derive(Clone, Debug, PartialEq)]

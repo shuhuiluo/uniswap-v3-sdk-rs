@@ -1,9 +1,8 @@
 use crate::prelude::*;
-use alloy_primitives::{Address, ChainId, B256, I256, U256};
+use alloy_primitives::{ChainId, B256, I256, U256};
 use anyhow::Result;
-use num_bigint::BigUint;
 use once_cell::sync::Lazy;
-use std::{cmp::PartialEq, fmt, ops::Neg};
+use std::{fmt, ops::Neg};
 use uniswap_sdk_core::prelude::*;
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
