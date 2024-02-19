@@ -78,7 +78,7 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
     // flag for whether a refund needs to happen
     let input_is_native = sample_trade.input_amount()?.meta.currency.is_native();
     let must_refund = input_is_native && sample_trade.trade_type == TradeType::ExactOutput;
-    // flags for whether funds should be send first to the router
+    // flags for whether funds should be sent first to the router
     let output_is_native = sample_trade.output_amount()?.meta.currency.is_native();
     let router_must_custody = output_is_native || fee.is_some();
 
@@ -199,23 +199,19 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
 
     // unwrap
     if router_must_custody {
-        if let Some(fee) = fee {
-            if output_is_native {
-                calldatas.push(encode_unwrap_weth9(
-                    total_amount_out,
-                    recipient,
-                    Some(fee.clone()),
-                ));
-            } else {
-                calldatas.push(encode_sweep_token(
-                    sample_trade.output_amount()?.meta.currency.address(),
-                    total_amount_out,
-                    recipient,
-                    Some(fee.clone()),
-                ));
-            }
+        if output_is_native {
+            calldatas.push(encode_unwrap_weth9(
+                total_amount_out,
+                recipient,
+                fee.clone(),
+            ));
         } else {
-            calldatas.push(encode_unwrap_weth9(total_amount_out, recipient, None));
+            calldatas.push(encode_sweep_token(
+                sample_trade.output_amount()?.meta.currency.address(),
+                total_amount_out,
+                recipient,
+                fee.clone(),
+            ));
         }
     }
 

@@ -218,7 +218,7 @@ mod tests {
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
-                    sqrt_price_limit_x96: U256::from_limbs([0, 0, 1, 0]),
+                    sqrt_price_limit_x96: Q128,
                     use_quoter_v2: false,
                 }),
             );

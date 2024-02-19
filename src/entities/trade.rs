@@ -594,7 +594,7 @@ where
         );
         let output_amount = amount_out.unwrap_or(self.output_amount()?);
         if self.trade_type == TradeType::ExactOutput {
-            return self.output_amount();
+            return Ok(output_amount);
         }
         let slippage_adjusted_amount_out = ((Percent::new(1, 1) + slippage_tolerance).invert()
             * Percent::new(output_amount.quotient(), 1))
