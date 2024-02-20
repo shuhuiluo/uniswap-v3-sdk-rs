@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{Address, Signature, U256};
+use alloy_primitives::{Signature, U256};
 use alloy_sol_types::SolCall;
 use anyhow::Result;
 use uniswap_sdk_core::prelude::*;

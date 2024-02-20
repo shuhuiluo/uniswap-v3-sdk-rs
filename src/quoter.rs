@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use alloy_primitives::U256;
 use alloy_sol_types::SolCall;
-use uniswap_sdk_core::{constants::TradeType, prelude::*};
+use uniswap_sdk_core::prelude::*;
 
 /// Optional arguments to send to the quoter.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -218,7 +218,7 @@ mod tests {
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
-                    sqrt_price_limit_x96: U256::from_limbs([0, 0, 1, 0]),
+                    sqrt_price_limit_x96: Q128,
                     use_quoter_v2: false,
                 }),
             );
