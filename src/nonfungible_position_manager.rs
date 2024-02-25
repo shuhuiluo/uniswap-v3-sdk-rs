@@ -215,8 +215,8 @@ pub fn add_call_parameters<P>(
 fn encode_collect(options: CollectOptions) -> Vec<Vec<u8>> {
     let mut calldatas: Vec<Vec<u8>> = vec![];
 
-    let involves_eth = options.expected_currency_owed0.meta.currency.is_native()
-        || options.expected_currency_owed1.meta.currency.is_native();
+    let involves_eth = options.expected_currency_owed0.currency.is_native()
+        || options.expected_currency_owed1.currency.is_native();
 
     // collect
     calldatas.push(
@@ -239,13 +239,13 @@ fn encode_collect(options: CollectOptions) -> Vec<Vec<u8>> {
         let eth_amount: U256;
         let token: Token;
         let token_amount: U256;
-        if options.expected_currency_owed0.meta.currency.is_native() {
+        if options.expected_currency_owed0.currency.is_native() {
             eth_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
-            token = options.expected_currency_owed1.meta.currency.wrapped();
+            token = options.expected_currency_owed1.currency.wrapped();
             token_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
         } else {
             eth_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
-            token = options.expected_currency_owed0.meta.currency.wrapped();
+            token = options.expected_currency_owed0.currency.wrapped();
             token_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
         }
 
@@ -343,11 +343,11 @@ pub fn remove_call_parameters<P>(
         token_id,
         // add the underlying value to the expected currency already owed
         expected_currency_owed0: expected_currency_owed0.add(&CurrencyAmount::from_raw_amount(
-            expected_currency_owed0.meta.currency.clone(),
+            expected_currency_owed0.currency.clone(),
             u256_to_big_int(amount0_min),
         )?)?,
         expected_currency_owed1: expected_currency_owed1.add(&CurrencyAmount::from_raw_amount(
-            expected_currency_owed1.meta.currency.clone(),
+            expected_currency_owed1.currency.clone(),
             u256_to_big_int(amount1_min),
         )?)?,
         recipient: options.collect_options.recipient,

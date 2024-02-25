@@ -222,9 +222,9 @@ where
         input_amount: CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U256>,
     ) -> Result<(CurrencyAmount<Token>, Self)> {
-        assert!(self.involves_token(&input_amount.meta.currency), "TOKEN");
+        assert!(self.involves_token(&input_amount.currency), "TOKEN");
 
-        let zero_for_one = input_amount.meta.currency.equals(&self.token0);
+        let zero_for_one = input_amount.currency.equals(&self.token0);
 
         let (output_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
             zero_for_one,
@@ -263,9 +263,9 @@ where
         output_amount: CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U256>,
     ) -> Result<(CurrencyAmount<Token>, Self)> {
-        assert!(self.involves_token(&output_amount.meta.currency), "TOKEN");
+        assert!(self.involves_token(&output_amount.currency), "TOKEN");
 
-        let zero_for_one = output_amount.meta.currency.equals(&self.token1);
+        let zero_for_one = output_amount.currency.equals(&self.token1);
 
         let (input_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
             zero_for_one,
@@ -696,7 +696,7 @@ mod tests {
         fn get_output_amount_usdc_to_dai() -> Result<()> {
             let (output_amount, _) =
                 POOL.get_output_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 100)?, None)?;
-            assert!(output_amount.meta.currency.equals(&DAI.clone()));
+            assert!(output_amount.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
             Ok(())
         }
@@ -705,7 +705,7 @@ mod tests {
         fn get_output_amount_dai_to_usdc() -> Result<()> {
             let (output_amount, _) =
                 POOL.get_output_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 100)?, None)?;
-            assert!(output_amount.meta.currency.equals(&USDC.clone()));
+            assert!(output_amount.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
             Ok(())
         }
@@ -714,7 +714,7 @@ mod tests {
         fn get_input_amount_usdc_to_dai() -> Result<()> {
             let (input_amount, _) =
                 POOL.get_input_amount(CurrencyAmount::from_raw_amount(DAI.clone(), 98)?, None)?;
-            assert!(input_amount.meta.currency.equals(&USDC.clone()));
+            assert!(input_amount.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
             Ok(())
         }
@@ -723,7 +723,7 @@ mod tests {
         fn get_input_amount_dai_to_usdc() -> Result<()> {
             let (input_amount, _) =
                 POOL.get_input_amount(CurrencyAmount::from_raw_amount(USDC.clone(), 98)?, None)?;
-            assert!(input_amount.meta.currency.equals(&DAI.clone()));
+            assert!(input_amount.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
             Ok(())
         }
