@@ -116,10 +116,7 @@ pub fn sqrt_ratio_x96_to_price(
 
 /// Same as [`price_to_closest_tick`] but returns [`MIN_TICK`] or [`MAX_TICK`] if the price is outside Uniswap's range.
 pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
-    let sorted = price
-        .meta
-        .base_currency
-        .sorts_before(&price.meta.quote_currency)?;
+    let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     if price.as_fraction() < *MIN_PRICE {
         Ok(if sorted { MIN_TICK } else { MAX_TICK })
     } else if price.as_fraction() > *MAX_PRICE {

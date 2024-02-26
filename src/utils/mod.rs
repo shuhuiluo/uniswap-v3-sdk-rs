@@ -34,9 +34,9 @@ pub use types::*;
 
 use alloy_primitives::{uint, U256};
 
-pub const ONE: U256 = uint!(1_U256);
-pub const TWO: U256 = uint!(2_U256);
-pub const THREE: U256 = uint!(3_U256);
+pub(crate) const ONE: U256 = uint!(1_U256);
+pub(crate) const TWO: U256 = uint!(2_U256);
+pub(crate) const THREE: U256 = uint!(3_U256);
 pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
