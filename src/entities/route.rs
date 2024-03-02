@@ -82,7 +82,7 @@ impl<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> Route<TInput, TOutput, P>
             price = self.pools[0].token1_price();
             next_input = self.pools[0].token0.clone();
         }
-        for pool in self.pools[1..].iter_mut() {
+        for pool in self.pools[1..].iter() {
             if next_input.equals(&pool.token0) {
                 next_input = pool.token1.clone();
                 price = price.multiply(&pool.token0_price())?;
