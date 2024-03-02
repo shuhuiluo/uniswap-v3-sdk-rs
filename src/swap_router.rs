@@ -220,9 +220,8 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
 mod tests {
     use super::*;
     use crate::tests::*;
-    use alloy_primitives::hex;
+    use alloy_primitives::{hex, uint};
     use once_cell::sync::Lazy;
-    use ruint::uint;
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN1.clone()));

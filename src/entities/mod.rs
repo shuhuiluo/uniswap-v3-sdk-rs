@@ -6,7 +6,7 @@ mod tick_data_provider;
 mod tick_list_data_provider;
 mod trade;
 
-pub use pool::Pool;
+pub use pool::{get_address, Pool};
 pub use position::{MintAmounts, Position};
 pub use route::Route;
 pub use tick::{Tick, TickTrait};
