@@ -12,7 +12,38 @@ use alloy_sol_types::SolValue;
 /// * `fee`: The fee tier of the pool
 /// * `init_code_hash_manual_override`: Override the init code hash used to compute the pool address if necessary
 ///
-/// returns: Address
+/// ## Returns
+///
+/// The computed pool address
+///
+/// ## Examples
+///
+/// ```
+/// use alloy_primitives::{address, Address};
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// const FACTORY_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
+/// const USDC_ADDRESS: Address = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+/// const DAI_ADDRESS: Address = address!("6B175474E89094C44Da98b954EedeAC495271d0F");
+/// let result = compute_pool_address(
+///     FACTORY_ADDRESS,
+///     USDC_ADDRESS,
+///     DAI_ADDRESS,
+///     FeeAmount::LOW,
+///     None,
+/// );
+/// assert_eq!(result, address!("90B1b09A9715CaDbFD9331b3A7652B24BfBEfD32"));
+/// assert_eq!(
+///     result,
+///     compute_pool_address(
+///         FACTORY_ADDRESS,
+///         DAI_ADDRESS,
+///         USDC_ADDRESS,
+///         FeeAmount::LOW,
+///         None,
+///     )
+/// );
+/// ```
 pub fn compute_pool_address(
     factory: Address,
     token_a: Address,
@@ -31,36 +62,4 @@ pub fn compute_pool_address(
         keccak256(pool_key.abi_encode()),
         init_code_hash_manual_override.unwrap_or(POOL_INIT_CODE_HASH),
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloy_primitives::address;
-
-    const FACTORY_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
-    const USDC_ADDRESS: Address = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-    const DAI_ADDRESS: Address = address!("6B175474E89094C44Da98b954EedeAC495271d0F");
-
-    #[test]
-    fn test_compute_pool_address() {
-        let result = compute_pool_address(
-            FACTORY_ADDRESS,
-            USDC_ADDRESS,
-            DAI_ADDRESS,
-            FeeAmount::LOW,
-            None,
-        );
-        assert_eq!(result, address!("90B1b09A9715CaDbFD9331b3A7652B24BfBEfD32"));
-        assert_eq!(
-            result,
-            compute_pool_address(
-                FACTORY_ADDRESS,
-                DAI_ADDRESS,
-                USDC_ADDRESS,
-                FeeAmount::LOW,
-                None,
-            )
-        );
-    }
 }
