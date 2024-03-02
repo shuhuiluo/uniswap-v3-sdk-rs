@@ -285,7 +285,7 @@ pub fn remove_call_parameters<P>(
     let token_id = options.token_id;
 
     // construct a partial position with a percentage of liquidity
-    let mut partial_position = Position::new(
+    let partial_position = Position::new(
         Pool::new(
             position.pool.token0.clone(),
             position.pool.token1.clone(),

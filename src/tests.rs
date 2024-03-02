@@ -1,8 +1,8 @@
 #![cfg(test)]
 
 use crate::prelude::*;
+use alloy_primitives::U256;
 use once_cell::sync::Lazy;
-use ruint::aliases::U256;
 use uniswap_sdk_core::{prelude::*, token};
 
 pub static ETHER: Lazy<Ether> = Lazy::new(|| Ether::on_chain(1));

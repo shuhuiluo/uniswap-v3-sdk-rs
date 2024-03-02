@@ -16,6 +16,26 @@ pub struct Position<P> {
     _mint_amounts: Option<MintAmounts>,
 }
 
+impl<P> fmt::Debug for Position<P> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Position")
+            .field("pool", &self.pool)
+            .field("tick_lower", &self.tick_lower)
+            .field("tick_upper", &self.tick_upper)
+            .field("liquidity", &self.liquidity)
+            .finish()
+    }
+}
+
+impl<P> PartialEq for Position<P> {
+    fn eq(&self, other: &Self) -> bool {
+        self.pool == other.pool
+            && self.tick_lower == other.tick_lower
+            && self.tick_upper == other.tick_upper
+            && self.liquidity == other.liquidity
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MintAmounts {
     pub amount0: U256,
@@ -145,7 +165,7 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
-    fn ratios_after_slippage(&mut self, slippage_tolerance: &Percent) -> (U256, U256) {
+    fn ratios_after_slippage(&self, slippage_tolerance: &Percent) -> (U256, U256) {
         let one = Percent::new(1, 1);
         let price_lower = self.pool.token0_price().as_fraction()
             * ((one.clone() - slippage_tolerance.clone()).as_fraction());
@@ -250,10 +270,7 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The amounts, with slippage
-    pub fn burn_amounts_with_slippage(
-        &mut self,
-        slippage_tolerance: &Percent,
-    ) -> Result<(U256, U256)> {
+    pub fn burn_amounts_with_slippage(&self, slippage_tolerance: &Percent) -> Result<(U256, U256)> {
         // get lower/upper prices
         let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
@@ -418,26 +435,6 @@ impl<P> Position<P> {
     ) -> Result<Self> {
         // this function always uses full precision
         Self::from_amounts(pool, tick_lower, tick_upper, U256::MAX, amount1, true)
-    }
-}
-
-impl<P> fmt::Debug for Position<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Position")
-            .field("pool", &self.pool)
-            .field("tick_lower", &self.tick_lower)
-            .field("tick_upper", &self.tick_upper)
-            .field("liquidity", &self.liquidity)
-            .finish()
-    }
-}
-
-impl<P> PartialEq for Position<P> {
-    fn eq(&self, other: &Self) -> bool {
-        self.pool == other.pool
-            && self.tick_lower == other.tick_lower
-            && self.tick_upper == other.tick_upper
-            && self.liquidity == other.liquidity
     }
 }
 
@@ -704,7 +701,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_pool_at_min_price() {
-        let mut position = Position::new(
+        let position = Position::new(
             Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0).unwrap(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -720,7 +717,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_pool_at_max_price() {
-        let mut position = Position::new(
+        let position = Position::new(
             Pool::new(
                 DAI.clone(),
                 USDC.clone(),
@@ -743,7 +740,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_below() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -759,7 +756,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_above() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
@@ -775,7 +772,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_within() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
@@ -791,7 +788,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_below_05_percent_slippage() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -807,7 +804,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_above_05_percent_slippage() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,
@@ -823,7 +820,7 @@ mod tests {
 
     #[test]
     fn burn_amounts_with_slippage_is_correct_for_positions_within_05_percent_slippage() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * 2,

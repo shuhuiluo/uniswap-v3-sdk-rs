@@ -17,8 +17,30 @@ pub struct Pool<P> {
     pub liquidity: u128,
     pub tick_current: i32,
     pub tick_data_provider: P,
-    _token0_price: Option<Price<Token, Token>>,
-    _token1_price: Option<Price<Token, Token>>,
+}
+
+impl<P> fmt::Debug for Pool<P> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Pool")
+            .field("token0", &self.token0)
+            .field("token1", &self.token1)
+            .field("fee", &self.fee)
+            .field("sqrt_ratio_x96", &self.sqrt_ratio_x96)
+            .field("liquidity", &self.liquidity)
+            .field("tick_current", &self.tick_current)
+            .finish()
+    }
+}
+
+impl<P> PartialEq for Pool<P> {
+    fn eq(&self, other: &Self) -> bool {
+        self.token0 == other.token0
+            && self.token1 == other.token1
+            && self.fee == other.fee
+            && self.sqrt_ratio_x96 == other.sqrt_ratio_x96
+            && self.liquidity == other.liquidity
+            && self.tick_current == other.tick_current
+    }
 }
 
 struct SwapState {
@@ -121,33 +143,25 @@ impl<P> Pool<P> {
     }
 
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over token0
-    pub fn token0_price(&mut self) -> Price<Token, Token> {
-        self._token0_price.clone().unwrap_or_else(|| {
-            let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
-            let price = Price::new(
-                self.token0.clone(),
-                self.token1.clone(),
-                _Q192.clone(),
-                &sqrt_ratio_x96 * &sqrt_ratio_x96,
-            );
-            self._token0_price = Some(price.clone());
-            price
-        })
+    pub fn token0_price(&self) -> Price<Token, Token> {
+        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
+        Price::new(
+            self.token0.clone(),
+            self.token1.clone(),
+            _Q192.clone(),
+            &sqrt_ratio_x96 * &sqrt_ratio_x96,
+        )
     }
 
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over token1
-    pub fn token1_price(&mut self) -> Price<Token, Token> {
-        self._token1_price.clone().unwrap_or_else(|| {
-            let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
-            let price = Price::new(
-                self.token1.clone(),
-                self.token0.clone(),
-                &sqrt_ratio_x96 * &sqrt_ratio_x96,
-                _Q192.clone(),
-            );
-            self._token1_price = Some(price.clone());
-            price
-        })
+    pub fn token1_price(&self) -> Price<Token, Token> {
+        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
+        Price::new(
+            self.token1.clone(),
+            self.token0.clone(),
+            &sqrt_ratio_x96 * &sqrt_ratio_x96,
+            _Q192.clone(),
+        )
     }
 
     /// Return the price of the given token in terms of the other token in the pool.
@@ -157,7 +171,7 @@ impl<P> Pool<P> {
     /// * `token`: The token to return price of
     ///
     /// returns: Price<Token, Token>
-    pub fn price_of(&mut self, token: &Token) -> Price<Token, Token> {
+    pub fn price_of(&self, token: &Token) -> Price<Token, Token> {
         assert!(self.involves_token(token), "TOKEN");
         if self.token0.equals(token) {
             self.token0_price()
@@ -204,8 +218,6 @@ where
             liquidity,
             tick_current: get_tick_at_sqrt_ratio(sqrt_ratio_x96)?,
             tick_data_provider,
-            _token0_price: None,
-            _token1_price: None,
         })
     }
 
@@ -416,30 +428,6 @@ where
     }
 }
 
-impl<P> fmt::Debug for Pool<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Pool")
-            .field("token0", &self.token0)
-            .field("token1", &self.token1)
-            .field("fee", &self.fee)
-            .field("sqrt_ratio_x96", &self.sqrt_ratio_x96)
-            .field("liquidity", &self.liquidity)
-            .field("tick_current", &self.tick_current)
-            .finish()
-    }
-}
-
-impl<P> PartialEq for Pool<P> {
-    fn eq(&self, other: &Self) -> bool {
-        self.token0 == other.token0
-            && self.token1 == other.token1
-            && self.fee == other.fee
-            && self.sqrt_ratio_x96 == other.sqrt_ratio_x96
-            && self.liquidity == other.liquidity
-            && self.tick_current == other.tick_current
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -542,7 +530,7 @@ mod tests {
 
     #[test]
     fn token0_price_returns_price_of_token0_in_terms_of_token1() -> Result<()> {
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
@@ -554,7 +542,7 @@ mod tests {
                 .to_significant(5, Rounding::RoundHalfUp)?,
             "1.01"
         );
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             DAI.clone(),
             USDC.clone(),
             FeeAmount::LOW,
@@ -571,7 +559,7 @@ mod tests {
 
     #[test]
     fn token1_price_returns_price_of_token1_in_terms_of_token0() -> Result<()> {
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
@@ -583,7 +571,7 @@ mod tests {
                 .to_significant(5, Rounding::RoundHalfUp)?,
             "0.9901"
         );
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             DAI.clone(),
             USDC.clone(),
             FeeAmount::LOW,
@@ -600,7 +588,7 @@ mod tests {
 
     #[test]
     fn price_of_returns_price_of_token_in_terms_of_other_token() {
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
@@ -615,7 +603,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "TOKEN")]
     fn price_of_throws_if_invalid_token() {
-        let mut pool = Pool::new(
+        let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
