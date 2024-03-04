@@ -36,8 +36,8 @@ pub trait TickDataProvider: Clone {
 #[error("No tick data provider was given")]
 pub struct NoTickDataError;
 
-/// This tick data provider does not know how to fetch any tick data. It throws whenever it is required.
-/// Useful if you do not need to load tick data for your use case.
+/// This tick data provider does not know how to fetch any tick data. It throws whenever it is
+/// required. Useful if you do not need to load tick data for your use case.
 #[derive(Clone, Debug)]
 pub struct NoTickDataProvider;
 

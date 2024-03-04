@@ -4,21 +4,26 @@ use uniswap_v3_math::error::UniswapV3MathError;
 
 /// Computes the result of swapping some amount in, or amount out, given the parameters of the swap
 ///
-/// The fee, plus the amount in, will never exceed the amount remaining if the swap's `amountSpecified` is positive
+/// The fee, plus the amount in, will never exceed the amount remaining if the swap's
+/// `amountSpecified` is positive
 ///
 /// ## Arguments
 ///
 /// * `sqrt_ratio_current_x96`: The current sqrt price of the pool
-/// * `sqrt_ratio_target_x96`: The price that cannot be exceeded, from which the direction of the swap is inferred
+/// * `sqrt_ratio_target_x96`: The price that cannot be exceeded, from which the direction of the
+///   swap is inferred
 /// * `liquidity`: The usable liquidity
 /// * `amount_remaining`: How much input or output amount is remaining to be swapped in/out
 /// * `fee_pips`: The fee taken from the input amount, expressed in hundredths of a bip
 ///
 /// ## Returns
 ///
-/// * `sqrt_ratio_next_x96`: The price after swapping the amount in/out, not to exceed the price target
-/// * `amount_in`: The amount to be swapped in, of either token0 or token1, based on the direction of the swap
-/// * `amount_out`: The amount to be received, of either token0 or token1, based on the direction of the swap
+/// * `sqrt_ratio_next_x96`: The price after swapping the amount in/out, not to exceed the price
+///   target
+/// * `amount_in`: The amount to be swapped in, of either token0 or token1, based on the direction
+///   of the swap
+/// * `amount_out`: The amount to be received, of either token0 or token1, based on the direction of
+///   the swap
 /// * `fee_amount`: The amount of input that will be taken as a fee
 pub fn compute_swap_step(
     sqrt_ratio_current_x96: U256,

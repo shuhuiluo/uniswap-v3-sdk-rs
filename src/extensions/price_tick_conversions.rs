@@ -1,6 +1,6 @@
 //! ## Price and tick conversions
-//! Utility functions for converting between [`i32`] ticks, [`BigDecimal`] prices, and SDK Core [`Price`] prices.
-//! Ported from [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk/blob/8bc54456753f454848d25029631f4e64ff573e12/price.ts).
+//! Utility functions for converting between [`i32`] ticks, [`BigDecimal`] prices, and SDK Core
+//! [`Price`] prices. Ported from [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk/blob/8bc54456753f454848d25029631f4e64ff573e12/price.ts).
 
 use crate::prelude::*;
 use alloy_primitives::U256;
@@ -37,12 +37,12 @@ pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
 /// ## Examples
 ///
 /// ```
-/// use uniswap_sdk_core::{prelude::Token, token};
+/// use uniswap_sdk_core::{prelude::*, token};
 /// use uniswap_v3_sdk::prelude::parse_price;
 ///
 /// let price = parse_price(
-///     token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC"),
-///     token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH"),
+///     token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC"),
+///     token!(1, "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH"),
 ///     "10.23",
 /// )
 /// .unwrap();
@@ -57,7 +57,8 @@ where
     TQuote: CurrencyTrait,
 {
     // Check whether `price` is a valid string of decimal number.
-    // This regex matches any number of digits optionally followed by '.' which is then followed by at least one digit.
+    // This regex matches any number of digits optionally followed by '.' which is then followed by
+    // at least one digit.
     let re = Regex::new(r"^\d*\.?\d+$").unwrap();
     if !re.is_match(price) {
         bail!("Invalid price string");
@@ -78,22 +79,24 @@ where
 ///
 /// ## Arguments
 ///
-/// * `sqrt_ratio_x96`: The sqrt ratio of the base token in terms of the quote token as a Q64.96 [`U256`].
+/// * `sqrt_ratio_x96`: The sqrt ratio of the base token in terms of the quote token as a Q64.96
+///   [`U256`].
 /// * `base_token`: The base token.
 /// * `quote_token`: The quote token.
 ///
 /// ## Returns
 ///
-/// The price of the base token in terms of the quote token as an instance of [`Price`] in [`uniswap_sdk_core`].
+/// The price of the base token in terms of the quote token as an instance of [`Price`] in
+/// [`uniswap_sdk_core`].
 ///
 /// ## Examples
 ///
 /// ```
-/// use uniswap_sdk_core::{prelude::Token, token};
+/// use uniswap_sdk_core::{prelude::*, token};
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let token0 = token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
-/// let token1 = token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
+/// let token0 = token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
+/// let token1 = token!(1, "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
 /// let min_price = tick_to_price(token0.clone(), token1.clone(), MIN_TICK).unwrap();
 /// assert_eq!(
 ///     sqrt_ratio_x96_to_price(MIN_SQRT_RATIO, token0, token1).unwrap(),
@@ -114,7 +117,8 @@ pub fn sqrt_ratio_x96_to_price(
     })
 }
 
-/// Same as [`price_to_closest_tick`] but returns [`MIN_TICK`] or [`MAX_TICK`] if the price is outside Uniswap's range.
+/// Same as [`price_to_closest_tick`] but returns [`MIN_TICK`] or [`MAX_TICK`] if the price is
+/// outside Uniswap's range.
 pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     if price.as_fraction() < *MIN_PRICE {
@@ -130,7 +134,8 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
 ///
 /// ## Arguments
 ///
-/// * `price`: The price of two tokens in the liquidity pool. Either token0 or token1 may be the base token.
+/// * `price`: The price of two tokens in the liquidity pool. Either token0 or token1 may be the
+///   base token.
 /// * `fee`: The liquidity pool fee tier.
 ///
 /// ## Returns
@@ -143,8 +148,8 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
 /// use uniswap_sdk_core::{prelude::*, token};
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let token0 = token!(1, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
-/// let token1 = token!(1, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
+/// let token0 = token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
+/// let token1 = token!(1, "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
 /// let fee = FeeAmount::MEDIUM;
 /// let min_price = Price::new(token0.clone(), token1.clone(), MIN_PRICE.denominator(), 1);
 /// let max_price = Price::new(
@@ -236,18 +241,20 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
     }
 }
 
-/// For a given tick range from `tick_lower` to `tick_upper`, and a given proportion of the position value that is held in
-/// token0, calculate the price of token0 denominated in token1.
+/// For a given tick range from `tick_lower` to `tick_upper`, and a given proportion of the position
+/// value that is held in token0, calculate the price of token0 denominated in token1.
 ///
 /// ## Arguments
 ///
-/// * `token0_ratio`: The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and 1, inclusive.
+/// * `token0_ratio`: The proportion of the position value that is held in token0, as a
+///   [`BigDecimal`] between 0 and 1, inclusive.
 /// * `tick_lower`: The lower tick of the range.
 /// * `tick_upper`: The upper tick of the range.
 ///
 /// ## Returns
 ///
-/// The price of token0 denominated in token1 for the specified tick range and token0 value proportion.
+/// The price of token0 denominated in token1 for the specified tick range and token0 value
+/// proportion.
 pub fn token0_ratio_to_price(
     token0_ratio: BigDecimal,
     tick_lower: i32,
@@ -278,8 +285,8 @@ pub fn token0_ratio_to_price(
     Ok((numerator / denominator).square())
 }
 
-/// Given a price ratio of token1/token0, calculate the proportion of the position value that is held in token0 for a
-/// given tick range. Inverse of [`token0_ratio_to_price`].
+/// Given a price ratio of token1/token0, calculate the proportion of the position value that is
+/// held in token0 for a given tick range. Inverse of [`token0_ratio_to_price`].
 ///
 /// ## Arguments
 ///
@@ -289,7 +296,8 @@ pub fn token0_ratio_to_price(
 ///
 /// ## Returns
 ///
-/// The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and 1, inclusive.
+/// The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and
+/// 1, inclusive.
 pub fn token0_price_to_ratio(
     price: BigDecimal,
     tick_lower: i32,

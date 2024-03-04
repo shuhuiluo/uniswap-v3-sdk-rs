@@ -69,12 +69,12 @@ pub fn encode_permit(token: Token, options: PermitOptions) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::{hex, uint};
+    use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::token;
 
     static TOKEN: Lazy<Token> =
-        Lazy::new(|| token!(1, "0x0000000000000000000000000000000000000001", 18));
+        Lazy::new(|| token!(1, "0000000000000000000000000000000000000001", 18));
 
     #[test]
     fn test_encode_permit_standard() {

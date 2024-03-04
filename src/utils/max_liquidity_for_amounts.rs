@@ -3,10 +3,10 @@ use alloy_primitives::U256;
 use num_bigint::BigUint;
 
 /// Returns an imprecise maximum amount of liquidity received for a given amount of token 0.
-/// This function is available to accommodate LiquidityAmounts#getLiquidityForAmount0 in the v3 periphery,
-/// which could be more precise by at least 32 bits by dividing by Q64 instead of Q96 in the intermediate step,
-/// and shifting the subtracted ratio left by 32 bits. This imprecise calculation will likely be replaced in a future
-/// v3 router contract.
+/// This function is available to accommodate LiquidityAmounts#getLiquidityForAmount0 in the v3
+/// periphery, which could be more precise by at least 32 bits by dividing by Q64 instead of Q96 in
+/// the intermediate step, and shifting the subtracted ratio left by 32 bits. This imprecise
+/// calculation will likely be replaced in a future v3 router contract.
 ///
 /// ## Arguments
 ///
@@ -30,8 +30,9 @@ pub fn max_liquidity_for_amount0_imprecise(
     u256_to_big_uint(amount0) * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
-/// Returns a precise maximum amount of liquidity received for a given amount of token 0 by dividing by Q64 instead of
-/// Q96 in the intermediate step, and shifting the subtracted ratio left by 32 bits.
+/// Returns a precise maximum amount of liquidity received for a given amount of token 0 by dividing
+/// by Q64 instead of Q96 in the intermediate step, and shifting the subtracted ratio left by 32
+/// bits.
 ///
 /// ## Arguments
 ///
@@ -90,8 +91,8 @@ pub fn max_liquidity_for_amount1(
 /// * `sqrt_ratio_b_x96`: The price at the upper boundary
 /// * `amount0`: The token0 amount
 /// * `amount1`: The token1 amount
-/// * `use_full_precision`: if false, liquidity will be maximized according to what the router can calculate,
-/// not what core can theoretically support
+/// * `use_full_precision`: if false, liquidity will be maximized according to what the router can
+///   calculate, not what core can theoretically support
 ///
 /// returns: maximum liquidity for the given amounts
 pub fn max_liquidity_for_amounts(

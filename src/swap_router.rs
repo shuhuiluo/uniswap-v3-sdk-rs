@@ -21,7 +21,8 @@ pub struct SwapOptions {
     pub fee: Option<FeeOptions>,
 }
 
-/// Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
+/// Produces the on-chain method name to call and the hex encoded parameters to pass as arguments
+/// for a given trade.
 ///
 /// ## Arguments
 ///

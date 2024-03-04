@@ -57,9 +57,11 @@ pub struct SafeTransferOptions {
 pub struct CollectOptions {
     /// Indicates the ID of the position to collect for.
     pub token_id: U256,
-    /// Expected value of tokensOwed0, including as-of-yet-unaccounted-for fees/liquidity value to be burned
+    /// Expected value of tokensOwed0, including as-of-yet-unaccounted-for fees/liquidity value to
+    /// be burned
     pub expected_currency_owed0: CurrencyAmount<Currency>,
-    /// Expected value of tokensOwed1, including as-of-yet-unaccounted-for fees/liquidity value to be burned
+    /// Expected value of tokensOwed1, including as-of-yet-unaccounted-for fees/liquidity value to
+    /// be burned
     pub expected_currency_owed1: CurrencyAmount<Currency>,
     /// The account that should receive the tokens.
     pub recipient: Address,
@@ -85,7 +87,8 @@ pub struct RemoveLiquidityOptions {
     pub deadline: U256,
     /// Whether the NFT should be burned if the entire position is being exited, by default false.
     pub burn_token: bool,
-    /// The optional permit of the token ID being exited, in case the exit transaction is being sent by an account that does not own the NFT
+    /// The optional permit of the token ID being exited, in case the exit transaction is being
+    /// sent by an account that does not own the NFT
     pub permit: Option<NFTPermitOptions>,
     /// Parameters to be passed on to collect
     pub collect_options: CollectOptions,

@@ -3,7 +3,8 @@ use anyhow::Result;
 use std::{cell::RefCell, collections::HashSet};
 use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 
-/// Trades comparator, an extension of the input output comparator that also considers other dimensions of the trade in ranking them
+/// Trades comparator, an extension of the input output comparator that also considers other
+/// dimensions of the trade in ranking them
 ///
 /// ## Arguments
 ///
@@ -79,15 +80,17 @@ pub struct Swap<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
     pub output_amount: CurrencyAmount<TOutput>,
 }
 
-/// Represents a trade executed against a set of routes where some percentage of the input is split across each route.
+/// Represents a trade executed against a set of routes where some percentage of the input is split
+/// across each route.
 ///
 /// Each route has its own set of pools. Pools can not be re-used across routes.
 ///
-/// Does not account for slippage, i.e., changes in price environment that can occur between the time the trade is
-/// submitted and when it is executed.
+/// Does not account for slippage, i.e., changes in price environment that can occur between the
+/// time the trade is submitted and when it is executed.
 #[derive(Clone, PartialEq, Debug)]
 pub struct Trade<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
-    /// The swaps of the trade, i.e. which routes and how much is swapped in each that make up the trade.
+    /// The swaps of the trade, i.e. which routes and how much is swapped in each that make up the
+    /// trade.
     pub swaps: Vec<Swap<TInput, TOutput, P>>,
     /// The type of the trade, either exact in or exact out.
     pub trade_type: TradeType,
@@ -251,7 +254,8 @@ where
     ///
     /// ## Arguments
     ///
-    /// * `routes`: The routes to swap through and how much of the amount should be routed through each
+    /// * `routes`: The routes to swap through and how much of the amount should be routed through
+    ///   each
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     pub fn from_routes(
         routes: Vec<(
@@ -295,18 +299,20 @@ where
         Self::new(swaps, trade_type)
     }
 
-    /// Given a list of pools, and a fixed amount in, returns the top `max_num_results` trades that go from an input token
-    /// amount to an output token, making at most `max_hops` hops.
+    /// Given a list of pools, and a fixed amount in, returns the top `max_num_results` trades that
+    /// go from an input token amount to an output token, making at most `max_hops` hops.
     ///
     /// ## Arguments
     ///
     /// * `pools`: The pools to consider in finding the best trade
     /// * `currency_amount_in`: The exact amount of input currency to spend
     /// * `currency_out`: The desired currency out
-    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a returned trade can make,
+    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a
+    ///   returned trade can make,
     /// e.g. 1 hop goes through a single pool
     /// * `current_pools`: Used in recursion; the current list of pools
-    /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in parameter
+    /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in
+    ///   parameter
     /// * `best_trades`: Used in recursion; the current list of best trades
     pub fn best_trade_exact_in(
         pools: Vec<Pool<P>>,
@@ -361,7 +367,8 @@ where
                     .filter(|p| p.address(None, None) != pool.address(None, None))
                     .cloned()
                     .collect();
-                // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
+                // otherwise, consider all the other paths that lead from this token as long as we
+                // have not exceeded maxHops
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
                 Self::best_trade_exact_in(
@@ -381,18 +388,19 @@ where
         Ok(best_trades)
     }
 
-    /// Given a list of pools, and a fixed amount out, returns the top `max_num_results` trades that go from an input token
-    /// to an output token amount, making at most `max_hops` hops.
+    /// Given a list of pools, and a fixed amount out, returns the top `max_num_results` trades that
+    /// go from an input token to an output token amount, making at most `max_hops` hops.
     ///
-    /// Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
-    /// the amount in among multiple routes.
+    /// Note this does not consider aggregation, as routes are linear. It's possible a better route
+    /// exists by splitting the amount in among multiple routes.
     ///
     /// ## Arguments
     ///
     /// * `pools`: The pools to consider in finding the best trade
     /// * `currency_in`: The currency to spend
     /// * `currency_amount_out`: The desired currency amount out
-    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a returned trade can make,
+    /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a
+    ///   returned trade can make,
     /// e.g. 1 hop goes through a single pool
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
@@ -451,7 +459,8 @@ where
                     .filter(|p| p.address(None, None) != pool.address(None, None))
                     .cloned()
                     .collect();
-                // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
+                // otherwise, consider all the other paths that arrive at this token as long as we
+                // have not exceeded maxHops
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
                 Self::best_trade_exact_out(
@@ -565,11 +574,13 @@ where
         Ok(self._price_impact.clone().unwrap())
     }
 
-    /// Get the minimum amount that must be received from this trade for the given slippage tolerance
+    /// Get the minimum amount that must be received from this trade for the given slippage
+    /// tolerance
     ///
     /// ## Arguments
     ///
-    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of this trade
+    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
+    ///   this trade
     /// * `amount_out`: The amount to receive
     pub fn minimum_amount_out(
         &mut self,
@@ -598,7 +609,8 @@ where
     ///
     /// ## Arguments
     ///
-    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of this trade
+    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
+    ///   this trade
     /// * `amount_in`: The amount to spend
     pub fn maximum_amount_in(
         &mut self,

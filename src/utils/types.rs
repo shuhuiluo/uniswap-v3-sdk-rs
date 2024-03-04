@@ -1,4 +1,5 @@
 use alloy_primitives::{Address, I256, U256};
+use bigdecimal::BigDecimal;
 use ethers_core::types;
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::{Signed, ToBytes};
@@ -82,4 +83,8 @@ pub fn big_int_to_i256(x: BigInt) -> I256 {
 
 pub const fn u128_to_uint256(x: u128) -> U256 {
     U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
+}
+
+pub fn u256_to_big_decimal(x: U256) -> BigDecimal {
+    BigDecimal::from(u256_to_big_int(x))
 }
