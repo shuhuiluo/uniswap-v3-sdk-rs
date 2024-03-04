@@ -151,7 +151,12 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
 /// let token0 = token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
 /// let token1 = token!(1, "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
 /// let fee = FeeAmount::MEDIUM;
-/// let min_price = Price::new(token0.clone(), token1.clone(), MIN_PRICE.denominator(), 1);
+/// let min_price = Price::new(
+///     token0.clone(),
+///     token1.clone(),
+///     MIN_PRICE.denominator(),
+///     MIN_PRICE.numerator(),
+/// );
 /// let max_price = Price::new(
 ///     token0.clone(),
 ///     token1.clone(),
@@ -260,16 +265,17 @@ pub fn token0_ratio_to_price(
     tick_lower: i32,
     tick_upper: i32,
 ) -> Result<BigDecimal> {
+    let one = BigDecimal::from(1);
     if tick_upper <= tick_lower {
         bail!("Invalid tick range: tickUpper must be greater than tickLower");
     }
-    if token0_ratio < BigDecimal::zero() || token0_ratio > BigDecimal::from(1) {
+    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
         bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
     }
     if token0_ratio.is_zero() {
         return tick_to_big_price(tick_upper);
     }
-    if token0_ratio == BigDecimal::from(1) {
+    if token0_ratio == one {
         return tick_to_big_price(tick_lower);
     }
     let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
@@ -277,8 +283,8 @@ pub fn token0_ratio_to_price(
     let l = u256_to_big_decimal(sqrt_ratio_lower_x96) / u256_to_big_decimal(Q96);
     let u = u256_to_big_decimal(sqrt_ratio_upper_x96) / u256_to_big_decimal(Q96);
     let r = token0_ratio;
-    let a = &r - BigDecimal::from(1);
-    let b = &u * (BigDecimal::from(1) - BigDecimal::from(2) * &r);
+    let a = &r - one.clone();
+    let b = &u * (one - BigDecimal::from(2) * &r);
     let c = r * l * u;
     let numerator = &b + (b.square() - BigDecimal::from(4) * &a * c).sqrt().unwrap();
     let denominator = BigDecimal::from(-2) * a;
@@ -332,6 +338,70 @@ pub fn token0_price_to_ratio(
         let value0 = u256_to_big_decimal(amount0) * price;
         Ok(&value0 / (&value0 + u256_to_big_decimal(amount1)))
     }
+}
+
+/// Returns the tick range for a position ratio and range width.
+///
+/// ## Arguments
+///
+/// * `width`: The width of the range.
+/// * `tick_current`: The current tick of the pool.
+/// * `token0_ratio`: The proportion of the position value that is held in token0, as a
+///   [`BigDecimal`] number between 0 and 1, inclusive.
+///
+/// ## Returns
+///
+/// The tick range as a tuple of `(tick_lower, tick_upper)`.
+///
+/// ## Examples
+///
+/// ```
+/// use bigdecimal::BigDecimal;
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let tick_current = 200000;
+/// let price = tick_to_big_price(tick_current).unwrap();
+/// let token0_ratio = "0.3".parse::<BigDecimal>().unwrap();
+/// let width = 1000;
+/// let (tick_lower, tick_upper) =
+///     tick_range_from_width_and_ratio(width, tick_current, token0_ratio.clone()).unwrap();
+/// assert_eq!(tick_upper - tick_lower, width);
+/// let price_lower_sqrt = tick_to_big_price(tick_lower).unwrap().sqrt().unwrap();
+/// let price_upper_sqrt = tick_to_big_price(tick_upper).unwrap().sqrt().unwrap();
+/// let one = BigDecimal::from(1);
+/// let amount0 = one.clone() / price.sqrt().unwrap() - one / price_upper_sqrt;
+/// let amount1 = price.sqrt().unwrap() - price_lower_sqrt;
+/// let value0 = amount0 * &price;
+/// let ratio = &value0 / (&value0 + amount1);
+/// assert!((ratio - token0_ratio).abs() < "0.001".parse::<BigDecimal>().unwrap());
+/// ```
+pub fn tick_range_from_width_and_ratio(
+    width: i32,
+    tick_current: i32,
+    token0_ratio: BigDecimal,
+) -> Result<(i32, i32)> {
+    let one = BigDecimal::from(1);
+    let two = BigDecimal::from(2);
+    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
+        bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
+    }
+    let (tick_lower, tick_upper) = if token0_ratio.is_zero() {
+        (tick_current - width, tick_current)
+    } else if token0_ratio == one {
+        (tick_current, tick_current + width)
+    } else {
+        let price = tick_to_big_price(tick_current)?;
+        let a = token0_ratio;
+        let b = (one.clone() - &a * two.clone()) * price.sqrt().unwrap();
+        let c = &price * (&a - one) / tick_to_big_price(width)?.sqrt().unwrap();
+        let price_lower_sqrt =
+            ((&b * &b - &a * &c * BigDecimal::from(4)).sqrt().unwrap() - &b) / (&a * two);
+        let sqrt_ratio_lower_x96 = price_lower_sqrt * u256_to_big_decimal(Q96);
+        let tick_lower =
+            get_tick_at_sqrt_ratio(big_int_to_u256(sqrt_ratio_lower_x96.to_bigint().unwrap()))?;
+        (tick_lower, tick_lower + width)
+    };
+    Ok((tick_lower, tick_upper))
 }
 
 #[cfg(test)]
