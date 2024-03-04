@@ -1,6 +1,7 @@
 //! ## Position Extension
 //! This module provides functions to create a [`Position`] struct from the token id, get the state
-//! and pool for all positions of the specified owner by deploying an ephemeral contract via `eth_call`, etc.
+//! and pool for all positions of the specified owner by deploying an ephemeral contract via
+//! `eth_call`, etc.
 
 use crate::prelude::*;
 use alloy_primitives::{Address, ChainId, U256};
@@ -72,7 +73,8 @@ pub async fn get_position<M: Middleware>(
 }
 
 impl Position<NoTickDataProvider> {
-    /// Get a [`Position`] struct from the token id in a single call by deploying an ephemeral contract via `eth_call`
+    /// Get a [`Position`] struct from the token id in a single call by deploying an ephemeral
+    /// contract via `eth_call`
     ///
     /// ## Arguments
     ///
@@ -121,12 +123,13 @@ impl Position<NoTickDataProvider> {
     }
 }
 
-/// Get the state and pool for all positions of the specified owner by deploying an ephemeral contract via `eth_call`.
+/// Get the state and pool for all positions of the specified owner by deploying an ephemeral
+/// contract via `eth_call`.
 ///
 /// ## Note
 ///
-/// Each position consumes about 200k gas, so this method may fail if the number of positions exceeds 1500 assuming the
-/// provider gas limit is 300m.
+/// Each position consumes about 200k gas, so this method may fail if the number of positions
+/// exceeds 1500 assuming the provider gas limit is 300m.
 ///
 /// ## Arguments
 ///
@@ -572,7 +575,8 @@ mod tests {
             .unwrap()
             .quotient()
             .is_zero());
-        // if rebalancing at the upper tick, `token0` are bought back at a higher price, hence `amount0` will be lower
+        // if rebalancing at the upper tick, `token0` are bought back at a higher price, hence
+        // `amount0` will be lower
         assert!((position_rebalanced_at_current_price.amount0().unwrap()
             - position_rebalanced_at_tick_upper.amount0().unwrap())
         .quotient()

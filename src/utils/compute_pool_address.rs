@@ -10,7 +10,8 @@ use alloy_sol_types::SolValue;
 /// * `token_a`: The first token of the pair, irrespective of sort order
 /// * `token_b`: The second token of the pair, irrespective of sort order
 /// * `fee`: The fee tier of the pool
-/// * `init_code_hash_manual_override`: Override the init code hash used to compute the pool address if necessary
+/// * `init_code_hash_manual_override`: Override the init code hash used to compute the pool address
+///   if necessary
 ///
 /// ## Returns
 ///

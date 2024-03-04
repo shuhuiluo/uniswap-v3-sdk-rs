@@ -9,15 +9,18 @@ use uniswap_v3_math::error::UniswapV3MathError;
 
 pub use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
 
-/// The minimum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to `get_sqrt_ratio_at_tick(MIN_TICK)`
+/// The minimum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to
+/// `get_sqrt_ratio_at_tick(MIN_TICK)`
 pub const MIN_SQRT_RATIO: U256 = uint!(4295128739_U256);
-/// The maximum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to `get_sqrt_ratio_at_tick(MAX_TICK)`
+/// The maximum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to
+/// `get_sqrt_ratio_at_tick(MAX_TICK)`
 pub const MAX_SQRT_RATIO: U256 = uint!(1461446703485210103287273052203988822378723970342_U256);
 /// A threshold used for optimized bounds check, equals `MAX_SQRT_RATIO - MIN_SQRT_RATIO - 1`
 const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U256 =
     uint!(1461446703485210103287273052203988822374428841602_U256);
 
-/// Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as sqrt(1.0001)^tick
+/// Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as
+/// sqrt(1.0001)^tick
 ///
 /// ## Arguments
 ///
@@ -107,7 +110,8 @@ pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
 }
 
 /// Returns the tick corresponding to a given sqrt ratio,
-/// s.t. get_sqrt_ratio_at_tick(tick) <= sqrt_ratio_x96 and get_sqrt_ratio_at_tick(tick + 1) > sqrt_ratio_x96
+/// s.t. get_sqrt_ratio_at_tick(tick) <= sqrt_ratio_x96 and get_sqrt_ratio_at_tick(tick + 1) >
+/// sqrt_ratio_x96
 ///
 /// ## Arguments
 ///
@@ -115,9 +119,10 @@ pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
 ///
 /// returns: Result<i32, UniswapV3MathError>
 pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3MathError> {
-    // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO) revert("R");
-    // if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true
-    // if sqrt_ratio_x96 >= MAX_SQRT_RATIO, sqrt_ratio_x96 - MIN_SQRT_RATIO > MAX_SQRT_RATIO - MAX_SQRT_RATIO - 1
+    // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO)
+    // revert("R"); if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true
+    // if sqrt_ratio_x96 >= MAX_SQRT_RATIO, sqrt_ratio_x96 - MIN_SQRT_RATIO > MAX_SQRT_RATIO -
+    // MAX_SQRT_RATIO - 1
     if (sqrt_ratio_x96 - MIN_SQRT_RATIO) > MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE {
         return Err(UniswapV3MathError::R);
     }

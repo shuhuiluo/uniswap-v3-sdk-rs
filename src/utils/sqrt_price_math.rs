@@ -18,11 +18,12 @@ fn to_uint160(x: U256) -> Result<U256, UniswapV3MathError> {
 
 /// Gets the next sqrt price given a delta of token0
 ///
-/// Always rounds up, because in the exact output case (increasing price) we need to move the price at least
-/// far enough to get the desired output amount, and in the exact input case (decreasing price) we need to move the
-/// price less in order to not send too much output.
+/// Always rounds up, because in the exact output case (increasing price) we need to move the price
+/// at least far enough to get the desired output amount, and in the exact input case (decreasing
+/// price) we need to move the price less in order to not send too much output.
 /// The most precise formula for this is liquidity * sqrtPX96 / (liquidity +- amount * sqrtPX96),
-/// if this is impossible because of overflow, we calculate liquidity / (liquidity / sqrtPX96 +- amount).
+/// if this is impossible because of overflow, we calculate liquidity / (liquidity / sqrtPX96 +-
+/// amount).
 ///
 /// ## Arguments
 ///
@@ -72,9 +73,9 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
 
 /// Gets the next sqrt price given a delta of token1
 ///
-/// Always rounds down, because in the exact output case (decreasing price) we need to move the price at least
-/// far enough to get the desired output amount, and in the exact input case (increasing price) we need to move the
-/// price less in order to not send too much output.
+/// Always rounds down, because in the exact output case (decreasing price) we need to move the
+/// price at least far enough to get the desired output amount, and in the exact input case
+/// (increasing price) we need to move the price less in order to not send too much output.
 /// The formula we compute is within <1 wei of the lossless version: sqrtPX96 +- amount / liquidity
 ///
 /// ## Arguments
@@ -194,7 +195,8 @@ pub fn get_next_sqrt_price_from_output(
 /// * `liquidity`: The amount of usable liquidity
 /// * `round_up`: Whether to round the amount up or down
 ///
-/// returns: Amount of token0 required to cover a position of size liquidity between the two passed prices
+/// returns: Amount of token0 required to cover a position of size liquidity between the two passed
+/// prices
 pub fn get_amount_0_delta(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,
@@ -230,7 +232,8 @@ pub fn get_amount_0_delta(
 /// * `liquidity`: The amount of usable liquidity
 /// * `round_up`: Whether to round the amount up, or down
 ///
-/// returns: Amount of token1 required to cover a position of size liquidity between the two passed prices
+/// returns: Amount of token1 required to cover a position of size liquidity between the two passed
+/// prices
 pub fn get_amount_1_delta(
     mut sqrt_ratio_a_x96: U256,
     mut sqrt_ratio_b_x96: U256,

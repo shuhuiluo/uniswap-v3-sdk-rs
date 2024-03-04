@@ -6,7 +6,8 @@ use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 /// Returns a price object corresponding to the input tick and the base/quote token.
-/// Inputs must be tokens because the address order is used to interpret the price represented by the tick.
+/// Inputs must be tokens because the address order is used to interpret the price represented by
+/// the tick.
 ///
 /// ## Arguments
 ///
@@ -69,7 +70,7 @@ mod tests {
     static TOKEN0: Lazy<Token> = Lazy::new(|| {
         token!(
             1,
-            "0x0000000000000000000000000000000000000000",
+            "0000000000000000000000000000000000000000",
             18,
             "T0",
             "token0"
@@ -78,7 +79,7 @@ mod tests {
     static TOKEN1: Lazy<Token> = Lazy::new(|| {
         token!(
             1,
-            "0x1111111111111111111111111111111111111111",
+            "1111111111111111111111111111111111111111",
             18,
             "T1",
             "token1"
@@ -87,7 +88,7 @@ mod tests {
     static TOKEN2_6DECIMALS: Lazy<Token> = Lazy::new(|| {
         token!(
             1,
-            "0x2222222222222222222222222222222222222222",
+            "2222222222222222222222222222222222222222",
             6,
             "T2",
             "token2"

@@ -2,7 +2,8 @@ use super::{ONE, Q96, THREE, TWO};
 use alloy_primitives::U256;
 use uniswap_v3_math::error::UniswapV3MathError;
 
-/// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
+/// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or
+/// denominator == 0
 ///
 /// ## Arguments
 ///
@@ -94,7 +95,8 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV
     Ok(prod_0 * inv)
 }
 
-/// Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
+/// Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or
+/// denominator == 0
 ///
 /// ## Arguments
 ///

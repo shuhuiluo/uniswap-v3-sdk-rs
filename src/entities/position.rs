@@ -90,7 +90,8 @@ impl<P> Position<P> {
         )
     }
 
-    /// Returns the amount of token0 that this position's liquidity could be burned for at the current pool price
+    /// Returns the amount of token0 that this position's liquidity could be burned for at the
+    /// current pool price
     pub fn amount0(&mut self) -> Result<CurrencyAmount<Token>> {
         if self._token0_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
@@ -123,7 +124,8 @@ impl<P> Position<P> {
         Ok(self._token0_amount.clone().unwrap())
     }
 
-    /// Returns the amount of token1 that this position's liquidity could be burned for at the current pool price
+    /// Returns the amount of token1 that this position's liquidity could be burned for at the
+    /// current pool price
     pub fn amount1(&mut self) -> Result<CurrencyAmount<Token>> {
         if self._token1_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
@@ -156,11 +158,13 @@ impl<P> Position<P> {
         Ok(self._token1_amount.clone().unwrap())
     }
 
-    /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance percentage
+    /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance
+    /// percentage
     ///
     /// ## Arguments
     ///
-    /// * `slippage_tolerance`: The amount by which the price can 'slip' before the transaction will revert
+    /// * `slippage_tolerance`: The amount by which the price can 'slip' before the transaction will
+    ///   revert
     ///
     /// ## Returns
     ///
@@ -187,7 +191,8 @@ impl<P> Position<P> {
         (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     }
 
-    /// Returns the minimum amounts that must be sent in order to safely mint the amount of liquidity held by the position
+    /// Returns the minimum amounts that must be sent in order to safely mint the amount of
+    /// liquidity held by the position
     ///
     /// ## Arguments
     ///
@@ -220,7 +225,8 @@ impl<P> Position<P> {
             0, // liquidity doesn't matter
         )?;
 
-        // Because the router is imprecise, we need to calculate the position that will be created (assuming no slippage)
+        // Because the router is imprecise, we need to calculate the position that will be created
+        // (assuming no slippage)
         let MintAmounts { amount0, amount1 } = self.mint_amounts()?;
         let position_that_will_be_created = Position::from_amounts(
             Pool::new(
@@ -260,8 +266,8 @@ impl<P> Position<P> {
         Ok(MintAmounts { amount0, amount1 })
     }
 
-    /// Returns the minimum amounts that should be requested in order to safely burn the amount of liquidity held by the
-    /// position with the given slippage tolerance
+    /// Returns the minimum amounts that should be requested in order to safely burn the amount of
+    /// liquidity held by the position with the given slippage tolerance
     ///
     /// ## Arguments
     ///
@@ -304,8 +310,8 @@ impl<P> Position<P> {
         Ok((big_int_to_u256(amount0), big_int_to_u256(amount1)))
     }
 
-    /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held by the position at
-    /// the current price for the pool
+    /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held
+    /// by the position at the current price for the pool
     pub fn mint_amounts(&mut self) -> Result<MintAmounts> {
         if self._mint_amounts.is_none() {
             if self.pool.tick_current < self.tick_lower {
@@ -358,8 +364,8 @@ impl<P> Position<P> {
     /// * `tick_upper`: The upper tick of the position
     /// * `amount0`: token0 amount
     /// * `amount1`: token1 amount
-    /// * `use_full_precision`: If false, liquidity will be maximized according to what the router can calculate,
-    /// not what core can theoretically support
+    /// * `use_full_precision`: If false, liquidity will be maximized according to what the router
+    ///   can calculate, not what core can theoretically support
     ///
     /// ## Returns
     ///
@@ -390,8 +396,8 @@ impl<P> Position<P> {
         ))
     }
 
-    /// Computes a position with the maximum amount of liquidity received for a given amount of token0,
-    /// assuming an unlimited amount of token1
+    /// Computes a position with the maximum amount of liquidity received for a given amount of
+    /// token0, assuming an unlimited amount of token1
     ///
     /// ## Arguments
     ///
@@ -399,8 +405,8 @@ impl<P> Position<P> {
     /// * `tick_lower`: The lower tick
     /// * `tick_upper`: The upper tick
     /// * `amount0`: The desired amount of token0
-    /// * `use_full_precision`: If true, liquidity will be maximized according to what the router can calculate,
-    /// not what core can theoretically support
+    /// * `use_full_precision`: If true, liquidity will be maximized according to what the router
+    ///   can calculate, not what core can theoretically support
     pub fn from_amount0(
         pool: Pool<P>,
         tick_lower: i32,
@@ -418,8 +424,8 @@ impl<P> Position<P> {
         )
     }
 
-    /// Computes a position with the maximum amount of liquidity received for a given amount of token1,
-    /// assuming an unlimited amount of token0
+    /// Computes a position with the maximum amount of liquidity received for a given amount of
+    /// token1, assuming an unlimited amount of token0
     ///
     /// ## Arguments
     ///

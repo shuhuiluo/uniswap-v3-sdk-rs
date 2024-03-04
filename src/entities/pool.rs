@@ -68,7 +68,8 @@ impl Pool<NoTickDataProvider> {
     ///
     /// * `token_a`: One of the tokens in the pool
     /// * `token_b`: The other token in the pool
-    /// * `fee`: The fee in hundredths of a bips of the input amount of every swap that is collected by the pool
+    /// * `fee`: The fee in hundredths of a bips of the input amount of every swap that is collected
+    ///   by the pool
     /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
@@ -142,7 +143,8 @@ impl<P> Pool<P> {
         self.token0.equals(token) || self.token1.equals(token)
     }
 
-    /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over token0
+    /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over
+    /// token0
     pub fn token0_price(&self) -> Price<Token, Token> {
         let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         Price::new(
@@ -153,7 +155,8 @@ impl<P> Pool<P> {
         )
     }
 
-    /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over token1
+    /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over
+    /// token1
     pub fn token1_price(&self) -> Price<Token, Token> {
         let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
         Price::new(
@@ -192,7 +195,8 @@ where
     ///
     /// * `token_a`: One of the tokens in the pool
     /// * `token_b`: The other token in the pool
-    /// * `fee`: The fee in hundredths of a bips of the input amount of every swap that is collected by the pool
+    /// * `fee`: The fee in hundredths of a bips of the input amount of every swap that is collected
+    ///   by the pool
     /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
@@ -221,7 +225,8 @@ where
         })
     }
 
-    /// Given an input amount of a token, return the computed output amount, and a pool with state updated after the trade
+    /// Given an input amount of a token, return the computed output amount, and a pool with state
+    /// updated after the trade
     ///
     /// ## Arguments
     ///
@@ -261,13 +266,15 @@ where
         ))
     }
 
-    /// Given a desired output amount of a token, return the computed input amount and a pool with state updated after the trade
+    /// Given a desired output amount of a token, return the computed input amount and a pool with
+    /// state updated after the trade
     ///
     /// ## Arguments
     ///
     /// * `output_amount`: the output amount for which to quote the input amount
-    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this value
-    /// after the swap. If one for zero, the price cannot be greater than this value after the swap
+    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit. If zero for one, the price cannot be
+    ///   less than this value after the swap. If one for zero, the price cannot be greater than
+    ///   this value after the swap
     ///
     /// returns: The input amount and the pool with updated state
     pub fn get_input_amount(
@@ -350,8 +357,9 @@ where
             };
 
             step.sqrt_price_start_x96 = state.sqrt_price_x96;
-            // because each iteration of the while loop rounds, we can't optimize this code (relative to the smart contract)
-            // by simply traversing to the next available tick, we instead need to exactly replicate
+            // because each iteration of the while loop rounds, we can't optimize this code
+            // (relative to the smart contract) by simply traversing to the next available tick, we
+            // instead need to exactly replicate
             (step.tick_next, step.initialized) = self
                 .tick_data_provider
                 .next_initialized_tick_within_one_word(
@@ -414,7 +422,8 @@ where
                 }
                 state.tick = step.tick_next - zero_for_one as i32;
             } else {
-                // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
+                // recompute unless we're on a lower tick boundary (i.e. already transitioned
+                // ticks), and haven't moved
                 state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96)?;
             }
         }

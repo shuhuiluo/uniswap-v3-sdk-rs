@@ -24,7 +24,8 @@ pub struct ClaimOptions {
 pub struct WithdrawOptions {
     /// Set when withdrawing. The position will be sent to `owner` on withdraw.
     pub owner: Address,
-    /// Set when withdrawing. `data` is passed to `safeTransferFrom` when transferring the position from contract back to owner.
+    /// Set when withdrawing. `data` is passed to `safeTransferFrom` when transferring the position
+    /// from contract back to owner.
     pub data: Option<Vec<u8>>,
 }
 
@@ -81,8 +82,9 @@ fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [V
 
 /// Collect rewards from multiple programs at once.
 ///
-/// Note:  A `tokenId` can be staked in many programs but to claim rewards and continue the program you must unstake, claim, and then restake.
-/// You can only specify one amount and one recipient across the various programs if you are collecting from multiple programs at once.
+/// Note:  A `tokenId` can be staked in many programs but to claim rewards and continue the program
+/// you must unstake, claim, and then restake. You can only specify one amount and one recipient
+/// across the various programs if you are collecting from multiple programs at once.
 ///
 /// ## Arguments
 ///
@@ -116,8 +118,10 @@ pub fn collect_rewards<P>(
 ///
 /// ## Arguments
 ///
-/// * `incentive_keys`: A list of incentiveKeys to unstake from. Should include all incentiveKeys (unique staking programs) that `options.tokenId` is staked in.
-/// * `withdraw_options`: Options for producing claim calldata and withdraw calldata. Can't withdraw without unstaking all programs for `tokenId`.
+/// * `incentive_keys`: A list of incentiveKeys to unstake from. Should include all incentiveKeys
+///   (unique staking programs) that `options.tokenId` is staked in.
+/// * `withdraw_options`: Options for producing claim calldata and withdraw calldata. Can't withdraw
+///   without unstaking all programs for `tokenId`.
 pub fn withdraw_token<P>(
     incentive_keys: &[IncentiveKey<P>],
     withdraw_options: FullWithdrawOptions,
