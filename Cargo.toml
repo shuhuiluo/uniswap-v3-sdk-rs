@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "0.27.0"
+version = "0.28.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -14,8 +14,8 @@ exclude = [".github", ".gitignore", "rustfmt.toml"]
 all-features = true
 
 [dependencies]
-alloy-primitives = "0.6"
-alloy-sol-types = "0.6"
+alloy-primitives = "0.7"
+alloy-sol-types = "0.7"
 anyhow = "1.0"
 aperture-lens = { version = "0.4", optional = true }
 base64 = { version = "0.22", optional = true }
@@ -30,7 +30,7 @@ regex = { version = "1.10", optional = true }
 ruint = "1.12"
 serde_json = { version = "1.0", optional = true }
 thiserror = "1.0"
-uniswap-sdk-core = "0.20.0"
+uniswap-sdk-core = "0.21.0"
 uniswap_v3_math = "0.4"
 
 [features]

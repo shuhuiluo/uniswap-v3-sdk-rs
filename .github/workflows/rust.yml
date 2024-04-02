@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -30,10 +30,9 @@ jobs:
             ${{ runner.os }}-cargo-registry-
       - name: Install Rust toolchain via rustup
         run: |
-          rustup toolchain install nightly
-          rustup component add rustfmt --toolchain nightly
-          rustup component add clippy --toolchain nightly
           rustup override set nightly
+          rustup component add clippy --toolchain nightly
+          rustup component add rustfmt --toolchain nightly
       - name: Check linting
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Check formatting
@@ -45,11 +44,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry

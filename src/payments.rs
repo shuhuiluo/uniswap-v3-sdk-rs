@@ -1,6 +1,6 @@
 use super::abi::IPeripheryPaymentsWithFee;
 use crate::utils::big_int_to_u256;
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::prelude::{FractionBase, Percent};
 
@@ -20,7 +20,7 @@ pub fn encode_unwrap_weth9(
     amount_minimum: U256,
     recipient: Address,
     fee_options: Option<FeeOptions>,
-) -> Vec<u8> {
+) -> Bytes {
     if let Some(fee_options) = fee_options {
         IPeripheryPaymentsWithFee::unwrapWETH9WithFeeCall {
             amountMinimum: amount_minimum,
@@ -36,6 +36,7 @@ pub fn encode_unwrap_weth9(
         }
         .abi_encode()
     }
+    .into()
 }
 
 pub fn encode_sweep_token(
@@ -43,7 +44,7 @@ pub fn encode_sweep_token(
     amount_minimum: U256,
     recipient: Address,
     fee_options: Option<FeeOptions>,
-) -> Vec<u8> {
+) -> Bytes {
     if let Some(fee_options) = fee_options {
         IPeripheryPaymentsWithFee::sweepTokenWithFeeCall {
             token,
@@ -61,10 +62,13 @@ pub fn encode_sweep_token(
         }
         .abi_encode()
     }
+    .into()
 }
 
-pub fn encode_refund_eth() -> Vec<u8> {
-    IPeripheryPaymentsWithFee::refundETHCall {}.abi_encode()
+pub fn encode_refund_eth() -> Bytes {
+    IPeripheryPaymentsWithFee::refundETHCall {}
+        .abi_encode()
+        .into()
 }
 
 #[cfg(test)]
@@ -85,7 +89,7 @@ mod tests {
     fn test_encode_unwrap_weth9_without_fee_options() {
         let calldata = encode_unwrap_weth9(AMOUNT, RECIPIENT, None);
         assert_eq!(
-            calldata,
+            calldata.to_vec(),
             hex!("49404b7c000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000003")
         );
     }
@@ -94,7 +98,7 @@ mod tests {
     fn test_encode_unwrap_weth9_with_fee_options() {
         let calldata = encode_unwrap_weth9(AMOUNT, RECIPIENT, Some(FEE_OPTIONS.clone()));
         assert_eq!(
-            calldata,
+            calldata.to_vec(),
             hex!("9b2c0a37000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000009")
         );
     }
@@ -103,7 +107,7 @@ mod tests {
     fn test_encode_sweep_token_without_fee_options() {
         let calldata = encode_sweep_token(TOKEN, AMOUNT, RECIPIENT, None);
         assert_eq!(
-            calldata,
+            calldata.to_vec(),
             hex!("df2ab5bb0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000003")
         );
     }
@@ -112,7 +116,7 @@ mod tests {
     fn test_encode_sweep_token_with_fee_options() {
         let calldata = encode_sweep_token(TOKEN, AMOUNT, RECIPIENT, Some(FEE_OPTIONS.clone()));
         assert_eq!(
-            calldata,
+            calldata.to_vec(),
             hex!("e0e189a00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b0000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000009")
         );
     }
@@ -120,6 +124,6 @@ mod tests {
     #[test]
     fn test_encode_refund_eth() {
         let calldata = encode_refund_eth();
-        assert_eq!(calldata, hex!("12210e8a"));
+        assert_eq!(calldata.to_vec(), hex!("12210e8a"));
     }
 }
