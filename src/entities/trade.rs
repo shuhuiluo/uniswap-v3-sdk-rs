@@ -201,7 +201,7 @@ where
                 );
                 for i in 0..length - 1 {
                     let pool = &route.pools[i];
-                    let (output_amount, _) = pool.get_output_amount(token_amount.clone(), None)?;
+                    let (output_amount, _) = pool.get_output_amount(&token_amount, None)?;
                     token_amount = output_amount;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
@@ -222,7 +222,7 @@ where
                 );
                 for i in (1..length).rev() {
                     let pool = &route.pools[i - 1];
-                    let (input_amount, _) = pool.get_input_amount(token_amount.clone(), None)?;
+                    let (input_amount, _) = pool.get_input_amount(&token_amount, None)?;
                     token_amount = input_amount;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
@@ -337,7 +337,7 @@ where
             {
                 continue;
             }
-            let (amount_out, _) = pool.get_output_amount(amount_in.clone(), None)?;
+            let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
             // we have arrived at the output token, so this is the final trade of one of the paths
             if !amount_out.currency.is_native() && amount_out.currency.equals(&token_out) {
                 let mut next_pools = current_pools.clone();
@@ -423,7 +423,7 @@ where
             {
                 continue;
             }
-            let (amount_in, _) = pool.get_input_amount(amount_out.clone(), None)?;
+            let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;
             // we have arrived at the input token, so this is the first trade of one of the paths
             if amount_in.currency.equals(&token_in) {
                 let mut next_pools = vec![pool.clone()];
