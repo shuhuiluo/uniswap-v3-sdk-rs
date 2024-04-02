@@ -190,8 +190,7 @@ where
         trade_type: TradeType,
     ) -> Result<Self> {
         let length = route.token_path.len();
-        let mut amounts: Vec<CurrencyAmount<Token>> =
-            vec![CurrencyAmount::from_raw_amount(route.input.wrapped(), 0)?; length];
+        let mut token_amount: CurrencyAmount<Token> = amount.wrapped()?;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
         match trade_type {
@@ -200,11 +199,10 @@ where
                     amount.currency.wrapped().equals(&route.input.wrapped()),
                     "INPUT"
                 );
-                amounts[0] = amount.wrapped()?;
                 for i in 0..length - 1 {
                     let pool = &route.pools[i];
-                    let (output_amount, _) = pool.get_output_amount(amounts[i].clone(), None)?;
-                    amounts[i + 1] = output_amount;
+                    let (output_amount, _) = pool.get_output_amount(token_amount.clone(), None)?;
+                    token_amount = output_amount;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
@@ -213,8 +211,8 @@ where
                 )?;
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
-                    amounts[length - 1].numerator(),
-                    amounts[length - 1].denominator(),
+                    token_amount.numerator(),
+                    token_amount.denominator(),
                 )?;
             }
             TradeType::ExactOutput => {
@@ -222,16 +220,15 @@ where
                     amount.currency.wrapped().equals(&route.output.wrapped()),
                     "OUTPUT"
                 );
-                amounts[length - 1] = amount.wrapped()?;
-                for i in (1..=length - 1).rev() {
+                for i in (1..length).rev() {
                     let pool = &route.pools[i - 1];
-                    let (input_amount, _) = pool.get_input_amount(amounts[i].clone(), None)?;
-                    amounts[i - 1] = input_amount;
+                    let (input_amount, _) = pool.get_input_amount(token_amount.clone(), None)?;
+                    token_amount = input_amount;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
-                    amounts[0].numerator(),
-                    amounts[0].denominator(),
+                    token_amount.numerator(),
+                    token_amount.denominator(),
                 )?;
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
@@ -308,8 +305,7 @@ where
     /// * `currency_amount_in`: The exact amount of input currency to spend
     /// * `currency_out`: The desired currency out
     /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a
-    ///   returned trade can make,
-    /// e.g. 1 hop goes through a single pool
+    ///   returned trade can make, e.g. 1 hop goes through a single pool
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in
     ///   parameter
@@ -395,8 +391,7 @@ where
     /// * `currency_in`: The currency to spend
     /// * `currency_amount_out`: The desired currency amount out
     /// * `best_trade_options`: Maximum number of results to return and maximum number of hops a
-    ///   returned trade can make,
-    /// e.g. 1 hop goes through a single pool
+    ///   returned trade can make, e.g. 1 hop goes through a single pool
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
     /// * `best_trades`: Used in recursion; the current list of best trades
