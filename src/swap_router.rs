@@ -56,7 +56,9 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
         );
     }
 
-    let mut calldatas: Vec<Bytes> = vec![];
+    let num_swaps = trades.iter().map(|trade| trade.swaps.len()).sum::<usize>();
+
+    let mut calldatas: Vec<Bytes> = Vec::with_capacity(num_swaps + 3);
 
     let mut total_amount_out = BigInt::zero();
     for trade in trades.iter_mut() {

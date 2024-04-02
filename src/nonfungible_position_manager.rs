@@ -118,7 +118,7 @@ pub fn add_call_parameters<P>(
 ) -> Result<MethodParameters> {
     assert!(position.liquidity > 0, "ZERO_LIQUIDITY");
 
-    let mut calldatas: Vec<Bytes> = vec![];
+    let mut calldatas: Vec<Bytes> = Vec::with_capacity(5);
 
     // get amounts
     let MintAmounts {
@@ -219,7 +219,7 @@ pub fn add_call_parameters<P>(
 }
 
 fn encode_collect(options: CollectOptions) -> Vec<Bytes> {
-    let mut calldatas: Vec<Bytes> = vec![];
+    let mut calldatas: Vec<Bytes> = Vec::with_capacity(3);
 
     let involves_eth = options.expected_currency_owed0.currency.is_native()
         || options.expected_currency_owed1.currency.is_native();
@@ -286,7 +286,7 @@ pub fn remove_call_parameters<P>(
     position: &Position<P>,
     options: RemoveLiquidityOptions,
 ) -> Result<MethodParameters> {
-    let mut calldatas: Vec<Bytes> = vec![];
+    let mut calldatas: Vec<Bytes> = Vec::with_capacity(6);
 
     let deadline = options.deadline;
     let token_id = options.token_id;
