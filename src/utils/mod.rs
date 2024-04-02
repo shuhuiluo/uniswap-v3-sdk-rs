@@ -32,7 +32,7 @@ pub use tick_list::TickList;
 pub use tick_math::*;
 pub use types::*;
 
-use alloy_primitives::{uint, U256};
+use alloy_primitives::{uint, Bytes, U256};
 
 pub(crate) const ONE: U256 = uint!(1_U256);
 pub(crate) const TWO: U256 = uint!(2_U256);
@@ -45,7 +45,7 @@ pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MethodParameters {
     /// The encoded calldata to perform the given operation
-    pub calldata: Vec<u8>,
+    pub calldata: Bytes,
     /// The amount of ether (wei) to send.
     pub value: U256,
 }

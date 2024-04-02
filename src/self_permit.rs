@@ -1,5 +1,5 @@
 use super::abi::ISelfPermit;
-use alloy_primitives::{Signature, U256};
+use alloy_primitives::{Bytes, Signature, U256};
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::prelude::{CurrencyTrait, Token};
 
@@ -43,7 +43,7 @@ impl AllowedPermitArguments {
     }
 }
 
-pub fn encode_permit(token: Token, options: PermitOptions) -> Vec<u8> {
+pub fn encode_permit(token: Token, options: PermitOptions) -> Bytes {
     match options {
         PermitOptions::Standard(args) => ISelfPermit::selfPermitCall {
             token: token.address(),
@@ -64,6 +64,7 @@ pub fn encode_permit(token: Token, options: PermitOptions) -> Vec<u8> {
         }
         .abi_encode(),
     }
+    .into()
 }
 
 #[cfg(test)]
