@@ -368,11 +368,7 @@ where
                     self.tick_spacing(),
                 )?;
 
-            if step.tick_next < MIN_TICK {
-                step.tick_next = MIN_TICK;
-            } else if step.tick_next > MAX_TICK {
-                step.tick_next = MAX_TICK;
-            }
+            step.tick_next = step.tick_next.clamp(MIN_TICK, MAX_TICK);
 
             step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next)?;
             (
