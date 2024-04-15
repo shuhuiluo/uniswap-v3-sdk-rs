@@ -124,7 +124,6 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
                             } else {
                                 recipient
                             },
-                            deadline,
                             amountIn: amount_in,
                             amountOutMinimum: amount_out,
                             sqrtPriceLimitX96: sqrt_price_limit_x96.unwrap_or_default(),
@@ -141,7 +140,6 @@ pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Cl
                             } else {
                                 recipient
                             },
-                            deadline,
                             amountOut: amount_out,
                             amountInMaximum: amount_in,
                             sqrtPriceLimitX96: sqrt_price_limit_x96.unwrap_or_default(),
