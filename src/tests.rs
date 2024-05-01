@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::prelude::*;
 use alloy_primitives::U256;
 use once_cell::sync::Lazy;

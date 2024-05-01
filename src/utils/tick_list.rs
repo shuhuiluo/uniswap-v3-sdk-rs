@@ -1,7 +1,7 @@
 use crate::entities::TickTrait;
 use num_integer::Integer;
 
-/// Utility methods for interacting with sorted lists of self
+/// Utility methods for interacting with sorted lists of ticks
 pub trait TickList {
     type Tick;
 
