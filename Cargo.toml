@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "0.29.1"
+version = "0.29.2"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -39,7 +39,7 @@ extensions = ["aperture-lens", "base64", "ethers", "regex", "serde_json"]
 [dev-dependencies]
 criterion = "0.5.1"
 ethers = "2.0"
-tokio = { version = "1.36", features = ["full"] }
+tokio = { version = "1.37", features = ["full"] }
 
 [[bench]]
 name = "bit_math"
