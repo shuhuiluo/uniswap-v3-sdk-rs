@@ -128,7 +128,7 @@ impl<T: TickTrait> TickList for [T] {
             (next_initialized_tick, next_initialized_tick == index)
         } else {
             let word_pos = (compressed + 1) >> 8;
-            let maximum = (((word_pos + 1) << 8) - 1) * tick_spacing;
+            let maximum = ((word_pos << 8) + 255) * tick_spacing;
             if Self::is_at_or_above_largest(self, tick) {
                 return (maximum, false);
             }

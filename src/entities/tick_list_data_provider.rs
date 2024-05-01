@@ -5,7 +5,7 @@ use crate::{
 use anyhow::Result;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TickListDataProvider(Vec<Tick>);
 
 impl TickListDataProvider {

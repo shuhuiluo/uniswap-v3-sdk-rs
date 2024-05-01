@@ -64,7 +64,7 @@ pub fn trade_comparator<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BestTradeOptions {
     /// how many results to return
     pub max_num_results: Option<usize>,
