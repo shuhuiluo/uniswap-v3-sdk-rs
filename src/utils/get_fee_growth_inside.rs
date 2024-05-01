@@ -1,17 +1,9 @@
 use alloy_primitives::U256;
 
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct FeeGrowthOutside {
     pub fee_growth_outside0_x128: U256,
     pub fee_growth_outside1_x128: U256,
-}
-
-impl Default for FeeGrowthOutside {
-    fn default() -> Self {
-        Self {
-            fee_growth_outside0_x128: U256::ZERO,
-            fee_growth_outside1_x128: U256::ZERO,
-        }
-    }
 }
 
 pub fn get_fee_growth_inside(
