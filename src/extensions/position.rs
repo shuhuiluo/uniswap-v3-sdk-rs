@@ -375,6 +375,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::make_provider;
     use alloy_primitives::{address, uint};
     use num_traits::Signed;
 
@@ -386,7 +387,7 @@ mod tests {
             1,
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await
@@ -398,7 +399,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_positions_by_owner() {
-        let client = Arc::new(MAINNET.provider());
+        let client = Arc::new(make_provider().await);
         let block_id = BlockId::from(17188000);
         let owner = address!("4bD047CA72fa05F0B89ad08FE5Ba5ccdC07DFFBF");
         let positions = get_all_positions_by_owner(NPM, owner, client.clone(), Some(block_id))
@@ -433,7 +434,7 @@ mod tests {
             1,
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await
@@ -447,7 +448,7 @@ mod tests {
         let svg = get_token_svg(
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await
@@ -464,7 +465,7 @@ mod tests {
             1,
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await
@@ -494,7 +495,7 @@ mod tests {
             1,
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await
@@ -547,7 +548,7 @@ mod tests {
             1,
             NPM,
             uint!(4_U256),
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17188000)),
         )
         .await

@@ -52,20 +52,7 @@ fn compute_swap_step_benchmark(c: &mut Criterion) {
 }
 
 fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
-    use ethers::types::{I256, U256};
-
-    let inputs: Vec<(U256, U256, u128, I256, u32)> = generate_inputs()
-        .into_iter()
-        .map(|i| {
-            (
-                i.0.to_ethers(),
-                i.1.to_ethers(),
-                i.2,
-                I256::from_raw(i.3.into_raw().to_ethers()),
-                i.4,
-            )
-        })
-        .collect();
+    let inputs: Vec<(U256, U256, u128, I256, u32)> = generate_inputs();
     c.bench_function("compute_swap_step_ref", |b| {
         b.iter(|| {
             for (

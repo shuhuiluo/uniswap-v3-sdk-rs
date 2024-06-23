@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
 
 jobs:
   lint:
@@ -59,5 +60,7 @@ jobs:
             ${{ runner.os }}-cargo-registry-
       - name: Build
         run: cargo build --all-features
-      - name: Run tests
-        run: cargo test --all-features
+      - name: Run tests for core library
+        run: cargo test
+      - name: Run tests for extensions
+        run: cargo test --all-features --lib extensions -- --test-threads=1

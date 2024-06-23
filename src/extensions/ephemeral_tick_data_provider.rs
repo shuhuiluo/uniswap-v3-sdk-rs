@@ -88,8 +88,9 @@ impl From<EphemeralTickDataProvider> for TickListDataProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::*;
     use alloy_primitives::address;
-    use ethers::prelude::{Provider, MAINNET};
+    use ethers::prelude::Provider;
 
     const TICK_SPACING: i32 = 10;
 
@@ -98,7 +99,7 @@ mod tests {
     async fn test_ephemeral_tick_data_provider() -> Result<()> {
         let provider = EphemeralTickDataProvider::new(
             address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
-            Arc::new(Provider::new_client(MAINNET.provider().url().as_str(), 3, 1000).unwrap()),
+            Arc::new(Provider::new_client(make_provider().await.url().as_str(), 3, 1000).unwrap()),
             None,
             None,
             Some(BlockId::from(17000000)),

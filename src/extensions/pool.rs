@@ -197,6 +197,7 @@ pub async fn get_liquidity_array_for_pool<M: Middleware, P>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::make_provider;
     use alloy_primitives::address;
 
     async fn pool() -> Pool<NoTickDataProvider> {
@@ -206,7 +207,7 @@ mod tests {
             address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
             address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
             FeeAmount::LOW,
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17000000)),
         )
         .await
@@ -235,7 +236,7 @@ mod tests {
             pool,
             tick_lower,
             tick_upper,
-            Arc::new(MAINNET.provider()),
+            Arc::new(make_provider().await),
             Some(BlockId::from(17000000)),
             None,
             None,

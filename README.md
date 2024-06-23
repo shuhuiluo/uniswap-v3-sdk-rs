@@ -45,7 +45,7 @@ expect. The error handling is still a work in progress.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "0.25.0", features = ["extensions"] }
+uniswap-v3-sdk = { version = "0.30.0", features = ["extensions"] }
 ```
 
 ### Usage
@@ -64,7 +64,19 @@ Contributions are welcome. Please open an issue if you have any questions or sug
 
 ### Testing
 
-Tests are run with `cargo test`. To test a specific module, use `cargo test --test <module_name>`.
+Tests are run with
+
+```shell
+cargo test
+```
+
+for the core library. To run the tests for the extensions, use
+
+```shell
+cargo test --all-features --lib extensions -- --test-threads=1
+```
+
+To test a specific module, use `cargo test --test <module_name>`.
 
 ### Linting
 

@@ -34,7 +34,7 @@ pub fn tick_to_price(
 /// ## Arguments
 ///
 /// * `price`: for which to return the closest tick that represents a price less than or equal to
-/// the input price, i.e. the price of the returned tick is less than or equal to the input price
+///   the input price, i.e. the price of the returned tick is less than or equal to the input price
 pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<i32> {
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     let sqrt_ratio_x96 = if sorted {
