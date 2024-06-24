@@ -43,9 +43,9 @@ fn get_next_sqrt_price_from_input_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
                 let _ = sqrt_price_math::get_next_sqrt_price_from_input(
-                    sqrt_price_x_96.to_ethers(),
+                    *sqrt_price_x_96,
                     *liquidity,
-                    amount.to_ethers(),
+                    *amount,
                     *add,
                 );
             }
@@ -71,9 +71,9 @@ fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
                 let _ = sqrt_price_math::get_next_sqrt_price_from_output(
-                    sqrt_price_x_96.to_ethers(),
+                    *sqrt_price_x_96,
                     *liquidity,
-                    amount.to_ethers(),
+                    *amount,
                     *add,
                 );
             }
@@ -99,8 +99,8 @@ fn get_amount_0_delta_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_0_delta(
-                    sqrt_ratio_a_x96.to_ethers(),
-                    sqrt_ratio_b_x96.to_ethers(),
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
                     *liquidity,
                     *round_up,
                 );
@@ -127,8 +127,8 @@ fn get_amount_1_delta_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_1_delta(
-                    sqrt_ratio_a_x96.to_ethers(),
-                    sqrt_ratio_b_x96.to_ethers(),
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
                     *liquidity,
                     *round_up,
                 );
@@ -158,8 +158,8 @@ fn get_amount_0_delta_signed_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
                 let _ = sqrt_price_math::get_amount_0_delta(
-                    sqrt_ratio_a_x96.to_ethers(),
-                    sqrt_ratio_b_x96.to_ethers(),
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
                     *liquidity as i128,
                 );
             }
@@ -188,8 +188,8 @@ fn get_amount_1_delta_signed_benchmark_ref(c: &mut Criterion) {
         b.iter(|| {
             for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
                 let _ = sqrt_price_math::get_amount_1_delta(
-                    sqrt_ratio_a_x96.to_ethers(),
-                    sqrt_ratio_b_x96.to_ethers(),
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
                     *liquidity as i128,
                 );
             }

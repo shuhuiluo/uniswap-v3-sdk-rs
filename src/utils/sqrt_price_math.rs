@@ -355,12 +355,11 @@ mod tests {
         for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
             let res = get_next_sqrt_price_from_input(*sqrt_price_x_96, *liquidity, *amount, *add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_input(
-                sqrt_price_x_96.to_ethers(),
+                *sqrt_price_x_96,
                 *liquidity,
-                amount.to_ethers(),
+                *amount,
                 *add,
-            )
-            .map(ToAlloy::to_alloy);
+            );
             match_u256(res, ref_);
         }
     }
@@ -371,12 +370,11 @@ mod tests {
         for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
             let res = get_next_sqrt_price_from_output(*sqrt_price_x_96, *liquidity, *amount, *add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_output(
-                sqrt_price_x_96.to_ethers(),
+                *sqrt_price_x_96,
                 *liquidity,
-                amount.to_ethers(),
+                *amount,
                 *add,
-            )
-            .map(ToAlloy::to_alloy);
+            );
             match_u256(res, ref_);
         }
     }
@@ -388,12 +386,11 @@ mod tests {
             let res =
                 get_amount_0_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             let ref_ = sqrt_price_math::_get_amount_0_delta(
-                sqrt_ratio_a_x96.to_ethers(),
-                sqrt_ratio_b_x96.to_ethers(),
+                *sqrt_ratio_a_x96,
+                *sqrt_ratio_b_x96,
                 *liquidity,
                 *round_up,
-            )
-            .map(ToAlloy::to_alloy);
+            );
             match_u256(res, ref_);
         }
     }
@@ -405,12 +402,11 @@ mod tests {
             let res =
                 get_amount_1_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             let ref_ = sqrt_price_math::_get_amount_1_delta(
-                sqrt_ratio_a_x96.to_ethers(),
-                sqrt_ratio_b_x96.to_ethers(),
+                *sqrt_ratio_a_x96,
+                *sqrt_ratio_b_x96,
                 *liquidity,
                 *round_up,
-            )
-            .map(ToAlloy::to_alloy);
+            );
             match_u256(res, ref_);
         }
     }
@@ -423,13 +419,13 @@ mod tests {
                 get_amount_0_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_0_delta(
-                sqrt_ratio_a_x96.to_ethers(),
-                sqrt_ratio_b_x96.to_ethers(),
+                *sqrt_ratio_a_x96,
+                *sqrt_ratio_b_x96,
                 *liquidity as i128,
             );
             match ref_ {
                 Ok(ref_) => {
-                    assert_eq!(res.unwrap(), ref_.into_raw().to_alloy());
+                    assert_eq!(res.unwrap(), ref_.into_raw());
                 }
                 Err(e) => {
                     assert_eq!(res.unwrap_err().to_string(), e.to_string());
@@ -446,13 +442,13 @@ mod tests {
                 get_amount_1_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_1_delta(
-                sqrt_ratio_a_x96.to_ethers(),
-                sqrt_ratio_b_x96.to_ethers(),
+                *sqrt_ratio_a_x96,
+                *sqrt_ratio_b_x96,
                 *liquidity as i128,
             );
             match ref_ {
                 Ok(ref_) => {
-                    assert_eq!(res.unwrap(), ref_.into_raw().to_alloy());
+                    assert_eq!(res.unwrap(), ref_.into_raw());
                 }
                 Err(e) => {
                     assert_eq!(res.unwrap_err().to_string(), e.to_string());

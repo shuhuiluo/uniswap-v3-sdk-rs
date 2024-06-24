@@ -18,7 +18,7 @@ fn most_significant_bit_benchmark_ref(c: &mut Criterion) {
     c.bench_function("most_significant_bit_ref", |b| {
         b.iter(|| {
             for i in 1u8..=255 {
-                let _ = bit_math::most_significant_bit(U256::from(1).shl(i).to_ethers());
+                let _ = bit_math::most_significant_bit(U256::from(1).shl(i));
             }
         })
     });
@@ -38,7 +38,7 @@ fn least_significant_bit_benchmark_ref(c: &mut Criterion) {
     c.bench_function("least_significant_bit_ref", |b| {
         b.iter(|| {
             for i in 1u8..=255 {
-                let _ = bit_math::least_significant_bit(U256::from(1).shl(i).to_ethers());
+                let _ = bit_math::least_significant_bit(U256::from(1).shl(i));
             }
         });
     });

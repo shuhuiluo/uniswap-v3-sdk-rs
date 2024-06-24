@@ -38,7 +38,7 @@ fn get_tick_at_sqrt_ratio_benchmark_ref(c: &mut Criterion) {
     c.bench_function("get_tick_at_sqrt_ratio_ref", |b| {
         b.iter(|| {
             for i in 33u8..=191 {
-                let _ = tick_math::get_tick_at_sqrt_ratio(U256::from(1).shl(i).to_ethers());
+                let _ = tick_math::get_tick_at_sqrt_ratio(U256::from(1).shl(i));
             }
         });
     });
