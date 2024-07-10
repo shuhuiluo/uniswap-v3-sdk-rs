@@ -28,7 +28,7 @@ pub struct SwapOptions {
 ///
 /// * `trades`: trades to produce call parameters for
 /// * `options`: options for the call parameters
-pub fn swap_call_parameters<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>(
+pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
     trades: &mut [Trade<TInput, TOutput, P>],
     options: SwapOptions,
 ) -> Result<MethodParameters> {
@@ -553,13 +553,13 @@ mod tests {
                     ETHER.clone(),
                     TOKEN3.clone(),
                 ),
-                CurrencyAmount::from_raw_amount(Ether::on_chain(1), 100).unwrap(),
+                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 Route::new(vec![POOL_3_WETH.clone()], ETHER.clone(), TOKEN3.clone()),
-                CurrencyAmount::from_raw_amount(Ether::on_chain(1), 100).unwrap(),
+                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
             .unwrap();

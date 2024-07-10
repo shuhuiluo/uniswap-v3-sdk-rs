@@ -42,7 +42,7 @@ pub static TOKEN3: Lazy<Token> = Lazy::new(|| {
         "token3"
     )
 });
-pub static WETH: Lazy<Token> = Lazy::new(|| Ether::on_chain(1).wrapped());
+pub static WETH: Lazy<Token> = Lazy::new(|| ETHER.wrapped());
 pub static USDC: Lazy<Token> = Lazy::new(|| {
     token!(
         1,
