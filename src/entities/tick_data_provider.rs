@@ -1,6 +1,5 @@
-use crate::entities::Tick;
+use crate::prelude::*;
 use anyhow::Result;
-use thiserror::Error;
 
 /// Provides information about ticks
 pub trait TickDataProvider: Clone {
@@ -32,20 +31,24 @@ pub trait TickDataProvider: Clone {
     ) -> Result<(i32, bool)>;
 }
 
-#[derive(Clone, Debug, Error)]
-#[error("No tick data provider was given")]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[cfg_attr(feature = "std", error("No tick data provider was given"))]
 pub struct NoTickDataError;
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is
 /// required. Useful if you do not need to load tick data for your use case.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct NoTickDataProvider;
 
 impl TickDataProvider for NoTickDataProvider {
     type Tick = Tick;
 
     fn get_tick(&self, _: i32) -> Result<&Tick> {
-        Err(NoTickDataError.into())
+        #[cfg(feature = "std")]
+        return Err(NoTickDataError.into());
+        #[cfg(not(feature = "std"))]
+        anyhow::bail!("No tick data provider was given");
     }
 
     fn next_initialized_tick_within_one_word(
@@ -54,11 +57,14 @@ impl TickDataProvider for NoTickDataProvider {
         _: bool,
         _: i32,
     ) -> Result<(i32, bool)> {
-        Err(NoTickDataError.into())
+        #[cfg(feature = "std")]
+        return Err(NoTickDataError.into());
+        #[cfg(not(feature = "std"))]
+        anyhow::bail!("No tick data provider was given");
     }
 }
 
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 mod tests {
     use super::*;
 

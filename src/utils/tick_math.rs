@@ -4,7 +4,7 @@
 
 use super::most_significant_bit;
 use alloy_primitives::{uint, U256};
-use std::ops::{Shl, Shr, Sub};
+use core::ops::{Shl, Shr, Sub};
 use uniswap_v3_math::error::UniswapV3MathError;
 
 pub use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
@@ -143,7 +143,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3Math
     // let r := shr(sub(msb, 31), shl(96, sqrt_ratio_x96))
     let mut r: U256 = sqrt_ratio_x96.shl(96_u8).shr(msb - 31_u8);
 
-    fn to_u8(x: U256) -> u8 {
+    const fn to_u8(x: U256) -> u8 {
         x.into_limbs()[0] as u8
     }
 

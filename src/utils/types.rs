@@ -1,9 +1,9 @@
 use alloy_primitives::{Address, I256, U256};
 use bigdecimal::BigDecimal;
+use core::ops::Neg;
 use ethers_core::types;
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::{Signed, ToBytes};
-use std::ops::Neg;
 
 pub trait ToAlloy {
     type AlloyType;

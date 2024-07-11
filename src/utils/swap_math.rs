@@ -136,7 +136,7 @@ pub fn compute_swap_step(
 #[cfg(test)]
 mod tests {
     #[test]
-    fn test_compute_swap_step() {
+    const fn test_compute_swap_step() {
         // TODO: Add more tests
     }
 }

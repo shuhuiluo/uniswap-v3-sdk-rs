@@ -1,6 +1,6 @@
 use alloy_primitives::U256;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FeeGrowthOutside {
     pub fee_growth_outside0_x128: U256,
     pub fee_growth_outside1_x128: U256,

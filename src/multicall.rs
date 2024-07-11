@@ -1,4 +1,4 @@
-use super::abi::IMulticall;
+use crate::prelude::*;
 use alloy_primitives::Bytes;
 use alloy_sol_types::SolCall;
 
