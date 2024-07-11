@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use anyhow::Result;
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 
 /// Trades comparator, an extension of the input output comparator that also considers other
@@ -134,7 +134,7 @@ where
             .iter()
             .map(|swap| swap.route.pools.len())
             .sum::<usize>();
-        let mut pool_address_set = HashSet::<Address>::new();
+        let mut pool_address_set = FxHashSet::<Address>::default();
         for Swap { route, .. } in &swaps {
             for pool in &route.pools {
                 pool_address_set.insert(pool.address(None, None));

@@ -4,7 +4,7 @@
 
 use super::most_significant_bit;
 use alloy_primitives::{uint, U256};
-use std::ops::{Shl, Shr, Sub};
+use core::ops::{Shl, Shr, Sub};
 use uniswap_v3_math::error::UniswapV3MathError;
 
 pub use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};

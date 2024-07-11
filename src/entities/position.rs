@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use alloy_primitives::U256;
 use anyhow::Result;
-use std::{cmp::PartialEq, fmt};
+use core::{cmp::PartialEq, fmt};
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
