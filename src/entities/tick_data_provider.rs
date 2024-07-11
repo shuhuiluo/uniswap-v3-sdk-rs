@@ -31,14 +31,14 @@ pub trait TickDataProvider: Clone {
     ) -> Result<(i32, bool)>;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 #[cfg_attr(feature = "std", error("No tick data provider was given"))]
 pub struct NoTickDataError;
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is
 /// required. Useful if you do not need to load tick data for your use case.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct NoTickDataProvider;
 
 impl TickDataProvider for NoTickDataProvider {

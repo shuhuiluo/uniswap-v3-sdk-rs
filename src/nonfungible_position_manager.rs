@@ -18,7 +18,7 @@ pub struct IncreaseSpecificOptions {
     pub token_id: U256,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum AddLiquiditySpecificOptions {
     Mint(MintSpecificOptions),
     Increase(IncreaseSpecificOptions),

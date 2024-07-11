@@ -1,6 +1,6 @@
 use crate::utils::{MAX_TICK, MIN_TICK};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tick {
     pub index: i32,
     pub liquidity_gross: u128,
@@ -46,13 +46,13 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "TICK")]
-    fn test_tick_below_min_tick() {
+    const fn test_tick_below_min_tick() {
         Tick::new(MIN_TICK - 1, 0, 0);
     }
 
     #[test]
     #[should_panic(expected = "TICK")]
-    fn test_tick_above_max_tick() {
+    const fn test_tick_above_max_tick() {
         Tick::new(MAX_TICK + 1, 0, 0);
     }
 }
