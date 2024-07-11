@@ -54,15 +54,15 @@ pub struct SafeTransferOptions {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CollectOptions {
+pub struct CollectOptions<Currency0: Currency, Currency1: Currency> {
     /// Indicates the ID of the position to collect for.
     pub token_id: U256,
     /// Expected value of tokensOwed0, including as-of-yet-unaccounted-for fees/liquidity value to
     /// be burned
-    pub expected_currency_owed0: CurrencyAmount<Currency>,
+    pub expected_currency_owed0: CurrencyAmount<Currency0>,
     /// Expected value of tokensOwed1, including as-of-yet-unaccounted-for fees/liquidity value to
     /// be burned
-    pub expected_currency_owed1: CurrencyAmount<Currency>,
+    pub expected_currency_owed1: CurrencyAmount<Currency1>,
     /// The account that should receive the tokens.
     pub recipient: Address,
 }
@@ -76,7 +76,7 @@ pub struct NFTPermitOptions {
 
 /// Options for producing the calldata to exit a position.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RemoveLiquidityOptions {
+pub struct RemoveLiquidityOptions<Currency0: Currency, Currency1: Currency> {
     /// The ID of the token to exit
     pub token_id: U256,
     /// The percentage of position liquidity to exit.
@@ -91,7 +91,7 @@ pub struct RemoveLiquidityOptions {
     /// sent by an account that does not own the NFT
     pub permit: Option<NFTPermitOptions>,
     /// Parameters to be passed on to collect
-    pub collect_options: CollectOptions,
+    pub collect_options: CollectOptions<Currency0, Currency1>,
 }
 
 fn encode_create<P>(pool: &Pool<P>) -> Bytes {
@@ -218,7 +218,9 @@ pub fn add_call_parameters<P>(
     })
 }
 
-fn encode_collect(options: CollectOptions) -> Vec<Bytes> {
+fn encode_collect<Currency0: Currency, Currency1: Currency>(
+    options: CollectOptions<Currency0, Currency1>,
+) -> Vec<Bytes> {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(3);
 
     let involves_eth = options.expected_currency_owed0.currency.is_native()
@@ -267,7 +269,9 @@ fn encode_collect(options: CollectOptions) -> Vec<Bytes> {
     calldatas
 }
 
-pub fn collect_call_parameters(options: CollectOptions) -> MethodParameters {
+pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
+    options: CollectOptions<Currency0, Currency1>,
+) -> MethodParameters {
     let calldatas = encode_collect(options);
 
     MethodParameters {
@@ -282,9 +286,9 @@ pub fn collect_call_parameters(options: CollectOptions) -> MethodParameters {
 ///
 /// * `position`: The position to exit
 /// * `options`: Additional information necessary for generating the calldata
-pub fn remove_call_parameters<P>(
+pub fn remove_call_parameters<Currency0: Currency, Currency1: Currency, P>(
     position: &Position<P>,
-    options: RemoveLiquidityOptions,
+    options: RemoveLiquidityOptions<Currency0, Currency1>,
 ) -> Result<MethodParameters> {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(6);
 
@@ -415,41 +419,17 @@ mod tests {
     const TOKEN_ID: U256 = uint!(1_U256);
     static SLIPPAGE_TOLERANCE: Lazy<Percent> = Lazy::new(|| Percent::new(1, 100));
     const DEADLINE: U256 = uint!(123_U256);
-    static COLLECT_OPTIONS: Lazy<CollectOptions> = Lazy::new(|| CollectOptions {
+    static COLLECT_OPTIONS: Lazy<CollectOptions<Token, Token>> = Lazy::new(|| CollectOptions {
         token_id: TOKEN_ID,
-        expected_currency_owed0: CurrencyAmount::from_raw_amount(
-            Currency::Token(TOKEN0.clone()),
-            0,
-        )
-        .unwrap(),
-        expected_currency_owed1: CurrencyAmount::from_raw_amount(
-            Currency::Token(TOKEN1.clone()),
-            0,
-        )
-        .unwrap(),
+        expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN0.clone(), 0).unwrap(),
+        expected_currency_owed1: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
         recipient: RECIPIENT,
     });
-    static COLLECT_OPTIONS2: Lazy<CollectOptions> = Lazy::new(|| {
-        let eth_amount =
-            CurrencyAmount::from_raw_amount(Currency::NativeCurrency(Ether::on_chain(1)), 0)
-                .unwrap();
-        let token_amount =
-            CurrencyAmount::from_raw_amount(Currency::Token(TOKEN1.clone()), 0).unwrap();
-        let condition = POOL_1_WETH.token0.equals(&TOKEN1.clone());
-        CollectOptions {
-            token_id: TOKEN_ID,
-            expected_currency_owed0: if condition {
-                token_amount.clone()
-            } else {
-                eth_amount.clone()
-            },
-            expected_currency_owed1: if condition {
-                eth_amount.clone()
-            } else {
-                token_amount.clone()
-            },
-            recipient: RECIPIENT,
-        }
+    static COLLECT_OPTIONS2: Lazy<CollectOptions<Token, Ether>> = Lazy::new(|| CollectOptions {
+        token_id: TOKEN_ID,
+        expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
+        expected_currency_owed1: CurrencyAmount::from_raw_amount(ETHER.clone(), 0).unwrap(),
+        recipient: RECIPIENT,
     });
 
     #[test]
@@ -502,7 +482,7 @@ mod tests {
             AddLiquidityOptions {
                 slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
                 deadline: DEADLINE,
-                use_native: Some(Ether::on_chain(1)),
+                use_native: Some(ETHER.clone()),
                 token0_permit: None,
                 token1_permit: None,
                 specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
@@ -616,7 +596,7 @@ mod tests {
             AddLiquidityOptions {
                 slippage_tolerance: SLIPPAGE_TOLERANCE.clone(),
                 deadline: DEADLINE,
-                use_native: Some(Ether::on_chain(1)),
+                use_native: Some(ETHER.clone()),
                 token0_permit: None,
                 token1_permit: None,
                 specific_opts: AddLiquiditySpecificOptions::Mint(MintSpecificOptions {
@@ -647,16 +627,8 @@ mod tests {
     fn test_collect_call_parameters_eth() {
         let MethodParameters { calldata, value } = collect_call_parameters(CollectOptions {
             token_id: TOKEN_ID,
-            expected_currency_owed0: CurrencyAmount::from_raw_amount(
-                Currency::Token(TOKEN1.clone()),
-                0,
-            )
-            .unwrap(),
-            expected_currency_owed1: CurrencyAmount::from_raw_amount(
-                Currency::NativeCurrency(Ether::on_chain(1)),
-                0,
-            )
-            .unwrap(),
+            expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
+            expected_currency_owed1: CurrencyAmount::from_raw_amount(ETHER.clone(), 0).unwrap(),
             recipient: RECIPIENT,
         });
         assert_eq!(value, U256::ZERO);

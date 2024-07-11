@@ -10,7 +10,7 @@ use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 ///
 /// * `a`: The first trade to compare
 /// * `b`: The second trade to compare
-pub fn trade_comparator<TInput: CurrencyTrait, TOutput: CurrencyTrait, P: Clone>(
+pub fn trade_comparator<TInput: Currency, TOutput: Currency, P: Clone>(
     a: &Trade<TInput, TOutput, P>,
     b: &Trade<TInput, TOutput, P>,
 ) -> Ordering {
@@ -74,7 +74,7 @@ pub struct BestTradeOptions {
 
 /// Represents a swap through a route
 #[derive(Clone, PartialEq, Debug)]
-pub struct Swap<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
+pub struct Swap<TInput: Currency, TOutput: Currency, P> {
     pub route: Route<TInput, TOutput, P>,
     pub input_amount: CurrencyAmount<TInput>,
     pub output_amount: CurrencyAmount<TOutput>,
@@ -88,7 +88,7 @@ pub struct Swap<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
 /// Does not account for slippage, i.e., changes in price environment that can occur between the
 /// time the trade is submitted and when it is executed.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Trade<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
+pub struct Trade<TInput: Currency, TOutput: Currency, P> {
     /// The swaps of the trade, i.e. which routes and how much is swapped in each that make up the
     /// trade.
     pub swaps: Vec<Swap<TInput, TOutput, P>>,
@@ -106,8 +106,8 @@ pub struct Trade<TInput: CurrencyTrait, TOutput: CurrencyTrait, P> {
 
 impl<TInput, TOutput, T, P> Trade<TInput, TOutput, P>
 where
-    TInput: CurrencyTrait,
-    TOutput: CurrencyTrait,
+    TInput: Currency,
+    TOutput: Currency,
     T: TickTrait,
     P: TickDataProvider<Tick = T>,
 {
@@ -186,7 +186,7 @@ where
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     pub fn from_route(
         route: Route<TInput, TOutput, P>,
-        amount: CurrencyAmount<impl CurrencyTrait>,
+        amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
     ) -> Result<Self> {
         let length = route.token_path.len();
@@ -255,10 +255,7 @@ where
     ///   each
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     pub fn from_routes(
-        routes: Vec<(
-            CurrencyAmount<impl CurrencyTrait>,
-            Route<TInput, TOutput, P>,
-        )>,
+        routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, P>)>,
         trade_type: TradeType,
     ) -> Result<Self> {
         let mut populated_routes: Vec<Swap<TInput, TOutput, P>> = Vec::with_capacity(routes.len());
@@ -468,8 +465,8 @@ where
 
 impl<TInput, TOutput, P> Trade<TInput, TOutput, P>
 where
-    TInput: CurrencyTrait,
-    TOutput: CurrencyTrait,
+    TInput: Currency,
+    TOutput: Currency,
     P: Clone,
 {
     /// When the trade consists of just a single route, this returns the route of the trade.

@@ -1,7 +1,7 @@
 use super::abi::ISelfPermit;
 use alloy_primitives::{Bytes, Signature, U256};
 use alloy_sol_types::SolCall;
-use uniswap_sdk_core::prelude::{CurrencyTrait, Token};
+use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StandardPermitArguments {
