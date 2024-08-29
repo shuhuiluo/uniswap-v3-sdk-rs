@@ -197,17 +197,13 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
     // unwrap
     if router_must_custody {
         if output_is_native {
-            calldatas.push(encode_unwrap_weth9(
-                total_amount_out,
-                recipient,
-                fee.clone(),
-            ));
+            calldatas.push(encode_unwrap_weth9(total_amount_out, recipient, fee));
         } else {
             calldatas.push(encode_sweep_token(
                 sample_trade.output_amount()?.currency.address(),
                 total_amount_out,
                 recipient,
-                fee.clone(),
+                fee,
             ));
         }
     }

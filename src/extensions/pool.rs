@@ -143,6 +143,7 @@ fn reconstruct_liquidity_array(
     Ok(liquidity_array)
 }
 
+#[allow(clippy::too_long_first_doc_paragraph)]
 /// Fetches the liquidity within a tick range for the specified pool, using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
 /// in a single `eth_call`.
 ///
