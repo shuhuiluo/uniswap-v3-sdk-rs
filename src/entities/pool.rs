@@ -447,8 +447,7 @@ mod tests {
         #[should_panic(expected = "CHAIN_IDS")]
         fn cannot_be_used_for_tokens_on_different_chains() {
             let weth9 = WETH9::default().get(3).unwrap().clone();
-            Pool::new(USDC.clone(), weth9.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0)
-                .expect("CHAIN_IDS");
+            Pool::new(USDC.clone(), weth9, FeeAmount::MEDIUM, ONE_ETHER, 0).expect("CHAIN_IDS");
         }
 
         #[test]
@@ -461,25 +460,25 @@ mod tests {
         #[test]
         fn works_with_valid_arguments_for_empty_pool_medium_fee() {
             let weth9 = WETH9::default().get(1).unwrap().clone();
-            Pool::new(USDC.clone(), weth9.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0).unwrap();
+            Pool::new(USDC.clone(), weth9, FeeAmount::MEDIUM, ONE_ETHER, 0).unwrap();
         }
 
         #[test]
         fn works_with_valid_arguments_for_empty_pool_low_fee() {
             let weth9 = WETH9::default().get(1).unwrap().clone();
-            Pool::new(USDC.clone(), weth9.clone(), FeeAmount::LOW, ONE_ETHER, 0).unwrap();
+            Pool::new(USDC.clone(), weth9, FeeAmount::LOW, ONE_ETHER, 0).unwrap();
         }
 
         #[test]
         fn works_with_valid_arguments_for_empty_pool_lowest_fee() {
             let weth9 = WETH9::default().get(1).unwrap().clone();
-            Pool::new(USDC.clone(), weth9.clone(), FeeAmount::LOWEST, ONE_ETHER, 0).unwrap();
+            Pool::new(USDC.clone(), weth9, FeeAmount::LOWEST, ONE_ETHER, 0).unwrap();
         }
 
         #[test]
         fn works_with_valid_arguments_for_empty_pool_high_fee() {
             let weth9 = WETH9::default().get(1).unwrap().clone();
-            Pool::new(USDC.clone(), weth9.clone(), FeeAmount::HIGH, ONE_ETHER, 0).unwrap();
+            Pool::new(USDC.clone(), weth9, FeeAmount::HIGH, ONE_ETHER, 0).unwrap();
         }
     }
 
