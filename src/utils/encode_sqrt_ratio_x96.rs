@@ -12,7 +12,7 @@ use uniswap_sdk_core::utils::sqrt::sqrt;
 ///
 /// returns: U160 The sqrt ratio as a Q64.96
 pub fn encode_sqrt_ratio_x96(amount1: impl Into<BigInt>, amount0: impl Into<BigInt>) -> U160 {
-    let numerator: BigInt = amount1.into() << 192;
+    let numerator = amount1.into() << 192;
     let denominator = amount0.into();
     big_int_to_u160(sqrt(&(numerator / denominator)).unwrap())
 }

@@ -373,7 +373,7 @@ mod tests {
 
     fn wrap_to_uint160(x: U256) -> U160 {
         let limbs = x.into_limbs();
-        U160::from_limbs([limbs[0], limbs[1], limbs[2] % 1 << 32])
+        U160::from_limbs([limbs[0], limbs[1], limbs[2] % (1 << 32)])
     }
 
     #[test]

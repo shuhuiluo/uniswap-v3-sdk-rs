@@ -185,11 +185,15 @@ impl<P> Position<P> {
             sqrt_ratio_x96_lower = MIN_SQRT_RATIO + ONE;
         }
 
-        let mut sqrt_ratio_x96_upper =
-            encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator());
-        if sqrt_ratio_x96_upper >= MAX_SQRT_RATIO {
-            sqrt_ratio_x96_upper = MAX_SQRT_RATIO - ONE;
-        }
+        let sqrt_ratio_x96_upper = if price_upper
+            >= Fraction::new(
+                u160_to_big_int(MAX_SQRT_RATIO) * u160_to_big_int(MAX_SQRT_RATIO),
+                u256_to_big_int(Q192),
+            ) {
+            MAX_SQRT_RATIO - ONE
+        } else {
+            encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator())
+        };
 
         (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     }

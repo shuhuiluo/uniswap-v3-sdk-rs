@@ -61,6 +61,10 @@ pub fn u256_to_big_int(x: U256) -> BigInt {
     BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<32>())
 }
 
+pub fn u160_to_big_int(x: U160) -> BigInt {
+    BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<20>())
+}
+
 pub fn i256_to_big_int(x: I256) -> BigInt {
     if x.is_positive() {
         u256_to_big_int(x.into_raw())
