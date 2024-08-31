@@ -1,5 +1,8 @@
-use crate::prelude::*;
-use alloy_primitives::U256;
+use crate::prelude::{
+    tick_math::{MAX_TICK, MIN_TICK},
+    *,
+};
+use alloy_primitives::U160;
 use dotenv::dotenv;
 use ethers::prelude::*;
 use once_cell::sync::Lazy;
@@ -62,7 +65,7 @@ pub(crate) static DAI: Lazy<Token> = Lazy::new(|| {
     )
 });
 pub(crate) const FEE_AMOUNT: FeeAmount = FeeAmount::MEDIUM;
-pub(crate) const SQRT_RATIO_X96: U256 = Q96;
+pub(crate) const SQRT_RATIO_X96: U160 = U160::from_limbs([0, 4294967296, 0]);
 pub(crate) const LIQUIDITY: u128 = 1_000_000;
 
 pub(crate) static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
@@ -106,17 +109,17 @@ pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvid
         TickListDataProvider::new(
             vec![
                 Tick::new(
-                    nearest_usable_tick(MIN_TICK, FEE_AMOUNT.tick_spacing()),
+                    nearest_usable_tick(MIN_TICK, FEE_AMOUNT.tick_spacing()).as_i32(),
                     LIQUIDITY,
                     LIQUIDITY as i128,
                 ),
                 Tick::new(
-                    nearest_usable_tick(MAX_TICK, FEE_AMOUNT.tick_spacing()),
+                    nearest_usable_tick(MAX_TICK, FEE_AMOUNT.tick_spacing()).as_i32(),
                     LIQUIDITY,
                     -(LIQUIDITY as i128),
                 ),
             ],
-            FEE_AMOUNT.tick_spacing(),
+            FEE_AMOUNT.tick_spacing().as_i32(),
         ),
     )
     .unwrap()

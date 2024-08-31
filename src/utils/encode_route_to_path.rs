@@ -1,5 +1,5 @@
 use crate::prelude::Route;
-use alloy_primitives::Bytes;
+use alloy_primitives::{aliases::U24, Bytes};
 use alloy_sol_types::{sol, SolType, SolValue};
 use uniswap_sdk_core::prelude::*;
 
@@ -19,12 +19,12 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
     if exact_output {
         let mut output_token = &route.output.wrapped();
         for pool in route.pools.iter().rev() {
-            let leg = if pool.token0.equals(output_token) {
+            let leg: (Address, U24) = if pool.token0.equals(output_token) {
                 output_token = &pool.token1;
-                (pool.token0.address(), pool.fee as u32)
+                (pool.token0.address(), pool.fee.into())
             } else {
                 output_token = &pool.token0;
-                (pool.token1.address(), pool.fee as u32)
+                (pool.token1.address(), pool.fee.into())
             };
             path.extend(TokenFee::abi_encode_packed(&leg));
         }
@@ -32,12 +32,12 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
     } else {
         let mut input_token = &route.input.wrapped();
         for pool in route.pools.iter() {
-            let leg = if pool.token0.equals(input_token) {
+            let leg: (Address, U24) = if pool.token0.equals(input_token) {
                 input_token = &pool.token1;
-                (pool.token0.address(), pool.fee as u32)
+                (pool.token0.address(), pool.fee.into())
             } else {
                 input_token = &pool.token0;
-                (pool.token1.address(), pool.fee as u32)
+                (pool.token1.address(), pool.fee.into())
             };
             path.extend(TokenFee::abi_encode_packed(&leg));
         }

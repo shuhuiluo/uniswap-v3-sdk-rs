@@ -637,7 +637,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{
+        tests::*,
+        utils::tick_math::{MAX_TICK, MIN_TICK},
+    };
     use once_cell::sync::Lazy;
 
     fn v2_style_pool(
@@ -660,17 +663,17 @@ mod tests {
             TickListDataProvider::new(
                 vec![
                     Tick::new(
-                        nearest_usable_tick(MIN_TICK, FeeAmount::MEDIUM.tick_spacing()),
+                        nearest_usable_tick(MIN_TICK, FeeAmount::MEDIUM.tick_spacing()).as_i32(),
                         liquidity,
                         liquidity as i128,
                     ),
                     Tick::new(
-                        nearest_usable_tick(MAX_TICK, FeeAmount::MEDIUM.tick_spacing()),
+                        nearest_usable_tick(MAX_TICK, FeeAmount::MEDIUM.tick_spacing()).as_i32(),
                         liquidity,
                         -(liquidity as i128),
                     ),
                 ],
-                FeeAmount::MEDIUM.tick_spacing(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
         )
         .unwrap()

@@ -1,4 +1,4 @@
-use crate::utils::{MAX_TICK, MIN_TICK};
+use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tick {

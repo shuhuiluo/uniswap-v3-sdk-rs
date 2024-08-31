@@ -1,9 +1,10 @@
 use crate::prelude::*;
-use alloy_primitives::{ChainId, B256, I256, U256};
+use alloy_primitives::{aliases::I24, ChainId, B256, I256, U160, U256};
 use anyhow::Result;
 use core::{fmt, ops::Neg};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
+use uniswap_v3_math::tick_math::{MAX_TICK as _MAX_TICK, MIN_TICK as _MIN_TICK};
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
@@ -13,9 +14,9 @@ pub struct Pool<P> {
     pub token0: Token,
     pub token1: Token,
     pub fee: FeeAmount,
-    pub sqrt_ratio_x96: U256,
+    pub sqrt_ratio_x96: U160,
     pub liquidity: u128,
-    pub tick_current: i32,
+    pub tick_current: I24,
     pub tick_data_provider: P,
 }
 
@@ -46,16 +47,17 @@ impl<P> PartialEq for Pool<P> {
 struct SwapState {
     amount_specified_remaining: I256,
     amount_calculated: I256,
-    sqrt_price_x96: U256,
+    sqrt_price_x96: U160,
     tick: i32,
     liquidity: u128,
 }
 
+#[derive(Clone, Copy, Default)]
 struct StepComputations {
-    sqrt_price_start_x96: U256,
+    sqrt_price_start_x96: U160,
     tick_next: i32,
     initialized: bool,
-    sqrt_price_next_x96: U256,
+    sqrt_price_next_x96: U160,
     amount_in: U256,
     amount_out: U256,
     fee_amount: U256,
@@ -77,7 +79,7 @@ impl Pool<NoTickDataProvider> {
         token_a: Token,
         token_b: Token,
         fee: FeeAmount,
-        sqrt_ratio_x96: U256,
+        sqrt_ratio_x96: U160,
         liquidity: u128,
     ) -> Result<Pool<NoTickDataProvider>> {
         Self::new_with_tick_data_provider(
@@ -128,7 +130,7 @@ impl<P> Pool<P> {
         self.token0.chain_id()
     }
 
-    pub const fn tick_spacing(&self) -> i32 {
+    pub const fn tick_spacing(&self) -> I24 {
         self.fee.tick_spacing()
     }
 
@@ -146,7 +148,7 @@ impl<P> Pool<P> {
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over
     /// token0
     pub fn token0_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
+        let sqrt_ratio_x96: BigUint = u160_to_big_uint(self.sqrt_ratio_x96);
         Price::new(
             self.token0.clone(),
             self.token1.clone(),
@@ -158,7 +160,7 @@ impl<P> Pool<P> {
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over
     /// token1
     pub fn token1_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u256_to_big_uint(self.sqrt_ratio_x96);
+        let sqrt_ratio_x96: BigUint = u160_to_big_uint(self.sqrt_ratio_x96);
         Price::new(
             self.token1.clone(),
             self.token0.clone(),
@@ -205,7 +207,7 @@ where
         token_a: Token,
         token_b: Token,
         fee: FeeAmount,
-        sqrt_ratio_x96: U256,
+        sqrt_ratio_x96: U160,
         liquidity: u128,
         tick_data_provider: P,
     ) -> Result<Self> {
@@ -237,7 +239,7 @@ where
     pub fn get_output_amount(
         &self,
         input_amount: &CurrencyAmount<Token>,
-        sqrt_price_limit_x96: Option<U256>,
+        sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<Token>, Self)> {
         assert!(self.involves_token(&input_amount.currency), "TOKEN");
 
@@ -280,7 +282,7 @@ where
     pub fn get_input_amount(
         &self,
         output_amount: &CurrencyAmount<Token>,
-        sqrt_price_limit_x96: Option<U256>,
+        sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<Token>, Self)> {
         assert!(self.involves_token(&output_amount.currency), "TOKEN");
 
@@ -313,8 +315,8 @@ where
         &self,
         zero_for_one: bool,
         amount_specified: I256,
-        sqrt_price_limit_x96: Option<U256>,
-    ) -> Result<(I256, U256, u128, i32)> {
+        sqrt_price_limit_x96: Option<U160>,
+    ) -> Result<(I256, U160, u128, i32)> {
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
                 MIN_SQRT_RATIO + ONE
@@ -338,7 +340,7 @@ where
             amount_specified_remaining: amount_specified,
             amount_calculated: I256::ZERO,
             sqrt_price_x96: self.sqrt_ratio_x96,
-            tick: self.tick_current,
+            tick: self.tick_current.as_i32(),
             liquidity: self.liquidity,
         };
 
@@ -348,12 +350,7 @@ where
         {
             let mut step = StepComputations {
                 sqrt_price_start_x96: state.sqrt_price_x96,
-                tick_next: 0,
-                initialized: false,
-                sqrt_price_next_x96: U256::ZERO,
-                amount_in: U256::ZERO,
-                amount_out: U256::ZERO,
-                fee_amount: U256::ZERO,
+                ..Default::default()
             };
 
             step.sqrt_price_start_x96 = state.sqrt_price_x96;
@@ -365,12 +362,13 @@ where
                 .next_initialized_tick_within_one_word(
                     state.tick,
                     zero_for_one,
-                    self.tick_spacing(),
+                    self.tick_spacing().as_i32(),
                 )?;
 
-            step.tick_next = step.tick_next.clamp(MIN_TICK, MAX_TICK);
+            step.tick_next = step.tick_next.clamp(_MIN_TICK, _MAX_TICK);
 
-            step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next)?;
+            step.sqrt_price_next_x96 =
+                get_sqrt_ratio_at_tick(I24::try_from(step.tick_next).unwrap())?;
             (
                 state.sqrt_price_x96,
                 step.amount_in,
@@ -420,7 +418,7 @@ where
             } else {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned
                 // ticks), and haven't moved
-                state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96)?;
+                state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96)?.as_i32();
             }
         }
 
@@ -438,7 +436,7 @@ mod tests {
     use super::*;
     use crate::tests::*;
 
-    const ONE_ETHER: U256 = U256::from_limbs([10u64.pow(18), 0, 0, 0]);
+    const ONE_ETHER: U160 = U160::from_limbs([10u64.pow(18), 0, 0]);
 
     mod constructor {
         use super::*;
@@ -657,6 +655,7 @@ mod tests {
 
     mod swaps {
         use super::*;
+        use crate::utils::tick_math::{MAX_TICK, MIN_TICK};
 
         static POOL: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
             Pool::new_with_tick_data_provider(
@@ -668,17 +667,17 @@ mod tests {
                 TickListDataProvider::new(
                     vec![
                         Tick::new(
-                            nearest_usable_tick(MIN_TICK, FeeAmount::LOW.tick_spacing()),
+                            nearest_usable_tick(MIN_TICK, FeeAmount::LOW.tick_spacing()).as_i32(),
                             ONE_ETHER.into_limbs()[0] as u128,
                             ONE_ETHER.into_limbs()[0] as i128,
                         ),
                         Tick::new(
-                            nearest_usable_tick(MAX_TICK, FeeAmount::LOW.tick_spacing()),
+                            nearest_usable_tick(MAX_TICK, FeeAmount::LOW.tick_spacing()).as_i32(),
                             ONE_ETHER.into_limbs()[0] as u128,
                             -(ONE_ETHER.into_limbs()[0] as i128),
                         ),
                     ],
-                    FeeAmount::LOW.tick_spacing(),
+                    FeeAmount::LOW.tick_spacing().as_i32(),
                 ),
             )
             .unwrap()

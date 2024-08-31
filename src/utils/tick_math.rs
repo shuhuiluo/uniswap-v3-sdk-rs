@@ -2,22 +2,25 @@
 //! This library is a Rust port of the [TickMath library](https://github.com/uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol) in Solidity,
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/TickMath.sol).
 
-use super::most_significant_bit;
-use alloy_primitives::{uint, U256};
+use super::{most_significant_bit, uint160_to_uint256, uint256_to_uint160_unchecked};
+use alloy_primitives::{aliases::I24, uint, U160, U256};
 use core::ops::{Shl, Shr, Sub};
 use uniswap_v3_math::error::UniswapV3MathError;
 
-pub use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
+/// The maximum tick that can be passed to `get_sqrt_ratio_at_tick`.
+pub const MAX_TICK: I24 = I24::from_limbs([887272]);
+/// The minimum tick that can be passed to `get_sqrt_ratio_at_tick`.
+pub const MIN_TICK: I24 = I24::from_limbs([15889944]);
 
 /// The minimum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to
 /// `get_sqrt_ratio_at_tick(MIN_TICK)`
-pub const MIN_SQRT_RATIO: U256 = uint!(4295128739_U256);
+pub const MIN_SQRT_RATIO: U160 = uint!(4295128739_U160);
 /// The maximum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to
 /// `get_sqrt_ratio_at_tick(MAX_TICK)`
-pub const MAX_SQRT_RATIO: U256 = uint!(1461446703485210103287273052203988822378723970342_U256);
+pub const MAX_SQRT_RATIO: U160 = uint!(1461446703485210103287273052203988822378723970342_U160);
 /// A threshold used for optimized bounds check, equals `MAX_SQRT_RATIO - MIN_SQRT_RATIO - 1`
-const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U256 =
-    uint!(1461446703485210103287273052203988822374428841602_U256);
+const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U160 =
+    uint!(1461446703485210103287273052203988822374428841602_U160);
 
 /// Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as
 /// sqrt(1.0001)^tick
@@ -26,11 +29,11 @@ const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U256 =
 ///
 /// * `tick`: the tick for which to compute the sqrt ratio
 ///
-/// returns: Result<U256, UniswapV3MathError>
-pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
-    let abs_tick = tick.abs();
+/// returns: Result<U160, UniswapV3MathError>
+pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, UniswapV3MathError> {
+    let abs_tick = tick.abs().as_i32();
 
-    if abs_tick > MAX_TICK {
+    if abs_tick > MAX_TICK.as_i32() {
         return Err(UniswapV3MathError::T);
     }
 
@@ -102,11 +105,12 @@ pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
         ratio = (ratio * uint!(0x48a170391f7dc42444e8fa2_U256)) >> 128;
     }
 
-    if tick > 0 {
+    if tick.is_positive() {
         ratio = U256::MAX / ratio;
     }
 
-    Ok((ratio + uint!(0xffffffff_U256)) >> 32)
+    ratio = (ratio + uint!(0xffffffff_U256)) >> 32;
+    Ok(uint256_to_uint160_unchecked(ratio))
 }
 
 /// Returns the tick corresponding to a given sqrt ratio,
@@ -117,8 +121,8 @@ pub fn get_sqrt_ratio_at_tick(tick: i32) -> Result<U256, UniswapV3MathError> {
 ///
 /// * `sqrt_ratio_x96`: the sqrt ratio as a Q64.96 for which to compute the tick
 ///
-/// returns: Result<i32, UniswapV3MathError>
-pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3MathError> {
+/// returns: Result<I24, UniswapV3MathError>
+pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, UniswapV3MathError> {
     // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO)
     // revert("R"); if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true
     // if sqrt_ratio_x96 >= MAX_SQRT_RATIO, sqrt_ratio_x96 - MIN_SQRT_RATIO > MAX_SQRT_RATIO -
@@ -126,9 +130,10 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3Math
     if (sqrt_ratio_x96 - MIN_SQRT_RATIO) > MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE {
         return Err(UniswapV3MathError::R);
     }
+    let sqrt_ratio_x96_u256 = uint160_to_uint256(sqrt_ratio_x96);
 
     // Find the most significant bit of `sqrt_ratio_x96`, 160 > msb >= 32.
-    let msb = most_significant_bit(sqrt_ratio_x96);
+    let msb = most_significant_bit(sqrt_ratio_x96_u256);
 
     // 2**(msb - 95) > sqrt_ratio >= 2**(msb - 96)
     // the integer part of log_2(sqrt_ratio) * 2**64 = (msb - 96) << 64, 8.64 number
@@ -141,7 +146,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3Math
     // sqrt_ratio = 2**(msb - 96) * r / 2**127, in floating point math
     // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
     // let r := shr(sub(msb, 31), shl(96, sqrt_ratio_x96))
-    let mut r: U256 = sqrt_ratio_x96.shl(96_u8).shr(msb - 31_u8);
+    let mut r: U256 = sqrt_ratio_x96_u256.shl(96_u8).shr(msb - 31_u8);
 
     const fn to_u8(x: U256) -> u8 {
         x.into_limbs()[0] as u8
@@ -234,10 +239,11 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U256) -> Result<i32, UniswapV3Math
     let tick = if tick_low == tick_high {
         tick_low
     } else {
-        tick_high - (get_sqrt_ratio_at_tick(tick_high)? > sqrt_ratio_x96) as i32
+        tick_high
+            - (get_sqrt_ratio_at_tick(I24::try_from(tick_high).unwrap())? > sqrt_ratio_x96) as i32
     };
 
-    Ok(tick)
+    Ok(I24::try_from(tick).unwrap())
 }
 
 #[cfg(test)]
@@ -246,24 +252,24 @@ mod tests {
 
     #[test]
     fn min_tick() {
-        assert_eq!(MIN_TICK, -887272);
+        assert_eq!(MIN_TICK, -I24::from_limbs([887272]));
     }
 
     #[test]
     fn max_tick() {
-        assert_eq!(MAX_TICK, 887272);
+        assert_eq!(MAX_TICK, I24::from_limbs([887272]));
     }
 
     #[test]
     #[should_panic(expected = "T")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_small() {
-        get_sqrt_ratio_at_tick(MIN_TICK - 1).unwrap();
+        get_sqrt_ratio_at_tick(MIN_TICK - I24::ONE).unwrap();
     }
 
     #[test]
     #[should_panic(expected = "T")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_large() {
-        get_sqrt_ratio_at_tick(MAX_TICK + 1).unwrap();
+        get_sqrt_ratio_at_tick(MAX_TICK + I24::ONE).unwrap();
     }
 
     #[test]
@@ -273,7 +279,10 @@ mod tests {
 
     #[test]
     fn returns_correct_value_for_tick_zero() {
-        assert_eq!(get_sqrt_ratio_at_tick(0).unwrap(), U256::from(1).shl(96));
+        assert_eq!(
+            get_sqrt_ratio_at_tick(I24::ZERO).unwrap(),
+            U160::from(1).shl(96)
+        );
     }
 
     #[test]
@@ -289,8 +298,8 @@ mod tests {
     #[test]
     fn returns_correct_value_for_sqrt_ratio_at_max_tick() {
         assert_eq!(
-            get_tick_at_sqrt_ratio(MAX_SQRT_RATIO - U256::from(1u32)).unwrap(),
-            MAX_TICK - 1
+            get_tick_at_sqrt_ratio(MAX_SQRT_RATIO - U160::from(1u32)).unwrap(),
+            MAX_TICK - I24::ONE
         );
     }
 }
