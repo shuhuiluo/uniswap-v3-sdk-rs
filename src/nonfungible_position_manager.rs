@@ -98,7 +98,7 @@ fn encode_create<P>(pool: &Pool<P>) -> Bytes {
     INonfungiblePositionManager::createAndInitializePoolIfNecessaryCall {
         token0: pool.token0.address(),
         token1: pool.token1.address(),
-        fee: pool.fee as u32,
+        fee: pool.fee.into(),
         sqrtPriceX96: pool.sqrt_ratio_x96,
     }
     .abi_encode()
@@ -157,7 +157,7 @@ pub fn add_call_parameters<P>(
                     params: INonfungiblePositionManager::MintParams {
                         token0: position.pool.token0.address(),
                         token1: position.pool.token1.address(),
-                        fee: position.pool.fee as u32,
+                        fee: position.pool.fee.into(),
                         tickLower: position.tick_lower,
                         tickUpper: position.tick_upper,
                         amount0Desired: amount0_desired,

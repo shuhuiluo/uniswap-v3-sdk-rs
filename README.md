@@ -108,4 +108,4 @@ This project is inspired by and adapted from the following projects:
 - [Uniswap SDK Core Rust](https://github.com/malik672/uniswap-sdk-core-rust)
 - [Uniswap V3 Math In Rust](https://github.com/0xKitsune/uniswap-v3-math)
 - [Uni V3 Lib](https://github.com/Aperture-Finance/uni-v3-lib)
-- [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk)
+- [Uniswap V3 Automation SDK](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk)

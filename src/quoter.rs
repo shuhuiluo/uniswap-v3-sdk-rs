@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::U256;
+use alloy_primitives::{U160, U256};
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::prelude::*;
 
@@ -7,7 +7,7 @@ use uniswap_sdk_core::prelude::*;
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct QuoteOptions {
     /// The price limit for the trade.
-    sqrt_price_limit_x96: U256,
+    sqrt_price_limit_x96: U160,
     /// The quoter interface to use
     use_quoter_v2: bool,
 }
@@ -39,7 +39,7 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                             tokenIn: route.token_path[0].address(),
                             tokenOut: route.token_path[1].address(),
                             amountIn: quote_amount,
-                            fee: route.pools[0].fee as u32,
+                            fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
                         },
                     }
@@ -49,7 +49,7 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                         tokenIn: route.token_path[0].address(),
                         tokenOut: route.token_path[1].address(),
                         amountIn: quote_amount,
-                        fee: route.pools[0].fee as u32,
+                        fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,
                     }
                     .abi_encode()
@@ -62,7 +62,7 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                             tokenIn: route.token_path[0].address(),
                             tokenOut: route.token_path[1].address(),
                             amount: quote_amount,
-                            fee: route.pools[0].fee as u32,
+                            fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
                         },
                     }
@@ -72,7 +72,7 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                         tokenIn: route.token_path[0].address(),
                         tokenOut: route.token_path[1].address(),
                         amountOut: quote_amount,
-                        fee: route.pools[0].fee as u32,
+                        fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,
                     }
                     .abi_encode()
@@ -218,7 +218,7 @@ mod tests {
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
-                    sqrt_price_limit_x96: Q128,
+                    sqrt_price_limit_x96: U160::from_limbs([0, 0, 1]),
                     use_quoter_v2: false,
                 }),
             );
@@ -248,7 +248,7 @@ mod tests {
                 input_amount,
                 trade.trade_type,
                 Some(QuoteOptions {
-                    sqrt_price_limit_x96: U256::ZERO,
+                    sqrt_price_limit_x96: U160::ZERO,
                     use_quoter_v2: true,
                 }),
             );
@@ -272,7 +272,7 @@ mod tests {
                 output_amount,
                 trade.trade_type,
                 Some(QuoteOptions {
-                    sqrt_price_limit_x96: U256::ZERO,
+                    sqrt_price_limit_x96: U160::ZERO,
                     use_quoter_v2: true,
                 }),
             );

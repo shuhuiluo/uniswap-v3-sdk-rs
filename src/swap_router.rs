@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{Bytes, U256};
+use alloy_primitives::{Bytes, U160, U256};
 use alloy_sol_types::SolCall;
 use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
@@ -16,7 +16,7 @@ pub struct SwapOptions {
     /// The optional permit parameters for spending the input.
     pub input_token_permit: Option<PermitOptions>,
     /// The optional price limit for the trade.
-    pub sqrt_price_limit_x96: Option<U256>,
+    pub sqrt_price_limit_x96: Option<U160>,
     /// Optional information for taking a fee on output.
     pub fee: Option<FeeOptions>,
 }
@@ -120,7 +120,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
                         params: ISwapRouter::ExactInputSingleParams {
                             tokenIn: route.token_path[0].address(),
                             tokenOut: route.token_path[1].address(),
-                            fee: route.pools[0].fee as u32,
+                            fee: route.pools[0].fee.into(),
                             recipient: if router_must_custody {
                                 Address::ZERO
                             } else {
@@ -138,7 +138,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
                         params: ISwapRouter::ExactOutputSingleParams {
                             tokenIn: route.token_path[0].address(),
                             tokenOut: route.token_path[1].address(),
-                            fee: route.pools[0].fee as u32,
+                            fee: route.pools[0].fee.into(),
                             recipient: if router_must_custody {
                                 Address::ZERO
                             } else {
@@ -387,7 +387,7 @@ mod tests {
             let MethodParameters { calldata, value } = swap_call_parameters(
                 &mut [trade],
                 SwapOptions {
-                    sqrt_price_limit_x96: Some(Q128),
+                    sqrt_price_limit_x96: Some(U160::from_limbs([0, 0, 1])),
                     ..SWAP_OPTIONS.clone()
                 },
             )
@@ -766,7 +766,7 @@ mod tests {
             let MethodParameters { calldata, value } = swap_call_parameters(
                 &mut [trade1, trade2],
                 SwapOptions {
-                    sqrt_price_limit_x96: Some(Q128),
+                    sqrt_price_limit_x96: Some(U160::from_limbs([0, 0, 1])),
                     ..SWAP_OPTIONS.clone()
                 },
             )

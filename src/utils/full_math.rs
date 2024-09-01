@@ -1,6 +1,8 @@
-use super::{ONE, Q96, THREE, TWO};
-use alloy_primitives::U256;
+use super::{Q96, THREE, TWO};
+use alloy_primitives::{uint, U256};
 use uniswap_v3_math::error::UniswapV3MathError;
+
+const _ONE: U256 = uint!(1_U256);
 
 /// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or
 /// denominator == 0
@@ -64,7 +66,7 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV
     // Shift in bits from prod1 into prod0. For this we need
     // to flip `twos` such that it is 2**256 / twos.
     // If twos is zero, then it becomes one
-    twos = (U256::ZERO - twos) / twos + ONE;
+    twos = (U256::ZERO - twos) / twos + _ONE;
 
     prod_0 |= prod_1 * twos;
 
@@ -117,7 +119,7 @@ pub fn mul_div_rounding_up(
     } else if result == U256::MAX {
         Err(UniswapV3MathError::ResultIsU256MAX)
     } else {
-        Ok(result + ONE)
+        Ok(result + _ONE)
     }
 }
 

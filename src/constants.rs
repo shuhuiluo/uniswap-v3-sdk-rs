@@ -1,4 +1,8 @@
-use alloy_primitives::{address, b256, Address, B256};
+use alloy_primitives::{
+    address,
+    aliases::{I24, U24},
+    b256, Address, B256,
+};
 
 pub const FACTORY_ADDRESS: Address = address!("1F98431c8aD98523631AE4a59f267346ea31F984");
 
@@ -18,12 +22,12 @@ pub enum FeeAmount {
 
 impl FeeAmount {
     /// The default factory tick spacings by fee amount.
-    pub const fn tick_spacing(&self) -> i32 {
+    pub const fn tick_spacing(&self) -> I24 {
         match self {
-            Self::LOWEST => 1,
-            Self::LOW => 10,
-            Self::MEDIUM => 60,
-            Self::HIGH => 200,
+            Self::LOWEST => I24::ONE,
+            Self::LOW => I24::from_limbs([10]),
+            Self::MEDIUM => I24::from_limbs([60]),
+            Self::HIGH => I24::from_limbs([200]),
         }
     }
 }
@@ -48,6 +52,17 @@ impl From<i32> for FeeAmount {
             60 => Self::MEDIUM,
             200 => Self::HIGH,
             _ => panic!("Invalid tick spacing"),
+        }
+    }
+}
+
+impl From<FeeAmount> for U24 {
+    fn from(fee: FeeAmount) -> Self {
+        match fee {
+            FeeAmount::LOWEST => U24::from_limbs([100]),
+            FeeAmount::LOW => U24::from_limbs([500]),
+            FeeAmount::MEDIUM => U24::from_limbs([3000]),
+            FeeAmount::HIGH => U24::from_limbs([10000]),
         }
     }
 }

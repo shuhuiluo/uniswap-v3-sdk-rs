@@ -1,7 +1,8 @@
 //! ## Price and tick conversions
-//! Utility functions for converting between [`i32`] ticks and SDK Core [`Price`] prices.
+//! Utility functions for converting between [`I24`] ticks and SDK Core [`Price`] prices.
 
 use crate::prelude::*;
+use alloy_primitives::aliases::I24;
 use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
@@ -17,10 +18,10 @@ use uniswap_sdk_core::prelude::*;
 pub fn tick_to_price(
     base_token: Token,
     quote_token: Token,
-    tick: i32,
+    tick: I24,
 ) -> Result<Price<Token, Token>> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    let ratio_x192 = u256_to_big_uint(sqrt_ratio_x96).pow(2);
+    let ratio_x192 = u160_to_big_uint(sqrt_ratio_x96).pow(2);
     let q192 = u256_to_big_uint(Q192);
     Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
@@ -35,7 +36,8 @@ pub fn tick_to_price(
 ///
 /// * `price`: for which to return the closest tick that represents a price less than or equal to
 ///   the input price, i.e. the price of the returned tick is less than or equal to the input price
-pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<i32> {
+pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24> {
+    const ONE: I24 = I24::from_limbs([1]);
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     let sqrt_ratio_x96 = if sorted {
         encode_sqrt_ratio_x96(price.numerator(), price.denominator())
@@ -46,16 +48,16 @@ pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<i32> {
     let next_tick_price = tick_to_price(
         price.base_currency.clone(),
         price.quote_currency.clone(),
-        tick + 1,
+        tick + ONE,
     )?;
     Ok(if sorted {
         if price >= &next_tick_price {
-            tick + 1
+            tick + ONE
         } else {
             tick
         }
     } else if price <= &next_tick_price {
-        tick + 1
+        tick + ONE
     } else {
         tick
     })
@@ -98,7 +100,7 @@ mod tests {
     #[test]
     fn tick_to_price_test_1() {
         assert_eq!(
-            tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -74959)
+            tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -I24::from_limbs([74959]))
                 .unwrap()
                 .to_significant(5, Rounding::RoundHalfUp)
                 .unwrap(),
@@ -109,7 +111,7 @@ mod tests {
     #[test]
     fn tick_to_price_test_2() {
         assert_eq!(
-            tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -74959)
+            tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -I24::from_limbs([74959]))
                 .unwrap()
                 .to_significant(5, Rounding::RoundHalfUp)
                 .unwrap(),
@@ -120,7 +122,7 @@ mod tests {
     #[test]
     fn tick_to_price_test_3() {
         assert_eq!(
-            tick_to_price(TOKEN0.clone(), TOKEN1.clone(), 74959)
+            tick_to_price(TOKEN0.clone(), TOKEN1.clone(), I24::from_limbs([74959]))
                 .unwrap()
                 .to_significant(5, Rounding::RoundHalfUp)
                 .unwrap(),
@@ -131,7 +133,7 @@ mod tests {
     #[test]
     fn tick_to_price_test_4() {
         assert_eq!(
-            tick_to_price(TOKEN1.clone(), TOKEN0.clone(), 74959)
+            tick_to_price(TOKEN1.clone(), TOKEN0.clone(), I24::from_limbs([74959]))
                 .unwrap()
                 .to_significant(5, Rounding::RoundHalfUp)
                 .unwrap(),
@@ -142,10 +144,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_5() {
         assert_eq!(
-            tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN0.clone(),
+                TOKEN2_6DECIMALS.clone(),
+                -I24::from_limbs([276225])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "1.01"
         );
     }
@@ -153,10 +159,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_6() {
         assert_eq!(
-            tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN2_6DECIMALS.clone(),
+                TOKEN0.clone(),
+                -I24::from_limbs([276225])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "0.99015"
         );
     }
@@ -164,10 +174,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_7() {
         assert_eq!(
-            tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276423)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN0.clone(),
+                TOKEN2_6DECIMALS.clone(),
+                -I24::from_limbs([276423])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "0.99015"
         );
     }
@@ -175,10 +189,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_8() {
         assert_eq!(
-            tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276423)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN2_6DECIMALS.clone(),
+                TOKEN0.clone(),
+                -I24::from_limbs([276423])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "1.0099"
         );
     }
@@ -186,10 +204,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_9() {
         assert_eq!(
-            tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN0.clone(),
+                TOKEN2_6DECIMALS.clone(),
+                -I24::from_limbs([276225])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "1.01"
         );
     }
@@ -197,10 +219,14 @@ mod tests {
     #[test]
     fn tick_to_price_test_10() {
         assert_eq!(
-            tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225)
-                .unwrap()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            tick_to_price(
+                TOKEN2_6DECIMALS.clone(),
+                TOKEN0.clone(),
+                -I24::from_limbs([276225])
+            )
+            .unwrap()
+            .to_significant(5, Rounding::RoundHalfUp)
+            .unwrap(),
             "0.99015"
         );
     }
@@ -209,7 +235,7 @@ mod tests {
     fn price_to_closest_tick_test_1() {
         assert_eq!(
             price_to_closest_tick(&Price::new(TOKEN1.clone(), TOKEN0.clone(), 1, 1800)).unwrap(),
-            -74960
+            -I24::from_limbs([74960])
         );
     }
 
@@ -217,7 +243,7 @@ mod tests {
     fn price_to_closest_tick_test_2() {
         assert_eq!(
             price_to_closest_tick(&Price::new(TOKEN0.clone(), TOKEN1.clone(), 1800, 1)).unwrap(),
-            -74960
+            -I24::from_limbs([74960])
         );
     }
 
@@ -231,7 +257,7 @@ mod tests {
                 BigInt::from(101) * BigInt::from(10).pow(6),
             ))
             .unwrap(),
-            -276225
+            -I24::from_limbs([276225])
         );
     }
 
@@ -245,43 +271,51 @@ mod tests {
                 BigInt::from(100) * BigInt::from(10).pow(18),
             ))
             .unwrap(),
-            -276225
+            -I24::from_limbs([276225])
         );
     }
 
     #[test]
     fn price_to_closest_tick_test_5() {
         assert_eq!(
-            price_to_closest_tick(&tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -74960).unwrap())
-                .unwrap(),
-            -74960
+            price_to_closest_tick(
+                &tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -I24::from_limbs([74960])).unwrap()
+            )
+            .unwrap(),
+            -I24::from_limbs([74960])
         );
     }
 
     #[test]
     fn price_to_closest_tick_test_6() {
         assert_eq!(
-            price_to_closest_tick(&tick_to_price(TOKEN1.clone(), TOKEN0.clone(), 74960).unwrap())
-                .unwrap(),
-            74960
+            price_to_closest_tick(
+                &tick_to_price(TOKEN1.clone(), TOKEN0.clone(), I24::from_limbs([74960])).unwrap()
+            )
+            .unwrap(),
+            I24::from_limbs([74960])
         );
     }
 
     #[test]
     fn price_to_closest_tick_test_7() {
         assert_eq!(
-            price_to_closest_tick(&tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -74960).unwrap())
-                .unwrap(),
-            -74960
+            price_to_closest_tick(
+                &tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -I24::from_limbs([74960])).unwrap()
+            )
+            .unwrap(),
+            -I24::from_limbs([74960])
         );
     }
 
     #[test]
     fn price_to_closest_tick_test_8() {
         assert_eq!(
-            price_to_closest_tick(&tick_to_price(TOKEN0.clone(), TOKEN1.clone(), 74960).unwrap())
-                .unwrap(),
-            74960
+            price_to_closest_tick(
+                &tick_to_price(TOKEN0.clone(), TOKEN1.clone(), I24::from_limbs([74960])).unwrap()
+            )
+            .unwrap(),
+            I24::from_limbs([74960])
         );
     }
 
@@ -289,10 +323,15 @@ mod tests {
     fn price_to_closest_tick_test_9() {
         assert_eq!(
             price_to_closest_tick(
-                &tick_to_price(TOKEN0.clone(), TOKEN2_6DECIMALS.clone(), -276225).unwrap(),
+                &tick_to_price(
+                    TOKEN0.clone(),
+                    TOKEN2_6DECIMALS.clone(),
+                    -I24::from_limbs([276225])
+                )
+                .unwrap(),
             )
             .unwrap(),
-            -276225
+            -I24::from_limbs([276225])
         );
     }
 
@@ -300,10 +339,15 @@ mod tests {
     fn price_to_closest_tick_test_10() {
         assert_eq!(
             price_to_closest_tick(
-                &tick_to_price(TOKEN2_6DECIMALS.clone(), TOKEN0.clone(), -276225).unwrap(),
+                &tick_to_price(
+                    TOKEN2_6DECIMALS.clone(),
+                    TOKEN0.clone(),
+                    -I24::from_limbs([276225])
+                )
+                .unwrap(),
             )
             .unwrap(),
-            -276225
+            -I24::from_limbs([276225])
         );
     }
 }
