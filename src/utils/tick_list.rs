@@ -142,8 +142,10 @@ impl<T: TickTrait> TickList for [T] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entities::Tick;
-    use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
+    use crate::{
+        entities::Tick,
+        utils::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK},
+    };
 
     const LOW_TICK: Tick = Tick::new(MIN_TICK + 1, 10, 10);
     const MID_TICK: Tick = Tick::new(0, 5, -5);

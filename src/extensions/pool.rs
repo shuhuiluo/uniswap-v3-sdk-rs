@@ -3,7 +3,7 @@
 //! liquidity map within a tick range for the specified pool using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
 //! in a single `eth_call`.
 
-use crate::prelude::*;
+use crate::prelude::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK, *};
 use alloy_primitives::{Address, ChainId, B256};
 use anyhow::Result;
 use aperture_lens::prelude::{

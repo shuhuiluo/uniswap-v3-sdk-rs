@@ -1,6 +1,6 @@
+use super::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK};
 use alloy_primitives::aliases::I24;
 use num_integer::Integer;
-use uniswap_v3_math::tick_math::{MAX_TICK, MIN_TICK};
 
 /// Returns the closest tick that is nearest a given tick and usable for the given tick spacing
 ///

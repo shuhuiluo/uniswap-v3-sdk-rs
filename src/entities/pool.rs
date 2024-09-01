@@ -4,7 +4,6 @@ use anyhow::Result;
 use core::{fmt, ops::Neg};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
-use uniswap_v3_math::tick_math::{MAX_TICK as _MAX_TICK, MIN_TICK as _MIN_TICK};
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
@@ -365,7 +364,7 @@ where
                     self.tick_spacing().as_i32(),
                 )?;
 
-            step.tick_next = step.tick_next.clamp(_MIN_TICK, _MAX_TICK);
+            step.tick_next = step.tick_next.clamp(MIN_TICK_I32, MAX_TICK_I32);
 
             step.sqrt_price_next_x96 =
                 get_sqrt_ratio_at_tick(I24::try_from(step.tick_next).unwrap())?;

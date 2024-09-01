@@ -2,15 +2,18 @@
 //! This library is a Rust port of the [TickMath library](https://github.com/uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol) in Solidity,
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/TickMath.sol).
 
-use super::{most_significant_bit, uint160_to_uint256, uint256_to_uint160_unchecked};
+use super::{most_significant_bit, u160_to_u256, u256_to_u160_unchecked};
+use crate::error::Error;
 use alloy_primitives::{aliases::I24, uint, U160, U256};
 use core::ops::{Shl, Shr, Sub};
-use uniswap_v3_math::error::UniswapV3MathError;
 
 /// The maximum tick that can be passed to `get_sqrt_ratio_at_tick`.
 pub const MAX_TICK: I24 = I24::from_limbs([887272]);
 /// The minimum tick that can be passed to `get_sqrt_ratio_at_tick`.
 pub const MIN_TICK: I24 = I24::from_limbs([15889944]);
+
+pub const MAX_TICK_I32: i32 = 887272;
+pub const MIN_TICK_I32: i32 = -MAX_TICK_I32;
 
 /// The minimum value that can be returned from `get_sqrt_ratio_at_tick`. Equivalent to
 /// `get_sqrt_ratio_at_tick(MIN_TICK)`
@@ -29,15 +32,18 @@ const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U160 =
 ///
 /// * `tick`: the tick for which to compute the sqrt ratio
 ///
-/// returns: Result<U160, UniswapV3MathError>
-pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, UniswapV3MathError> {
+/// ## Returns
+///
+/// The sqrt ratio as a Q64.96
+pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
     let abs_tick = tick.abs().as_i32();
 
     if abs_tick > MAX_TICK.as_i32() {
-        return Err(UniswapV3MathError::T);
+        return Err(Error::InvalidTick(tick));
     }
 
     // Equivalent: ratio = 2**128 / sqrt(1.0001) if abs_tick & 0x1 else 1 << 128
+    // TODO: optimize this
     let mut ratio = uint!(0xfffcb933bd6fad37aa2d162d1a59400100000000000000000000000000000000_U256)
         .shr((abs_tick & 0x1) << 7)
         & uint!(0x1ffffffffffffffffffffffffffffffff_U256);
@@ -110,7 +116,7 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, UniswapV3MathError> {
     }
 
     ratio = (ratio + uint!(0xffffffff_U256)) >> 32;
-    Ok(uint256_to_uint160_unchecked(ratio))
+    Ok(u256_to_u160_unchecked(ratio))
 }
 
 /// Returns the tick corresponding to a given sqrt ratio,
@@ -121,16 +127,19 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, UniswapV3MathError> {
 ///
 /// * `sqrt_ratio_x96`: the sqrt ratio as a Q64.96 for which to compute the tick
 ///
-/// returns: Result<I24, UniswapV3MathError>
-pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, UniswapV3MathError> {
+/// ## Returns
+///
+/// The tick corresponding to the given sqrt ratio
+pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, Error> {
     // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO)
-    // revert("R"); if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true
+    // revert("R");
+    // if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true
     // if sqrt_ratio_x96 >= MAX_SQRT_RATIO, sqrt_ratio_x96 - MIN_SQRT_RATIO > MAX_SQRT_RATIO -
     // MAX_SQRT_RATIO - 1
     if (sqrt_ratio_x96 - MIN_SQRT_RATIO) > MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE {
-        return Err(UniswapV3MathError::R);
+        return Err(Error::InvalidSqrtPrice(sqrt_ratio_x96));
     }
-    let sqrt_ratio_x96_u256 = uint160_to_uint256(sqrt_ratio_x96);
+    let sqrt_ratio_x96_u256 = u160_to_u256(sqrt_ratio_x96);
 
     // Find the most significant bit of `sqrt_ratio_x96`, 160 > msb >= 32.
     let msb = most_significant_bit(sqrt_ratio_x96_u256);
@@ -261,13 +270,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "T")]
+    #[should_panic(expected = "InvalidTick(-887273)")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_small() {
         get_sqrt_ratio_at_tick(MIN_TICK - I24::ONE).unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "T")]
+    #[should_panic(expected = "InvalidTick(887273)")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_large() {
         get_sqrt_ratio_at_tick(MAX_TICK + I24::ONE).unwrap();
     }

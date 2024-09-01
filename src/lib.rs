@@ -36,12 +36,14 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![allow(unused_crate_dependencies)]
 
 extern crate alloc;
 
 pub mod abi;
 pub mod constants;
 pub mod entities;
+pub mod error;
 pub mod multicall;
 pub mod nonfungible_position_manager;
 pub mod payments;
@@ -51,15 +53,15 @@ pub mod staker;
 pub mod swap_router;
 pub mod utils;
 
-#[cfg(feature = "extensions")]
-pub mod extensions;
+// #[cfg(feature = "extensions")]
+// pub mod extensions;
 
 #[cfg(test)]
 mod tests;
 
 pub mod prelude {
     pub use crate::{
-        abi::*, constants::*, entities::*, multicall::encode_multicall,
+        abi::*, constants::*, entities::*, error::*, multicall::encode_multicall,
         nonfungible_position_manager::*, payments::*, quoter::*, self_permit::*, staker::*,
         swap_router::*, utils::*,
     };
@@ -69,6 +71,6 @@ pub mod prelude {
         vec::Vec,
     };
 
-    #[cfg(feature = "extensions")]
-    pub use crate::extensions::*;
+    // #[cfg(feature = "extensions")]
+    // pub use crate::extensions::*;
 }
