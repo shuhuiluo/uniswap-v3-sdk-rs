@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use anyhow::Result;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -15,7 +14,7 @@ impl TickListDataProvider {
 impl TickDataProvider for TickListDataProvider {
     type Tick = Tick;
 
-    fn get_tick(&self, tick: i32) -> Result<&Tick> {
+    fn get_tick(&self, tick: i32) -> Result<&Tick, Error> {
         Ok(self.0.get_tick(tick))
     }
 
@@ -24,7 +23,7 @@ impl TickDataProvider for TickListDataProvider {
         tick: i32,
         lte: bool,
         tick_spacing: i32,
-    ) -> Result<(i32, bool)> {
+    ) -> Result<(i32, bool), Error> {
         Ok(self
             .0
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing))

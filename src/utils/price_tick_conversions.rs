@@ -1,9 +1,8 @@
 //! ## Price and tick conversions
 //! Utility functions for converting between [`I24`] ticks and SDK Core [`Price`] prices.
 
-use crate::prelude::*;
+use crate::prelude::{Error, *};
 use alloy_primitives::aliases::I24;
-use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 /// Returns a price object corresponding to the input tick and the base/quote token.
@@ -19,7 +18,7 @@ pub fn tick_to_price(
     base_token: Token,
     quote_token: Token,
     tick: I24,
-) -> Result<Price<Token, Token>> {
+) -> Result<Price<Token, Token>, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
     let ratio_x192 = u160_to_big_uint(sqrt_ratio_x96).pow(2);
     let q192 = u256_to_big_uint(Q192);
@@ -36,7 +35,7 @@ pub fn tick_to_price(
 ///
 /// * `price`: for which to return the closest tick that represents a price less than or equal to
 ///   the input price, i.e. the price of the returned tick is less than or equal to the input price
-pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24> {
+pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24, Error> {
     const ONE: I24 = I24::from_limbs([1]);
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     let sqrt_ratio_x96 = if sorted {

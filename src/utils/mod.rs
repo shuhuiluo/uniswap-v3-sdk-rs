@@ -29,9 +29,7 @@ pub use price_tick_conversions::*;
 pub use sqrt_price_math::*;
 pub use swap_math::compute_swap_step;
 pub use tick_list::TickList;
-pub use tick_math::{
-    get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, MAX_SQRT_RATIO, MIN_SQRT_RATIO,
-};
+pub use tick_math::*;
 pub use types::*;
 
 use alloy_primitives::{uint, Bytes, U160, U256};
@@ -39,7 +37,7 @@ use alloy_primitives::{uint, Bytes, U160, U256};
 pub(crate) const ONE: U160 = uint!(1_U160);
 pub(crate) const TWO: U256 = uint!(2_U256);
 pub(crate) const THREE: U256 = uint!(3_U256);
-pub const Q96: U256 = U256::from_limbs([0, 4294967296, 0, 0]);
+pub const Q96: U256 = U256::from_limbs([0, 1 << 32, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
 

@@ -1,6 +1,6 @@
 use super::{Q96, THREE, TWO};
+use crate::error::Error;
 use alloy_primitives::{uint, U256};
-use uniswap_v3_math::error::UniswapV3MathError;
 
 const _ONE: U256 = uint!(1_U256);
 
@@ -13,8 +13,8 @@ const _ONE: U256 = uint!(1_U256);
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
 ///
-/// returns: Result<U256, UniswapV3MathError>
-pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV3MathError> {
+/// returns: Result<U256, Error>
+pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, Error> {
     // 512-bit multiply [prod1 prod0] = a * b
     // Compute the product mod 2**256 and mod 2**256 - 1
     // then use the Chinese Remainder Theorem to reconstruct
@@ -29,10 +29,7 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV
     // Make sure the result is less than 2**256.
     // Also prevents denominator == 0
     if denominator <= prod_1 {
-        if denominator.is_zero() {
-            return Err(UniswapV3MathError::DenominatorIsZero);
-        }
-        return Err(UniswapV3MathError::DenominatorIsLteProdOne);
+        return Err(Error::MulDivOverflow);
     }
 
     // Handle non-overflow cases, 256 by 256 division
@@ -106,30 +103,26 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, UniswapV
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
 ///
-/// returns: Result<U256, UniswapV3MathError>
-pub fn mul_div_rounding_up(
-    a: U256,
-    b: U256,
-    denominator: U256,
-) -> Result<U256, UniswapV3MathError> {
+/// returns: Result<U256, Error>
+pub fn mul_div_rounding_up(a: U256, b: U256, denominator: U256) -> Result<U256, Error> {
     let result = mul_div(a, b, denominator)?;
 
     if a.mul_mod(b, denominator).is_zero() {
         Ok(result)
     } else if result == U256::MAX {
-        Err(UniswapV3MathError::ResultIsU256MAX)
+        Err(Error::MulDivOverflow)
     } else {
         Ok(result + _ONE)
     }
 }
 
 /// Calculates a * b / 2^96 with full precision.
-pub fn mul_div_96(a: U256, b: U256) -> Result<U256, UniswapV3MathError> {
+pub fn mul_div_96(a: U256, b: U256) -> Result<U256, Error> {
     let prod0 = a * b;
     let mm = a.mul_mod(b, U256::MAX);
     let prod1 = mm - prod0 - U256::from_limbs([(mm < prod0) as u64, 0, 0, 0]);
     if prod1.ge(&Q96) {
-        return Err(UniswapV3MathError::DenominatorIsLteProdOne);
+        return Err(Error::MulDivOverflow);
     }
     Ok((prod0 >> 96) | (prod1 << 160))
 }

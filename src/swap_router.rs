@@ -1,7 +1,6 @@
-use crate::prelude::*;
+use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, U160, U256};
 use alloy_sol_types::SolCall;
-use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 /// Options for producing the arguments to send calls to the router.
@@ -31,7 +30,7 @@ pub struct SwapOptions {
 pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
     trades: &mut [Trade<TInput, TOutput, P>],
     options: SwapOptions,
-) -> Result<MethodParameters> {
+) -> Result<MethodParameters, Error> {
     let SwapOptions {
         slippage_tolerance,
         recipient,

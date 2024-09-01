@@ -1,6 +1,5 @@
 use crate::prelude::Pool;
 use alloy_primitives::ChainId;
-use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a list of pools through which a swap can occur
@@ -70,7 +69,7 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
     }
 
     /// Returns the mid price of the route
-    pub fn mid_price(&mut self) -> Result<Price<TInput, TOutput>> {
+    pub fn mid_price(&mut self) -> Result<Price<TInput, TOutput>, Error> {
         if let Some(mid_price) = &self._mid_price {
             return Ok(mid_price.clone());
         }

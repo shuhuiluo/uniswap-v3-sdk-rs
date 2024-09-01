@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use alloy_primitives::{I256, U160, U256};
-use uniswap_v3_math::error::UniswapV3MathError;
 
 /// Computes the result of swapping some amount in, or amount out, given the parameters of the swap
 ///
@@ -31,7 +30,7 @@ pub fn compute_swap_step(
     liquidity: u128,
     amount_remaining: I256,
     fee_pips: u32,
-) -> Result<(U160, U256, U256, U256), UniswapV3MathError> {
+) -> Result<(U160, U256, U256, U256), Error> {
     const MAX_FEE: U256 = U256::from_limbs([1000000, 0, 0, 0]);
     let fee_pips = U256::from_limbs([fee_pips as u64, 0, 0, 0]);
     let fee_complement = MAX_FEE - fee_pips;

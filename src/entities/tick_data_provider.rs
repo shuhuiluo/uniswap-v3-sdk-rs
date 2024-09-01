@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use anyhow::Result;
 
 /// Provides information about ticks
 pub trait TickDataProvider: Clone {
@@ -12,7 +11,7 @@ pub trait TickDataProvider: Clone {
     /// * `tick`: The tick to load
     ///
     /// returns: Result<&Self::Tick, Error>
-    fn get_tick(&self, tick: i32) -> Result<&Self::Tick>;
+    fn get_tick(&self, tick: i32) -> Result<&Self::Tick, Error>;
 
     /// Return the next tick that is initialized within a single word
     ///
@@ -28,13 +27,8 @@ pub trait TickDataProvider: Clone {
         tick: i32,
         lte: bool,
         tick_spacing: i32,
-    ) -> Result<(i32, bool)>;
+    ) -> Result<(i32, bool), Error>;
 }
-
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "std", derive(thiserror::Error))]
-#[cfg_attr(feature = "std", error("No tick data provider was given"))]
-pub struct NoTickDataError;
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is
 /// required. Useful if you do not need to load tick data for your use case.
@@ -44,11 +38,8 @@ pub struct NoTickDataProvider;
 impl TickDataProvider for NoTickDataProvider {
     type Tick = Tick;
 
-    fn get_tick(&self, _: i32) -> Result<&Tick> {
-        #[cfg(feature = "std")]
-        return Err(NoTickDataError.into());
-        #[cfg(not(feature = "std"))]
-        anyhow::bail!("No tick data provider was given");
+    fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
+        Err(Error::NoTickDataError)
     }
 
     fn next_initialized_tick_within_one_word(
@@ -56,11 +47,8 @@ impl TickDataProvider for NoTickDataProvider {
         _: i32,
         _: bool,
         _: i32,
-    ) -> Result<(i32, bool)> {
-        #[cfg(feature = "std")]
-        return Err(NoTickDataError.into());
-        #[cfg(not(feature = "std"))]
-        anyhow::bail!("No tick data provider was given");
+    ) -> Result<(i32, bool), Error> {
+        Err(Error::NoTickDataError)
     }
 }
 
@@ -73,14 +61,14 @@ mod tests {
         let tick_data_provider = NoTickDataProvider;
         assert_eq!(
             tick_data_provider.get_tick(0).unwrap_err().to_string(),
-            NoTickDataError.to_string()
+            Error::NoTickDataError.to_string()
         );
         assert_eq!(
             tick_data_provider
                 .next_initialized_tick_within_one_word(0, false, 1)
                 .unwrap_err()
                 .to_string(),
-            NoTickDataError.to_string()
+            Error::NoTickDataError.to_string()
         );
     }
 }

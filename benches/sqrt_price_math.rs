@@ -1,4 +1,4 @@
-use alloy_primitives::{keccak256, U256};
+use alloy_primitives::{keccak256, U160, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
 use uniswap_v3_math::sqrt_price_math;
@@ -13,17 +13,47 @@ fn pseudo_random_128(seed: u64) -> u128 {
     u128::from_be_bytes(s.to_be_bytes::<32>()[..16].try_into().unwrap())
 }
 
-fn generate_inputs() -> Vec<(U256, u128, U256, bool)> {
+const fn wrap_to_uint160(x: U256) -> U160 {
+    let limbs = x.into_limbs();
+    U160::from_limbs([limbs[0], limbs[1], limbs[2] % (1 << 32)])
+}
+
+const fn u160_to_u256(x: U160) -> U256 {
+    let limbs = x.into_limbs();
+    U256::from_limbs([limbs[0], limbs[1], limbs[2], 0])
+}
+
+fn generate_inputs() -> Vec<(U160, u128, U256, bool)> {
     (0u64..100)
         .map(|i| {
             (
-                pseudo_random(i),
+                wrap_to_uint160(pseudo_random(i)),
                 pseudo_random_128(i.pow(2)),
                 pseudo_random(i.pow(3)),
                 i % 2 == 0,
             )
         })
         .collect()
+}
+
+fn get_amount_inputs() -> Vec<(U160, U160, u128, bool)> {
+    (0u64..100)
+        .map(|i| {
+            (
+                wrap_to_uint160(pseudo_random(i)),
+                wrap_to_uint160(pseudo_random(i.pow(2))),
+                pseudo_random_128(i.pow(3)),
+                i % 2 == 0,
+            )
+        })
+        .collect()
+}
+
+fn get_amount_inputs_ref() -> Vec<(U256, U256, u128, bool)> {
+    get_amount_inputs()
+        .into_iter()
+        .map(|(a, b, c, d)| (u160_to_u256(a), u160_to_u256(b), c, d))
+        .collect::<Vec<_>>()
 }
 
 fn get_next_sqrt_price_from_input_benchmark(c: &mut Criterion) {
@@ -38,7 +68,10 @@ fn get_next_sqrt_price_from_input_benchmark(c: &mut Criterion) {
 }
 
 fn get_next_sqrt_price_from_input_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = generate_inputs()
+        .into_iter()
+        .map(|(a, b, c, d)| (u160_to_u256(a), b, c, d))
+        .collect::<Vec<_>>();
     c.bench_function("get_next_sqrt_price_from_input_ref", |b| {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
@@ -66,7 +99,10 @@ fn get_next_sqrt_price_from_output_benchmark(c: &mut Criterion) {
 }
 
 fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = generate_inputs()
+        .into_iter()
+        .map(|(a, b, c, d)| (u160_to_u256(a), b, c, d))
+        .collect::<Vec<_>>();
     c.bench_function("get_next_sqrt_price_from_output_ref", |b| {
         b.iter(|| {
             for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
@@ -82,10 +118,10 @@ fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
 }
 
 fn get_amount_0_delta_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs();
     c.bench_function("get_amount_0_delta", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
                 let _ =
                     get_amount_0_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             }
@@ -94,10 +130,10 @@ fn get_amount_0_delta_benchmark(c: &mut Criterion) {
 }
 
 fn get_amount_0_delta_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs_ref();
     c.bench_function("get_amount_0_delta_ref", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_0_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
@@ -110,10 +146,10 @@ fn get_amount_0_delta_benchmark_ref(c: &mut Criterion) {
 }
 
 fn get_amount_1_delta_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs();
     c.bench_function("get_amount_1_delta", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
                 let _ =
                     get_amount_1_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
             }
@@ -122,10 +158,10 @@ fn get_amount_1_delta_benchmark(c: &mut Criterion) {
 }
 
 fn get_amount_1_delta_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs_ref();
     c.bench_function("get_amount_1_delta_ref", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
                 let _ = sqrt_price_math::_get_amount_1_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
@@ -138,29 +174,35 @@ fn get_amount_1_delta_benchmark_ref(c: &mut Criterion) {
 }
 
 fn get_amount_0_delta_signed_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs();
     c.bench_function("get_amount_0_delta_signed", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
-                let _ = get_amount_0_delta_signed(
-                    *sqrt_ratio_a_x96,
-                    *sqrt_ratio_b_x96,
-                    *liquidity as i128,
-                );
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
+                let _ = get_amount_0_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, liquidity);
             }
         });
     });
 }
 
 fn get_amount_0_delta_signed_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs_ref();
     c.bench_function("get_amount_0_delta_signed_ref", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
                 let _ = sqrt_price_math::get_amount_0_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
-                    *liquidity as i128,
+                    liquidity,
                 );
             }
         });
@@ -168,29 +210,35 @@ fn get_amount_0_delta_signed_benchmark_ref(c: &mut Criterion) {
 }
 
 fn get_amount_1_delta_signed_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs();
     c.bench_function("get_amount_1_delta_signed", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
-                let _ = get_amount_1_delta_signed(
-                    *sqrt_ratio_a_x96,
-                    *sqrt_ratio_b_x96,
-                    *liquidity as i128,
-                );
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
+                let _ = get_amount_1_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, liquidity);
             }
         });
     });
 }
 
 fn get_amount_1_delta_signed_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs();
+    let inputs = get_amount_inputs_ref();
     c.bench_function("get_amount_1_delta_signed_ref", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
                 let _ = sqrt_price_math::get_amount_1_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
-                    *liquidity as i128,
+                    liquidity,
                 );
             }
         });

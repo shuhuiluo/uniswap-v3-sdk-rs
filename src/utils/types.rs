@@ -1,53 +1,8 @@
-use alloy_primitives::{Address, I256, U160, U256};
+use alloy_primitives::{I256, U160, U256};
 use bigdecimal::BigDecimal;
 use core::ops::Neg;
-use ethers_core::types;
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::{Signed, ToBytes};
-
-pub trait ToAlloy {
-    type AlloyType;
-
-    fn to_alloy(self) -> Self::AlloyType;
-}
-
-pub trait ToEthers {
-    type EthersType;
-
-    fn to_ethers(self) -> Self::EthersType;
-}
-
-impl ToAlloy for types::U256 {
-    type AlloyType = U256;
-
-    fn to_alloy(self) -> Self::AlloyType {
-        U256::from_limbs(self.0)
-    }
-}
-
-impl ToEthers for U256 {
-    type EthersType = types::U256;
-
-    fn to_ethers(self) -> Self::EthersType {
-        types::U256(self.into_limbs())
-    }
-}
-
-impl ToAlloy for types::Address {
-    type AlloyType = Address;
-
-    fn to_alloy(self) -> Self::AlloyType {
-        self.to_fixed_bytes().into()
-    }
-}
-
-impl ToEthers for Address {
-    type EthersType = types::Address;
-
-    fn to_ethers(self) -> Self::EthersType {
-        self.into_array().into()
-    }
-}
 
 pub fn u256_to_big_uint(x: U256) -> BigUint {
     BigUint::from_bytes_be(&x.to_be_bytes::<32>())
@@ -93,16 +48,16 @@ pub fn big_int_to_i256(x: BigInt) -> I256 {
     }
 }
 
-pub const fn u128_to_uint256(x: u128) -> U256 {
+pub const fn u128_to_u256(x: u128) -> U256 {
     U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
 }
 
-pub const fn uint160_to_uint256(x: U160) -> U256 {
+pub const fn u160_to_u256(x: U160) -> U256 {
     let limbs = x.into_limbs();
     U256::from_limbs([limbs[0], limbs[1], limbs[2], 0])
 }
 
-pub const fn uint256_to_uint160_unchecked(x: U256) -> U160 {
+pub const fn u256_to_u160_unchecked(x: U256) -> U160 {
     let limbs = x.into_limbs();
     U160::from_limbs([limbs[0], limbs[1], limbs[2]])
 }

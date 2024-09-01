@@ -1,10 +1,9 @@
-use crate::prelude::*;
+use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, ChainId, B256, I256, U160, U256};
 use anyhow::Result;
 use core::{fmt, ops::Neg};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
-use uniswap_v3_math::tick_math::{MAX_TICK as _MAX_TICK, MIN_TICK as _MIN_TICK};
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
 
@@ -81,7 +80,7 @@ impl Pool<NoTickDataProvider> {
         fee: FeeAmount,
         sqrt_ratio_x96: U160,
         liquidity: u128,
-    ) -> Result<Pool<NoTickDataProvider>> {
+    ) -> Result<Pool<NoTickDataProvider>, Error> {
         Self::new_with_tick_data_provider(
             token_a,
             token_b,
@@ -210,7 +209,7 @@ where
         sqrt_ratio_x96: U160,
         liquidity: u128,
         tick_data_provider: P,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         let (token0, token1) = if token_a.sorts_before(&token_b)? {
             (token_a, token_b)
         } else {
@@ -240,7 +239,7 @@ where
         &self,
         input_amount: &CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self)> {
+    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
         assert!(self.involves_token(&input_amount.currency), "TOKEN");
 
         let zero_for_one = input_amount.currency.equals(&self.token0);
@@ -283,7 +282,7 @@ where
         &self,
         output_amount: &CurrencyAmount<Token>,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self)> {
+    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
         assert!(self.involves_token(&output_amount.currency), "TOKEN");
 
         let zero_for_one = output_amount.currency.equals(&self.token1);
@@ -316,7 +315,7 @@ where
         zero_for_one: bool,
         amount_specified: I256,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(I256, U160, u128, i32)> {
+    ) -> Result<(I256, U160, u128, i32), Error> {
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
                 MIN_SQRT_RATIO + ONE
@@ -365,7 +364,7 @@ where
                     self.tick_spacing().as_i32(),
                 )?;
 
-            step.tick_next = step.tick_next.clamp(_MIN_TICK, _MAX_TICK);
+            step.tick_next = step.tick_next.clamp(MIN_TICK_I32, MAX_TICK_I32);
 
             step.sqrt_price_next_x96 =
                 get_sqrt_ratio_at_tick(I24::try_from(step.tick_next).unwrap())?;
@@ -531,17 +530,19 @@ mod tests {
     }
 
     #[test]
-    fn token0_price_returns_price_of_token0_in_terms_of_token1() -> Result<()> {
+    fn token0_price_returns_price_of_token0_in_terms_of_token1() {
         let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
-        )?;
+        )
+        .unwrap();
         assert_eq!(
             pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)?,
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1.01"
         );
         let pool = Pool::new(
@@ -550,27 +551,30 @@ mod tests {
             FeeAmount::LOW,
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
-        )?;
+        )
+        .unwrap();
         assert_eq!(
             pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)?,
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "1.01"
         );
-        Ok(())
     }
 
     #[test]
-    fn token1_price_returns_price_of_token1_in_terms_of_token0() -> Result<()> {
+    fn token1_price_returns_price_of_token1_in_terms_of_token0() {
         let pool = Pool::new(
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
-        )?;
+        )
+        .unwrap();
         assert_eq!(
             pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)?,
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.9901"
         );
         let pool = Pool::new(
@@ -579,13 +583,14 @@ mod tests {
             FeeAmount::LOW,
             encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
             0,
-        )?;
+        )
+        .unwrap();
         assert_eq!(
             pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)?,
+                .to_significant(5, Rounding::RoundHalfUp)
+                .unwrap(),
             "0.9901"
         );
-        Ok(())
     }
 
     #[test]
@@ -684,39 +689,51 @@ mod tests {
         });
 
         #[test]
-        fn get_output_amount_usdc_to_dai() -> Result<()> {
-            let (output_amount, _) =
-                POOL.get_output_amount(&CurrencyAmount::from_raw_amount(USDC.clone(), 100)?, None)?;
+        fn get_output_amount_usdc_to_dai() {
+            let (output_amount, _) = POOL
+                .get_output_amount(
+                    &CurrencyAmount::from_raw_amount(USDC.clone(), 100).unwrap(),
+                    None,
+                )
+                .unwrap();
             assert!(output_amount.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
-            Ok(())
         }
 
         #[test]
-        fn get_output_amount_dai_to_usdc() -> Result<()> {
-            let (output_amount, _) =
-                POOL.get_output_amount(&CurrencyAmount::from_raw_amount(DAI.clone(), 100)?, None)?;
+        fn get_output_amount_dai_to_usdc() {
+            let (output_amount, _) = POOL
+                .get_output_amount(
+                    &CurrencyAmount::from_raw_amount(DAI.clone(), 100).unwrap(),
+                    None,
+                )
+                .unwrap();
             assert!(output_amount.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
-            Ok(())
         }
 
         #[test]
-        fn get_input_amount_usdc_to_dai() -> Result<()> {
-            let (input_amount, _) =
-                POOL.get_input_amount(&CurrencyAmount::from_raw_amount(DAI.clone(), 98)?, None)?;
+        fn get_input_amount_usdc_to_dai() {
+            let (input_amount, _) = POOL
+                .get_input_amount(
+                    &CurrencyAmount::from_raw_amount(DAI.clone(), 98).unwrap(),
+                    None,
+                )
+                .unwrap();
             assert!(input_amount.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
-            Ok(())
         }
 
         #[test]
-        fn get_input_amount_dai_to_usdc() -> Result<()> {
-            let (input_amount, _) =
-                POOL.get_input_amount(&CurrencyAmount::from_raw_amount(USDC.clone(), 98)?, None)?;
+        fn get_input_amount_dai_to_usdc() {
+            let (input_amount, _) = POOL
+                .get_input_amount(
+                    &CurrencyAmount::from_raw_amount(USDC.clone(), 98).unwrap(),
+                    None,
+                )
+                .unwrap();
             assert!(input_amount.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
-            Ok(())
         }
     }
 }
