@@ -1,53 +1,8 @@
-use alloy_primitives::{Address, I256, U160, U256};
+use alloy_primitives::{I256, U160, U256};
 use bigdecimal::BigDecimal;
 use core::ops::Neg;
-use ethers_core::types;
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::{Signed, ToBytes};
-
-pub trait ToAlloy {
-    type AlloyType;
-
-    fn to_alloy(self) -> Self::AlloyType;
-}
-
-pub trait ToEthers {
-    type EthersType;
-
-    fn to_ethers(self) -> Self::EthersType;
-}
-
-impl ToAlloy for types::U256 {
-    type AlloyType = U256;
-
-    fn to_alloy(self) -> Self::AlloyType {
-        U256::from_limbs(self.0)
-    }
-}
-
-impl ToEthers for U256 {
-    type EthersType = types::U256;
-
-    fn to_ethers(self) -> Self::EthersType {
-        types::U256(self.into_limbs())
-    }
-}
-
-impl ToAlloy for types::Address {
-    type AlloyType = Address;
-
-    fn to_alloy(self) -> Self::AlloyType {
-        self.to_fixed_bytes().into()
-    }
-}
-
-impl ToEthers for Address {
-    type EthersType = types::Address;
-
-    fn to_ethers(self) -> Self::EthersType {
-        self.into_array().into()
-    }
-}
 
 pub fn u256_to_big_uint(x: U256) -> BigUint {
     BigUint::from_bytes_be(&x.to_be_bytes::<32>())
