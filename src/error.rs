@@ -37,6 +37,9 @@ pub enum Error {
 
     #[cfg_attr(feature = "std", error("Invalid price"))]
     InvalidPrice,
+
+    #[cfg_attr(feature = "std", error("No tick data provider was given"))]
+    NoTickDataError,
 }
 
 impl From<CoreError> for Error {

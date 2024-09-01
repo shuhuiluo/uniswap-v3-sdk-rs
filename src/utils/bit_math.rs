@@ -21,7 +21,7 @@ pub fn least_significant_bit(x: U256) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ops::{Shl, Sub};
+    use core::ops::{Shl, Sub};
 
     #[test]
     #[should_panic(expected = "ZERO")]

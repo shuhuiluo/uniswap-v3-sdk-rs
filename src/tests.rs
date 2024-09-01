@@ -124,7 +124,7 @@ pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvid
     .unwrap()
 }
 
-pub(crate) static RPC_URL: Lazy<String> = Lazy::new(|| {
+pub(crate) static _RPC_URL: Lazy<String> = Lazy::new(|| {
     dotenv().ok();
     std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap()
 });

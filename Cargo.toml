@@ -31,7 +31,7 @@ uniswap-lens = "0.2.0"
 uniswap-sdk-core = "1.1.0"
 
 [features]
-default = ["std"]
+default = []
 extensions = ["base64", "regex", "serde_json"]
 std = ["thiserror", "uniswap-sdk-core/std"]
 

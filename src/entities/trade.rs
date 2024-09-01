@@ -1,5 +1,4 @@
-use crate::prelude::*;
-use anyhow::Result;
+use crate::prelude::{Error, *};
 use rustc_hash::FxHashSet;
 use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 
@@ -117,7 +116,7 @@ where
     ///
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
-    fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self> {
+    fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self, Error> {
         let input_currency = &swaps[0].input_amount.currency.wrapped();
         let output_currency = &swaps[0].output_amount.currency.wrapped();
         for Swap { route, .. } in &swaps {
@@ -160,7 +159,7 @@ where
     pub fn exact_in(
         route: Route<TInput, TOutput, P>,
         amount_in: CurrencyAmount<Token>,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         Self::from_route(route, amount_in, TradeType::ExactInput)
     }
 
@@ -173,7 +172,7 @@ where
     pub fn exact_out(
         route: Route<TInput, TOutput, P>,
         amount_out: CurrencyAmount<Token>,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         Self::from_route(route, amount_out, TradeType::ExactOutput)
     }
 
@@ -188,7 +187,7 @@ where
         route: Route<TInput, TOutput, P>,
         amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         let length = route.token_path.len();
         let mut token_amount: CurrencyAmount<Token> = amount.wrapped()?;
         let input_amount: CurrencyAmount<TInput>;
@@ -257,7 +256,7 @@ where
     pub fn from_routes(
         routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, P>)>,
         trade_type: TradeType,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         let mut populated_routes: Vec<Swap<TInput, TOutput, P>> = Vec::with_capacity(routes.len());
         for (amount, route) in routes {
             let trade = Self::from_route(route, amount, trade_type)?;
@@ -273,7 +272,7 @@ where
         input_amount: CurrencyAmount<TInput>,
         output_amount: CurrencyAmount<TOutput>,
         trade_type: TradeType,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         Self::new(
             vec![Swap {
                 route,
@@ -289,7 +288,7 @@ where
     pub fn create_unchecked_trade_with_multiple_routes(
         swaps: Vec<Swap<TInput, TOutput, P>>,
         trade_type: TradeType,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         Self::new(swaps, trade_type)
     }
 
@@ -315,7 +314,7 @@ where
         current_pools: Vec<Pool<P>>,
         next_amount_in: Option<CurrencyAmount<Token>>,
         best_trades: &mut Vec<Self>,
-    ) -> Result<&mut Vec<Self>> {
+    ) -> Result<&mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");
         let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
         let max_hops = best_trade_options.max_hops.unwrap_or(3);
@@ -400,7 +399,7 @@ where
         current_pools: Vec<Pool<P>>,
         next_amount_out: Option<CurrencyAmount<Token>>,
         best_trades: &mut Vec<Self>,
-    ) -> Result<&mut Vec<Self>> {
+    ) -> Result<&mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");
         let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
         let max_hops = best_trade_options.max_hops.unwrap_or(3);
@@ -476,7 +475,7 @@ where
     }
 
     /// The input amount for the trade assuming no slippage.
-    fn input_amount_ref(&self) -> Result<CurrencyAmount<TInput>> {
+    fn input_amount_ref(&self) -> Result<CurrencyAmount<TInput>, Error> {
         if let Some(ref input_amount) = self._input_amount {
             return Ok(input_amount.clone());
         }
@@ -489,13 +488,13 @@ where
     }
 
     /// The input amount for the trade assuming no slippage.
-    pub fn input_amount(&mut self) -> Result<CurrencyAmount<TInput>> {
+    pub fn input_amount(&mut self) -> Result<CurrencyAmount<TInput>, Error> {
         self._input_amount = Some(self.input_amount_ref()?);
         Ok(self._input_amount.clone().unwrap())
     }
 
     /// The output amount for the trade assuming no slippage.
-    fn output_amount_ref(&self) -> Result<CurrencyAmount<TOutput>> {
+    fn output_amount_ref(&self) -> Result<CurrencyAmount<TOutput>, Error> {
         if let Some(ref output_amount) = self._output_amount {
             return Ok(output_amount.clone());
         }
@@ -508,13 +507,13 @@ where
     }
 
     /// The output amount for the trade assuming no slippage.
-    pub fn output_amount(&mut self) -> Result<CurrencyAmount<TOutput>> {
+    pub fn output_amount(&mut self) -> Result<CurrencyAmount<TOutput>, Error> {
         self._output_amount = Some(self.output_amount_ref()?);
         Ok(self._output_amount.clone().unwrap())
     }
 
     /// The price expressed in terms of output amount/input amount.
-    pub fn execution_price(&mut self) -> Result<Price<TInput, TOutput>> {
+    pub fn execution_price(&mut self) -> Result<Price<TInput, TOutput>, Error> {
         if let Some(ref execution_price) = self._execution_price {
             return Ok(execution_price.clone());
         }
@@ -531,7 +530,7 @@ where
     }
 
     /// Returns the percent difference between the route's mid price and the price impact
-    pub fn price_impact(&mut self) -> Result<Percent> {
+    pub fn price_impact(&mut self) -> Result<Percent, Error> {
         if let Some(ref price_impact) = self._price_impact {
             return Ok(price_impact.clone());
         }
@@ -568,7 +567,7 @@ where
         &mut self,
         slippage_tolerance: Percent,
         amount_out: Option<CurrencyAmount<TOutput>>,
-    ) -> Result<CurrencyAmount<TOutput>> {
+    ) -> Result<CurrencyAmount<TOutput>, Error> {
         assert!(
             slippage_tolerance >= Percent::new(0, 1),
             "SLIPPAGE_TOLERANCE"
@@ -598,7 +597,7 @@ where
         &mut self,
         slippage_tolerance: Percent,
         amount_in: Option<CurrencyAmount<TInput>>,
-    ) -> Result<CurrencyAmount<TInput>> {
+    ) -> Result<CurrencyAmount<TInput>, Error> {
         assert!(
             slippage_tolerance >= Percent::new(0, 1),
             "SLIPPAGE_TOLERANCE"
@@ -622,7 +621,7 @@ where
     pub fn worst_execution_price(
         &mut self,
         slippage_tolerance: Percent,
-    ) -> Result<Price<TInput, TOutput>> {
+    ) -> Result<Price<TInput, TOutput>, Error> {
         Ok(Price::new(
             self.input_amount()?.currency.clone(),
             self.output_amount()?.currency.clone(),

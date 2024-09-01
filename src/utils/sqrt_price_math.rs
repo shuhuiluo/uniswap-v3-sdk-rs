@@ -451,8 +451,8 @@ mod tests {
                 Ok(ref_) => {
                     assert_eq!(res.unwrap(), ref_.into_raw());
                 }
-                Err(e) => {
-                    assert_eq!(res.unwrap_err().to_string(), e.to_string());
+                Err(_) => {
+                    assert!(res.is_err());
                 }
             }
         }
@@ -476,8 +476,8 @@ mod tests {
                 Ok(ref_) => {
                     assert_eq!(res.unwrap(), ref_.into_raw());
                 }
-                Err(e) => {
-                    assert_eq!(res.unwrap_err().to_string(), e.to_string());
+                Err(_) => {
+                    assert!(res.is_err());
                 }
             }
         }

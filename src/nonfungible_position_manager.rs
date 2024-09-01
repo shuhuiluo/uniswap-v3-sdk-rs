@@ -1,7 +1,6 @@
-use crate::prelude::*;
+use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, Signature, U256};
 use alloy_sol_types::SolCall;
-use anyhow::Result;
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,7 +114,7 @@ pub fn create_call_parameters<P>(pool: &Pool<P>) -> MethodParameters {
 pub fn add_call_parameters<P>(
     position: &mut Position<P>,
     options: AddLiquidityOptions,
-) -> Result<MethodParameters> {
+) -> Result<MethodParameters, Error> {
     assert!(position.liquidity > 0, "ZERO_LIQUIDITY");
 
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(5);
@@ -289,7 +288,7 @@ pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
 pub fn remove_call_parameters<Currency0: Currency, Currency1: Currency, P>(
     position: &Position<P>,
     options: RemoveLiquidityOptions<Currency0, Currency1>,
-) -> Result<MethodParameters> {
+) -> Result<MethodParameters, Error> {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(6);
 
     let deadline = options.deadline;

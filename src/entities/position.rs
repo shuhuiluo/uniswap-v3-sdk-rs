@@ -1,9 +1,8 @@
 use crate::prelude::{
     tick_math::{MAX_TICK, MIN_TICK},
-    *,
+    Error, *,
 };
 use alloy_primitives::{aliases::I24, U160, U256};
-use anyhow::Result;
 use core::{cmp::PartialEq, fmt};
 use uniswap_sdk_core::prelude::*;
 
@@ -76,7 +75,7 @@ impl<P> Position<P> {
     }
 
     /// Returns the price of token0 at the lower tick
-    pub fn token0_price_lower(&self) -> Result<Price<Token, Token>> {
+    pub fn token0_price_lower(&self) -> Result<Price<Token, Token>, Error> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
@@ -85,7 +84,7 @@ impl<P> Position<P> {
     }
 
     /// Returns the price of token0 at the upper tick
-    pub fn token0_price_upper(&self) -> Result<Price<Token, Token>> {
+    pub fn token0_price_upper(&self) -> Result<Price<Token, Token>, Error> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
@@ -95,7 +94,7 @@ impl<P> Position<P> {
 
     /// Returns the amount of token0 that this position's liquidity could be burned for at the
     /// current pool price
-    pub fn amount0(&mut self) -> Result<CurrencyAmount<Token>> {
+    pub fn amount0(&mut self) -> Result<CurrencyAmount<Token>, Error> {
         if self._token0_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
@@ -129,7 +128,7 @@ impl<P> Position<P> {
 
     /// Returns the amount of token1 that this position's liquidity could be burned for at the
     /// current pool price
-    pub fn amount1(&mut self) -> Result<CurrencyAmount<Token>> {
+    pub fn amount1(&mut self) -> Result<CurrencyAmount<Token>, Error> {
         if self._token1_amount.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
@@ -211,7 +210,7 @@ impl<P> Position<P> {
     pub fn mint_amounts_with_slippage(
         &mut self,
         slippage_tolerance: &Percent,
-    ) -> Result<MintAmounts> {
+    ) -> Result<MintAmounts, Error> {
         // Get lower/upper prices
         let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
@@ -283,7 +282,10 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The amounts, with slippage
-    pub fn burn_amounts_with_slippage(&self, slippage_tolerance: &Percent) -> Result<(U256, U256)> {
+    pub fn burn_amounts_with_slippage(
+        &self,
+        slippage_tolerance: &Percent,
+    ) -> Result<(U256, U256), Error> {
         // get lower/upper prices
         let (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper) =
             self.ratios_after_slippage(slippage_tolerance);
@@ -319,7 +321,7 @@ impl<P> Position<P> {
 
     /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held
     /// by the position at the current price for the pool
-    pub fn mint_amounts(&mut self) -> Result<MintAmounts> {
+    pub fn mint_amounts(&mut self) -> Result<MintAmounts, Error> {
         if self._mint_amounts.is_none() {
             if self.pool.tick_current < self.tick_lower {
                 self._mint_amounts = Some(MintAmounts {
@@ -384,7 +386,7 @@ impl<P> Position<P> {
         amount0: U256,
         amount1: U256,
         use_full_precision: bool,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         let sqrt_ratio_a_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
         let sqrt_ratio_b_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
         let liquidity = max_liquidity_for_amounts(
@@ -420,7 +422,7 @@ impl<P> Position<P> {
         tick_upper: I24,
         amount0: U256,
         use_full_precision: bool,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         Self::from_amounts(
             pool,
             tick_lower,
@@ -445,7 +447,7 @@ impl<P> Position<P> {
         tick_lower: I24,
         tick_upper: I24,
         amount1: U256,
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         // this function always uses full precision
         Self::from_amounts(pool, tick_lower, tick_upper, U256::MAX, amount1, true)
     }
