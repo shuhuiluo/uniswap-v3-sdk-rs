@@ -2,7 +2,7 @@
 //! This library is a Rust port of the [TickMath library](https://github.com/uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol) in Solidity,
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/TickMath.sol).
 
-use super::{most_significant_bit, u160_to_u256, u256_to_u160_unchecked};
+use super::most_significant_bit;
 use crate::error::Error;
 use alloy_primitives::{aliases::I24, uint, U160, U256};
 use core::ops::{Shl, Shr, Sub};
@@ -116,7 +116,7 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
     }
 
     ratio = (ratio + uint!(0xffffffff_U256)) >> 32;
-    Ok(u256_to_u160_unchecked(ratio))
+    Ok(U160::from(ratio))
 }
 
 /// Returns the tick corresponding to a given sqrt ratio,
@@ -139,7 +139,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, Error> {
     if (sqrt_ratio_x96 - MIN_SQRT_RATIO) > MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE {
         return Err(Error::InvalidSqrtPrice(sqrt_ratio_x96));
     }
-    let sqrt_ratio_x96_u256 = u160_to_u256(sqrt_ratio_x96);
+    let sqrt_ratio_x96_u256 = U256::from(sqrt_ratio_x96);
 
     // Find the most significant bit of `sqrt_ratio_x96`, 160 > msb >= 32.
     let msb = most_significant_bit(sqrt_ratio_x96_u256);

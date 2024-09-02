@@ -10,16 +10,12 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use uniswap_sdk_core::prelude::*;
 
-pub static MIN_PRICE: Lazy<Fraction> = Lazy::new(|| {
-    Fraction::new(
-        u160_to_big_int(MIN_SQRT_RATIO).pow(2),
-        u256_to_big_int(Q192),
-    )
-});
+pub static MIN_PRICE: Lazy<Fraction> =
+    Lazy::new(|| Fraction::new(MIN_SQRT_RATIO.to_big_int().pow(2), Q192.to_big_int()));
 pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
-        u160_to_big_int(MAX_SQRT_RATIO).pow(2) - u160_to_big_int(ONE),
-        u256_to_big_int(Q192),
+        MAX_SQRT_RATIO.to_big_int().pow(2) - ONE.to_big_int(),
+        Q192.to_big_int(),
     )
 });
 
@@ -109,8 +105,8 @@ pub fn sqrt_ratio_x96_to_price(
     base_token: Token,
     quote_token: Token,
 ) -> Result<Price<Token, Token>, Error> {
-    let ratio_x192 = u160_to_big_uint(sqrt_ratio_x96).pow(2);
-    let q192 = u256_to_big_uint(Q192);
+    let ratio_x192 = sqrt_ratio_x96.to_big_uint().pow(2);
+    let q192 = Q192.to_big_uint();
     Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
     } else {
@@ -212,7 +208,7 @@ pub fn price_to_closest_usable_tick(
 /// ```
 pub fn tick_to_big_price(tick: I24) -> Result<BigDecimal, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    Ok(BigDecimal::from(u160_to_big_int(sqrt_ratio_x96).pow(2)) / u256_to_big_decimal(Q192))
+    Ok(BigDecimal::from(sqrt_ratio_x96.to_big_int().pow(2)) / Q192.to_big_decimal())
 }
 
 /// Convert a [`FractionBase`] object to a [`BigDecimal`].
@@ -243,14 +239,14 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
     if price < &BigDecimal::zero() {
         panic!("Invalid price: must be non-negative");
     }
-    let price_x192 = price * u256_to_big_decimal(Q192);
+    let price_x192 = price * Q192.to_big_decimal();
     let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
-    if sqrt_ratio_x96 < u160_to_big_int(MIN_SQRT_RATIO) {
+    if sqrt_ratio_x96 < MIN_SQRT_RATIO.to_big_int() {
         MIN_SQRT_RATIO
-    } else if sqrt_ratio_x96 > u160_to_big_int(MAX_SQRT_RATIO) {
+    } else if sqrt_ratio_x96 > MAX_SQRT_RATIO.to_big_int() {
         MAX_SQRT_RATIO
     } else {
-        big_int_to_u160(sqrt_ratio_x96)
+        U160::from_big_int(sqrt_ratio_x96)
     }
 }
 
@@ -288,8 +284,8 @@ pub fn token0_ratio_to_price(
     }
     let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
     let sqrt_ratio_upper_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
-    let l = u160_to_big_decimal(sqrt_ratio_lower_x96) / u256_to_big_decimal(Q96);
-    let u = u160_to_big_decimal(sqrt_ratio_upper_x96) / u256_to_big_decimal(Q96);
+    let l = sqrt_ratio_lower_x96.to_big_decimal() / Q96.to_big_decimal();
+    let u = sqrt_ratio_upper_x96.to_big_decimal() / Q96.to_big_decimal();
     let r = token0_ratio;
     let a = &r - one.clone();
     let b = &u * (one - BigDecimal::from(2) * &r);
@@ -343,8 +339,8 @@ pub fn token0_price_to_ratio(
             liquidity,
             false,
         )?;
-        let value0 = u256_to_big_decimal(amount0) * price;
-        Ok(&value0 / (&value0 + u256_to_big_decimal(amount1)))
+        let value0 = amount0.to_big_decimal() * price;
+        Ok(&value0 / (&value0 + amount1.to_big_decimal()))
     }
 }
 
@@ -405,9 +401,10 @@ pub fn tick_range_from_width_and_ratio(
         let c = &price * (&a - one) / tick_to_big_price(width)?.sqrt().unwrap();
         let price_lower_sqrt =
             ((&b * &b - &a * &c * BigDecimal::from(4)).sqrt().unwrap() - &b) / (&a * two);
-        let sqrt_ratio_lower_x96 = price_lower_sqrt * u256_to_big_decimal(Q96);
-        let tick_lower =
-            get_tick_at_sqrt_ratio(big_int_to_u160(sqrt_ratio_lower_x96.to_bigint().unwrap()))?;
+        let sqrt_ratio_lower_x96 = price_lower_sqrt * Q96.to_big_decimal();
+        let tick_lower = get_tick_at_sqrt_ratio(U160::from_big_int(
+            sqrt_ratio_lower_x96.to_bigint().unwrap(),
+        ))?;
         (tick_lower, tick_lower + width)
     };
     Ok((tick_lower, tick_upper))

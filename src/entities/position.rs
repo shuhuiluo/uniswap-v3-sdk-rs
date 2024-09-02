@@ -99,22 +99,24 @@ impl<P> Position<P> {
             if self.pool.tick_current < self.tick_lower {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token0.clone(),
-                    u256_to_big_int(get_amount_0_delta(
+                    get_amount_0_delta(
                         get_sqrt_ratio_at_tick(self.tick_lower)?,
                         get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         false,
-                    )?),
+                    )?
+                    .to_big_int(),
                 )?)
             } else if self.pool.tick_current < self.tick_upper {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token0.clone(),
-                    u256_to_big_int(get_amount_0_delta(
+                    get_amount_0_delta(
                         self.pool.sqrt_ratio_x96,
                         get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         false,
-                    )?),
+                    )?
+                    .to_big_int(),
                 )?)
             } else {
                 self._token0_amount = Some(CurrencyAmount::from_raw_amount(
@@ -138,22 +140,24 @@ impl<P> Position<P> {
             } else if self.pool.tick_current < self.tick_upper {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token1.clone(),
-                    u256_to_big_int(get_amount_1_delta(
+                    get_amount_1_delta(
                         get_sqrt_ratio_at_tick(self.tick_lower)?,
                         self.pool.sqrt_ratio_x96,
                         self.liquidity,
                         false,
-                    )?),
+                    )?
+                    .to_big_int(),
                 )?)
             } else {
                 self._token1_amount = Some(CurrencyAmount::from_raw_amount(
                     self.pool.token1.clone(),
-                    u256_to_big_int(get_amount_1_delta(
+                    get_amount_1_delta(
                         get_sqrt_ratio_at_tick(self.tick_lower)?,
                         get_sqrt_ratio_at_tick(self.tick_upper)?,
                         self.liquidity,
                         false,
-                    )?),
+                    )?
+                    .to_big_int(),
                 )?)
             }
         }
@@ -185,10 +189,8 @@ impl<P> Position<P> {
         }
 
         let sqrt_ratio_x96_upper = if price_upper
-            >= Fraction::new(
-                u160_to_big_int(MAX_SQRT_RATIO) * u160_to_big_int(MAX_SQRT_RATIO),
-                u256_to_big_int(Q192),
-            ) {
+            >= Fraction::new(MAX_SQRT_RATIO.to_big_int().pow(2), Q192.to_big_int())
+        {
             MAX_SQRT_RATIO - ONE
         } else {
             encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator())
@@ -316,7 +318,7 @@ impl<P> Position<P> {
             .amount1()?
             .quotient();
 
-        Ok((big_int_to_u256(amount0), big_int_to_u256(amount1)))
+        Ok((U256::from_big_int(amount0), U256::from_big_int(amount1)))
     }
 
     /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held

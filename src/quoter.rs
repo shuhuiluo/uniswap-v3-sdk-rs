@@ -28,7 +28,7 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
     options: Option<QuoteOptions>,
 ) -> MethodParameters {
     let options = options.unwrap_or_default();
-    let quote_amount = big_int_to_u256(amount.quotient());
+    let quote_amount = U256::from_big_int(amount.quotient());
 
     let calldata = if route.pools.len() == 1 {
         match trade_type {

@@ -248,13 +248,13 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
         let token: Token;
         let token_amount: U256;
         if options.expected_currency_owed0.currency.is_native() {
-            eth_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
+            eth_amount = U256::from_big_int(options.expected_currency_owed0.quotient());
             token = options.expected_currency_owed1.currency.wrapped();
-            token_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
+            token_amount = U256::from_big_int(options.expected_currency_owed1.quotient());
         } else {
-            eth_amount = big_int_to_u256(options.expected_currency_owed1.quotient());
+            eth_amount = U256::from_big_int(options.expected_currency_owed1.quotient());
             token = options.expected_currency_owed0.currency.wrapped();
-            token_amount = big_int_to_u256(options.expected_currency_owed0.quotient());
+            token_amount = U256::from_big_int(options.expected_currency_owed0.quotient());
         }
 
         calldatas.push(encode_unwrap_weth9(eth_amount, options.recipient, None));
@@ -356,11 +356,11 @@ pub fn remove_call_parameters<Currency0: Currency, Currency1: Currency, P>(
         // add the underlying value to the expected currency already owed
         expected_currency_owed0: expected_currency_owed0.add(&CurrencyAmount::from_raw_amount(
             expected_currency_owed0.currency.clone(),
-            u256_to_big_int(amount0_min),
+            amount0_min.to_big_int(),
         )?)?,
         expected_currency_owed1: expected_currency_owed1.add(&CurrencyAmount::from_raw_amount(
             expected_currency_owed1.currency.clone(),
-            u256_to_big_int(amount1_min),
+            amount1_min.to_big_int(),
         )?)?,
         recipient: options.collect_options.recipient,
     }));

@@ -13,21 +13,11 @@ fn pseudo_random_128(seed: u64) -> u128 {
     u128::from_be_bytes(s.to_be_bytes::<32>()[..16].try_into().unwrap())
 }
 
-const fn wrap_to_uint160(x: U256) -> U160 {
-    let limbs = x.into_limbs();
-    U160::from_limbs([limbs[0], limbs[1], limbs[2] % (1 << 32)])
-}
-
-const fn u160_to_u256(x: U160) -> U256 {
-    let limbs = x.into_limbs();
-    U256::from_limbs([limbs[0], limbs[1], limbs[2], 0])
-}
-
 fn generate_inputs() -> Vec<(U160, u128, U256, bool)> {
     (0u64..100)
         .map(|i| {
             (
-                wrap_to_uint160(pseudo_random(i)),
+                U160::saturating_from(pseudo_random(i)),
                 pseudo_random_128(i.pow(2)),
                 pseudo_random(i.pow(3)),
                 i % 2 == 0,
@@ -40,8 +30,8 @@ fn get_amount_inputs() -> Vec<(U160, U160, u128, bool)> {
     (0u64..100)
         .map(|i| {
             (
-                wrap_to_uint160(pseudo_random(i)),
-                wrap_to_uint160(pseudo_random(i.pow(2))),
+                U160::saturating_from(pseudo_random(i)),
+                U160::saturating_from(pseudo_random(i.pow(2))),
                 pseudo_random_128(i.pow(3)),
                 i % 2 == 0,
             )
@@ -52,7 +42,7 @@ fn get_amount_inputs() -> Vec<(U160, U160, u128, bool)> {
 fn get_amount_inputs_ref() -> Vec<(U256, U256, u128, bool)> {
     get_amount_inputs()
         .into_iter()
-        .map(|(a, b, c, d)| (u160_to_u256(a), u160_to_u256(b), c, d))
+        .map(|(a, b, c, d)| (U256::from(a), U256::from(b), c, d))
         .collect::<Vec<_>>()
 }
 
@@ -70,7 +60,7 @@ fn get_next_sqrt_price_from_input_benchmark(c: &mut Criterion) {
 fn get_next_sqrt_price_from_input_benchmark_ref(c: &mut Criterion) {
     let inputs = generate_inputs()
         .into_iter()
-        .map(|(a, b, c, d)| (u160_to_u256(a), b, c, d))
+        .map(|(a, b, c, d)| (U256::from(a), b, c, d))
         .collect::<Vec<_>>();
     c.bench_function("get_next_sqrt_price_from_input_ref", |b| {
         b.iter(|| {
@@ -101,7 +91,7 @@ fn get_next_sqrt_price_from_output_benchmark(c: &mut Criterion) {
 fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
     let inputs = generate_inputs()
         .into_iter()
-        .map(|(a, b, c, d)| (u160_to_u256(a), b, c, d))
+        .map(|(a, b, c, d)| (U256::from(a), b, c, d))
         .collect::<Vec<_>>();
     c.bench_function("get_next_sqrt_price_from_output_ref", |b| {
         b.iter(|| {
