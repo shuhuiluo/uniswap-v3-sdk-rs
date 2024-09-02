@@ -2,6 +2,14 @@ use super::ToBig;
 use alloy_primitives::{U160, U256};
 use num_bigint::BigUint;
 
+fn sort_to_big_uint(a: U160, b: U160) -> (BigUint, BigUint) {
+    if a > b {
+        (b.to_big_uint(), a.to_big_uint())
+    } else {
+        (a.to_big_uint(), b.to_big_uint())
+    }
+}
+
 /// Returns an imprecise maximum amount of liquidity received for a given amount of token 0.
 ///
 /// This function is available to accommodate LiquidityAmounts#getLiquidityForAmount0 in the v3
@@ -17,15 +25,11 @@ use num_bigint::BigUint;
 ///
 /// returns: liquidity for amount0, imprecise
 pub fn max_liquidity_for_amount0_imprecise(
-    mut sqrt_ratio_a_x96: U160,
-    mut sqrt_ratio_b_x96: U160,
+    sqrt_ratio_a_x96: U160,
+    sqrt_ratio_b_x96: U160,
     amount0: U256,
 ) -> BigUint {
-    if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
-        (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
-    }
-    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
-    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
+    let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
     let intermediate = (&sqrt_ratio_a_x96 * &sqrt_ratio_b_x96) >> 96;
     amount0.to_big_uint() * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
@@ -43,15 +47,11 @@ pub fn max_liquidity_for_amount0_imprecise(
 ///
 /// returns: liquidity for amount0, precise
 pub fn max_liquidity_for_amount0_precise(
-    mut sqrt_ratio_a_x96: U160,
-    mut sqrt_ratio_b_x96: U160,
+    sqrt_ratio_a_x96: U160,
+    sqrt_ratio_b_x96: U160,
     amount0: U256,
 ) -> BigUint {
-    if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
-        (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
-    }
-    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
-    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
+    let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
     let numerator = amount0.to_big_uint() * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
     let denominator = (sqrt_ratio_b_x96 - sqrt_ratio_a_x96) << 96;
@@ -69,15 +69,11 @@ pub fn max_liquidity_for_amount0_precise(
 ///
 /// returns: liquidity for amount1
 pub fn max_liquidity_for_amount1(
-    mut sqrt_ratio_a_x96: U160,
-    mut sqrt_ratio_b_x96: U160,
+    sqrt_ratio_a_x96: U160,
+    sqrt_ratio_b_x96: U160,
     amount1: U256,
 ) -> BigUint {
-    if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
-        (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
-    }
-    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
-    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
+    let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
     (amount1.to_big_uint() << 96) / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }

@@ -6,12 +6,12 @@ pub struct FeeGrowthOutside {
     pub fee_growth_outside1_x128: U256,
 }
 
-pub fn get_fee_growth_inside(
+pub fn get_fee_growth_inside<T: PartialOrd>(
     lower: FeeGrowthOutside,
     upper: FeeGrowthOutside,
-    tick_lower: i32,
-    tick_upper: i32,
-    tick_current: i32,
+    tick_lower: T,
+    tick_upper: T,
+    tick_current: T,
     fee_growth_global0_x128: U256,
     fee_growth_global1_x128: U256,
 ) -> (U256, U256) {
