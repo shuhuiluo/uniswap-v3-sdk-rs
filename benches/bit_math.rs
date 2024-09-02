@@ -1,6 +1,6 @@
 use alloy_primitives::U256;
+use core::ops::Shl;
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::ops::Shl;
 use uniswap_v3_math::bit_math;
 use uniswap_v3_sdk::prelude::*;
 

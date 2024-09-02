@@ -66,3 +66,9 @@ impl From<FeeAmount> for U24 {
         }
     }
 }
+
+impl From<U24> for FeeAmount {
+    fn from(fee: U24) -> Self {
+        (fee.into_limbs()[0] as u32).into()
+    }
+}

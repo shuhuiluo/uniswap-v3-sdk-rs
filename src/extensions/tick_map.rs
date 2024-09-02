@@ -5,12 +5,12 @@
 use crate::prelude::*;
 use alloy_primitives::U256;
 use anyhow::Result;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TickMap {
-    pub bitmap: HashMap<i16, U256>,
-    pub ticks: HashMap<i32, Tick>,
+    pub bitmap: FxHashMap<i16, U256>,
+    pub ticks: FxHashMap<i32, Tick>,
 }
 
 pub trait TickMapTrait {
