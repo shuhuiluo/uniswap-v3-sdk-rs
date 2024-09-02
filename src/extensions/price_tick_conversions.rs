@@ -1,9 +1,10 @@
 //! ## Price and tick conversions
-//! Utility functions for converting between [`i32`] ticks, [`BigDecimal`] prices, and SDK Core
+//! Utility functions for converting between [`I24`] ticks, [`BigDecimal`] prices, and SDK Core
 //! [`Price`] prices. Ported from [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk/blob/8bc54456753f454848d25029631f4e64ff573e12/price.ts).
 
-use crate::prelude::*;
-use alloy_primitives::U256;
+use crate::prelude::{Error, *};
+use alloc::format;
+use alloy_primitives::{aliases::I24, U160};
 use anyhow::{bail, Result};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -11,13 +12,13 @@ use uniswap_sdk_core::prelude::*;
 
 pub static MIN_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
-        u256_to_big_int(MIN_SQRT_RATIO).pow(2),
+        u160_to_big_int(MIN_SQRT_RATIO).pow(2),
         u256_to_big_int(Q192),
     )
 });
 pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
-        u256_to_big_int(MAX_SQRT_RATIO).pow(2) - u256_to_big_int(ONE),
+        u160_to_big_int(MAX_SQRT_RATIO).pow(2) - u160_to_big_int(ONE),
         u256_to_big_int(Q192),
     )
 });
@@ -104,11 +105,11 @@ where
 /// );
 /// ```
 pub fn sqrt_ratio_x96_to_price(
-    sqrt_ratio_x96: U256,
+    sqrt_ratio_x96: U160,
     base_token: Token,
     quote_token: Token,
-) -> Result<Price<Token, Token>> {
-    let ratio_x192 = u256_to_big_uint(sqrt_ratio_x96).pow(2);
+) -> Result<Price<Token, Token>, Error> {
+    let ratio_x192 = u160_to_big_uint(sqrt_ratio_x96).pow(2);
     let q192 = u256_to_big_uint(Q192);
     Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
@@ -119,7 +120,7 @@ pub fn sqrt_ratio_x96_to_price(
 
 /// Same as [`price_to_closest_tick`] but returns [`MIN_TICK`] or [`MAX_TICK`] if the price is
 /// outside Uniswap's range.
-pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
+pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<I24, Error> {
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     if price.as_fraction() < *MIN_PRICE {
         Ok(if sorted { MIN_TICK } else { MAX_TICK })
@@ -177,7 +178,10 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<i32> {
 ///     nearest_usable_tick(MAX_TICK, fee.tick_spacing())
 /// );
 /// ```
-pub fn price_to_closest_usable_tick(price: &Price<Token, Token>, fee: FeeAmount) -> Result<i32> {
+pub fn price_to_closest_usable_tick(
+    price: &Price<Token, Token>,
+    fee: FeeAmount,
+) -> Result<I24, Error> {
     Ok(nearest_usable_tick(
         price_to_closest_tick_safe(price)?,
         fee.tick_spacing(),
@@ -193,18 +197,22 @@ pub fn price_to_closest_usable_tick(price: &Price<Token, Token>, fee: FeeAmount)
 /// ## Examples
 ///
 /// ```
+/// use alloy_primitives::aliases::I24;
 /// use bigdecimal::BigDecimal;
 /// use num_traits::{FromPrimitive, Pow, ToPrimitive};
 /// use uniswap_v3_sdk::prelude::*;
 ///
 /// assert_eq!(
-///     tick_to_big_price(100).unwrap().to_f32().unwrap(),
+///     tick_to_big_price(I24::from_limbs([100]))
+///         .unwrap()
+///         .to_f32()
+///         .unwrap(),
 ///     1.0001f64.pow(100i32).to_f32().unwrap()
 /// );
 /// ```
-pub fn tick_to_big_price(tick: i32) -> Result<BigDecimal> {
+pub fn tick_to_big_price(tick: I24) -> Result<BigDecimal, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    Ok(BigDecimal::from(u256_to_big_int(sqrt_ratio_x96).pow(2)) / u256_to_big_decimal(Q192))
+    Ok(BigDecimal::from(u160_to_big_int(sqrt_ratio_x96).pow(2)) / u256_to_big_decimal(Q192))
 }
 
 /// Convert a [`FractionBase`] object to a [`BigDecimal`].
@@ -231,18 +239,18 @@ pub fn fraction_to_big_decimal<M>(price: &impl FractionBase<M>) -> BigDecimal {
 /// let price: BigDecimal = tick_to_big_price(MAX_TICK).unwrap();
 /// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
 /// ```
-pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
+pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
     if price < &BigDecimal::zero() {
         panic!("Invalid price: must be non-negative");
     }
     let price_x192 = price * u256_to_big_decimal(Q192);
     let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
-    if sqrt_ratio_x96 < u256_to_big_int(MIN_SQRT_RATIO) {
+    if sqrt_ratio_x96 < u160_to_big_int(MIN_SQRT_RATIO) {
         MIN_SQRT_RATIO
-    } else if sqrt_ratio_x96 > u256_to_big_int(MAX_SQRT_RATIO) {
+    } else if sqrt_ratio_x96 > u160_to_big_int(MAX_SQRT_RATIO) {
         MAX_SQRT_RATIO
     } else {
-        big_int_to_u256(sqrt_ratio_x96)
+        big_int_to_u160(sqrt_ratio_x96)
     }
 }
 
@@ -262,15 +270,15 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U256 {
 /// proportion.
 pub fn token0_ratio_to_price(
     token0_ratio: BigDecimal,
-    tick_lower: i32,
-    tick_upper: i32,
-) -> Result<BigDecimal> {
+    tick_lower: I24,
+    tick_upper: I24,
+) -> Result<BigDecimal, Error> {
     let one = BigDecimal::from(1);
     if tick_upper <= tick_lower {
-        bail!("Invalid tick range: tickUpper must be greater than tickLower");
+        panic!("Invalid tick range: tickUpper must be greater than tickLower");
     }
     if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
+        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
     }
     if token0_ratio.is_zero() {
         return tick_to_big_price(tick_upper);
@@ -280,8 +288,8 @@ pub fn token0_ratio_to_price(
     }
     let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
     let sqrt_ratio_upper_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
-    let l = u256_to_big_decimal(sqrt_ratio_lower_x96) / u256_to_big_decimal(Q96);
-    let u = u256_to_big_decimal(sqrt_ratio_upper_x96) / u256_to_big_decimal(Q96);
+    let l = u160_to_big_decimal(sqrt_ratio_lower_x96) / u256_to_big_decimal(Q96);
+    let u = u160_to_big_decimal(sqrt_ratio_upper_x96) / u256_to_big_decimal(Q96);
     let r = token0_ratio;
     let a = &r - one.clone();
     let b = &u * (one - BigDecimal::from(2) * &r);
@@ -306,11 +314,11 @@ pub fn token0_ratio_to_price(
 /// 1, inclusive.
 pub fn token0_price_to_ratio(
     price: BigDecimal,
-    tick_lower: i32,
-    tick_upper: i32,
-) -> Result<BigDecimal> {
+    tick_lower: I24,
+    tick_upper: I24,
+) -> Result<BigDecimal, Error> {
     if tick_upper <= tick_lower {
-        bail!("Invalid tick range: tickUpper must be greater than tickLower");
+        return Err(Error::InvalidRange);
     }
     let sqrt_price_x96 = price_to_sqrt_ratio_x96(&price);
     let tick = get_tick_at_sqrt_ratio(sqrt_price_x96)?;
@@ -356,13 +364,14 @@ pub fn token0_price_to_ratio(
 /// ## Examples
 ///
 /// ```
+/// use alloy_primitives::aliases::I24;
 /// use bigdecimal::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let tick_current = 200000;
+/// let tick_current = I24::from_limbs([200000]);
 /// let price = tick_to_big_price(tick_current).unwrap();
 /// let token0_ratio = "0.3".parse::<BigDecimal>().unwrap();
-/// let width = 1000;
+/// let width = I24::from_limbs([1000]);
 /// let (tick_lower, tick_upper) =
 ///     tick_range_from_width_and_ratio(width, tick_current, token0_ratio.clone()).unwrap();
 /// assert_eq!(tick_upper - tick_lower, width);
@@ -376,14 +385,14 @@ pub fn token0_price_to_ratio(
 /// assert!((ratio - token0_ratio).abs() < "0.001".parse::<BigDecimal>().unwrap());
 /// ```
 pub fn tick_range_from_width_and_ratio(
-    width: i32,
-    tick_current: i32,
+    width: I24,
+    tick_current: I24,
     token0_ratio: BigDecimal,
-) -> Result<(i32, i32)> {
+) -> Result<(I24, I24), Error> {
     let one = BigDecimal::from(1);
     let two = BigDecimal::from(2);
     if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        bail!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
+        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
     }
     let (tick_lower, tick_upper) = if token0_ratio.is_zero() {
         (tick_current - width, tick_current)
@@ -398,7 +407,7 @@ pub fn tick_range_from_width_and_ratio(
             ((&b * &b - &a * &c * BigDecimal::from(4)).sqrt().unwrap() - &b) / (&a * two);
         let sqrt_ratio_lower_x96 = price_lower_sqrt * u256_to_big_decimal(Q96);
         let tick_lower =
-            get_tick_at_sqrt_ratio(big_int_to_u256(sqrt_ratio_lower_x96.to_bigint().unwrap()))?;
+            get_tick_at_sqrt_ratio(big_int_to_u160(sqrt_ratio_lower_x96.to_bigint().unwrap()))?;
         (tick_lower, tick_lower + width)
     };
     Ok((tick_lower, tick_upper))
@@ -410,8 +419,8 @@ mod tests {
 
     #[test]
     fn test_token0_ratio_to_price_conversion() {
-        let tick_lower = 253320;
-        let tick_upper = 264600;
+        let tick_lower = I24::from_limbs([253320]);
+        let tick_upper = I24::from_limbs([264600]);
         assert_eq!(
             token0_ratio_to_price(BigDecimal::from(0), tick_lower, tick_upper).unwrap(),
             tick_to_big_price(tick_upper).unwrap()

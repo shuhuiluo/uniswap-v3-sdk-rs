@@ -3,7 +3,6 @@ use crate::prelude::{
     *,
 };
 use alloy_primitives::U160;
-use dotenv::dotenv;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::{prelude::*, token};
 
@@ -124,11 +123,12 @@ pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvid
     .unwrap()
 }
 
-pub(crate) static _RPC_URL: Lazy<String> = Lazy::new(|| {
-    dotenv().ok();
+#[cfg(feature = "extensions")]
+pub(crate) static RPC_URL: Lazy<alloy::transports::http::reqwest::Url> = Lazy::new(|| {
+    dotenv::dotenv().ok();
     std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap()
 });
 
-// pub(crate) async fn make_provider() -> Provider<Http> {
-//     Provider::<Http>::connect(&RPC_URL).await
-// }
+#[cfg(feature = "extensions")]
+pub(crate) static PROVIDER: Lazy<alloy::providers::ReqwestProvider> =
+    Lazy::new(|| alloy::providers::ProviderBuilder::new().on_http(RPC_URL.clone()));

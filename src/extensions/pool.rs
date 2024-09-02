@@ -3,29 +3,35 @@
 //! liquidity map within a tick range for the specified pool using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
 //! in a single `eth_call`.
 
-use crate::prelude::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK, *};
-use alloy_primitives::{Address, ChainId, B256};
-use anyhow::Result;
-use aperture_lens::prelude::{
-    get_populated_ticks_in_range,
-    i_uniswap_v3_pool::{IUniswapV3Pool, Slot0Return},
-    ierc20_metadata::IERC20Metadata,
+use crate::prelude::*;
+use alloy::{
+    eips::{BlockId, BlockNumberOrTag},
+    providers::Provider,
+    transports::Transport,
 };
-use ethers::prelude::*;
-use num_integer::Integer;
-use std::sync::Arc;
+use alloy_primitives::{aliases::I24, Address, ChainId, B256};
+use anyhow::Result;
+use core::ops::Div;
+use uniswap_lens::prelude::{
+    get_populated_ticks_in_range, ierc20metadata::IERC20Metadata,
+    iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,
+};
 use uniswap_sdk_core::{prelude::Token, token};
 
-pub fn get_pool_contract<M: Middleware>(
+pub fn get_pool_contract<T, P>(
     factory: Address,
     token_a: Address,
     token_b: Address,
     fee: FeeAmount,
-    client: Arc<M>,
-) -> IUniswapV3Pool<M> {
-    IUniswapV3Pool::new(
-        compute_pool_address(factory, token_a, token_b, fee, None).into_array(),
-        client,
+    provider: P,
+) -> IUniswapV3PoolInstance<T, P>
+where
+    T: Transport + Clone,
+    P: Provider<T>,
+{
+    IUniswapV3PoolInstance::new(
+        compute_pool_address(factory, token_a, token_b, fee, None),
+        provider,
     )
 }
 
@@ -38,46 +44,39 @@ pub fn get_pool_contract<M: Middleware>(
 /// * `token_a`: One of the tokens in the pool
 /// * `token_b`: The other token in the pool
 /// * `fee`: Fee tier of the pool
-/// * `client`: The client
+/// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query.
-pub async fn get_pool<M: Middleware>(
+pub async fn get_pool<T, P>(
     chain_id: ChainId,
     factory: Address,
     token_a: Address,
     token_b: Address,
     fee: FeeAmount,
-    client: Arc<M>,
+    provider: P,
     block_id: Option<BlockId>,
-) -> Result<Pool<NoTickDataProvider>, MulticallError<M>> {
-    let pool_contract = get_pool_contract(factory, token_a, token_b, fee, client.clone());
-    let token_a_contract = IERC20Metadata::new(token_a.into_array(), client.clone());
-    let token_b_contract = IERC20Metadata::new(token_b.into_array(), client.clone());
-    let mut multicall = Multicall::new_with_chain_id(client, None, Some(chain_id)).unwrap();
-    multicall.block = block_id;
-    multicall
-        .add_call(pool_contract.slot_0(), false)
-        .add_call(pool_contract.liquidity(), false)
-        .add_call(token_a_contract.decimals(), false)
-        .add_call(token_a_contract.name(), false)
-        .add_call(token_a_contract.symbol(), false)
-        .add_call(token_b_contract.decimals(), false)
-        .add_call(token_b_contract.name(), false)
-        .add_call(token_b_contract.symbol(), false);
-    let (
-        slot_0,
-        liquidity,
-        token_a_decimals,
-        token_a_name,
-        token_a_symbol,
-        token_b_decimals,
-        token_b_name,
-        token_b_symbol,
-    ): (Slot0Return, u128, u8, String, String, u8, String, String) = multicall.call().await?;
-    let sqrt_price_x96 = slot_0.sqrt_price_x96;
+) -> Result<Pool<NoTickDataProvider>, Error>
+where
+    T: Transport + Clone,
+    P: Provider<T> + Clone,
+{
+    let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+    let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.clone());
+    let token_a_contract = IERC20Metadata::new(token_a, provider.clone());
+    let token_b_contract = IERC20Metadata::new(token_b, provider.clone());
+    // TODO: use multicall
+    let slot_0 = pool_contract.slot0().block(block_id).call().await?;
+    let liquidity = pool_contract.liquidity().block(block_id).call().await?._0;
+    let token_a_decimals = token_a_contract.decimals().block(block_id).call().await?._0;
+    let token_a_name = token_a_contract.name().block(block_id).call().await?._0;
+    let token_a_symbol = token_a_contract.symbol().block(block_id).call().await?._0;
+    let token_b_decimals = token_b_contract.decimals().block(block_id).call().await?._0;
+    let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
+    let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
+    let sqrt_price_x96 = slot_0.sqrtPriceX96;
     if sqrt_price_x96.is_zero() {
         panic!("Pool has been created but not yet initialized");
     }
-    Ok(Pool::new(
+    Pool::new(
         token!(
             chain_id,
             token_a,
@@ -93,22 +92,21 @@ pub async fn get_pool<M: Middleware>(
             token_b_name
         ),
         fee,
-        sqrt_price_x96.to_alloy(),
+        sqrt_price_x96,
         liquidity,
     )
-    .unwrap())
 }
 
 /// Normalizes the specified tick range.
 fn normalize_ticks(
-    tick_current: i32,
-    tick_spacing: i32,
-    tick_lower: i32,
-    tick_upper: i32,
-) -> (i32, i32, i32) {
+    tick_current: I24,
+    tick_spacing: I24,
+    tick_lower: I24,
+    tick_upper: I24,
+) -> (I24, I24, I24) {
     assert!(tick_lower <= tick_upper, "tickLower > tickUpper");
     // The current tick must be within the specified tick range.
-    let tick_current_aligned = tick_current.div_mod_floor(&tick_spacing).0 * tick_spacing;
+    let tick_current_aligned = tick_current.div(tick_spacing) * tick_spacing;
     let tick_lower = tick_lower.max(MIN_TICK).min(tick_current_aligned);
     let tick_upper = tick_upper.min(MAX_TICK).max(tick_current_aligned);
     (tick_current_aligned, tick_lower, tick_upper)
@@ -116,10 +114,10 @@ fn normalize_ticks(
 
 /// Reconstructs the liquidity array from the tick array and the current liquidity.
 fn reconstruct_liquidity_array(
-    tick_array: Vec<(i32, i128)>,
-    tick_current_aligned: i32,
+    tick_array: Vec<(I24, i128)>,
+    tick_current_aligned: I24,
     current_liquidity: u128,
-) -> Result<Vec<(i32, u128)>> {
+) -> Result<Vec<(I24, u128)>, Error> {
     // Locate the tick in the populated ticks array with the current liquidity.
     let current_index = tick_array
         .iter()
@@ -128,7 +126,7 @@ fn reconstruct_liquidity_array(
         - 1;
     // Accumulate the liquidity from the current tick to the end of the populated ticks array.
     let mut cumulative_liquidity = current_liquidity;
-    let mut liquidity_array = vec![(0, 0); tick_array.len()];
+    let mut liquidity_array = vec![(I24::ZERO, 0); tick_array.len()];
     for (i, &(tick, liquidity_net)) in tick_array.iter().enumerate().skip(current_index + 1) {
         // added when tick is crossed from left to right
         cumulative_liquidity = add_delta(cumulative_liquidity, liquidity_net)?;
@@ -152,7 +150,7 @@ fn reconstruct_liquidity_array(
 /// * `pool`: The liquidity pool to fetch the tick to liquidity map for.
 /// * `tick_lower`: The lower tick to fetch liquidity for.
 /// * `tick_upper`: The upper tick to fetch liquidity for.
-/// * `client`: The client.
+/// * `provider`: The alloy provider.
 /// * `block_id`: Optional block number to query.
 /// * `init_code_hash_manual_override`: Optional init code hash override.
 /// * `factory_address_override`: Optional factory address override.
@@ -160,15 +158,19 @@ fn reconstruct_liquidity_array(
 /// ## Returns
 ///
 /// An array of ticks and corresponding cumulative liquidity.
-pub async fn get_liquidity_array_for_pool<M: Middleware, P>(
-    pool: Pool<P>,
-    tick_lower: i32,
-    tick_upper: i32,
-    client: Arc<M>,
+pub async fn get_liquidity_array_for_pool<M, T, P>(
+    pool: Pool<M>,
+    tick_lower: I24,
+    tick_upper: I24,
+    provider: P,
     block_id: Option<BlockId>,
     init_code_hash_manual_override: Option<B256>,
     factory_address_override: Option<Address>,
-) -> Result<Vec<(i32, u128)>, ContractError<M>> {
+) -> Result<Vec<(I24, u128)>, Error>
+where
+    T: Transport + Clone,
+    P: Provider<T>,
+{
     let (tick_current_aligned, tick_lower, tick_upper) = normalize_ticks(
         pool.tick_current,
         pool.tick_spacing(),
@@ -176,29 +178,28 @@ pub async fn get_liquidity_array_for_pool<M: Middleware, P>(
         tick_upper,
     );
     let ticks = get_populated_ticks_in_range(
-        pool.address(init_code_hash_manual_override, factory_address_override)
-            .to_ethers(),
+        pool.address(init_code_hash_manual_override, factory_address_override),
         tick_lower,
         tick_upper,
-        client,
+        provider,
         block_id,
     )
-    .await?;
-    Ok(reconstruct_liquidity_array(
+    .await
+    .map_err(|_| Error::LensError)?;
+    reconstruct_liquidity_array(
         ticks
             .into_iter()
-            .map(|tick| (tick.tick, tick.liquidity_net))
+            .map(|tick| (tick.tick, tick.liquidityNet))
             .collect(),
         tick_current_aligned,
         pool.liquidity,
     )
-    .unwrap())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::make_provider;
+    use crate::tests::PROVIDER;
     use alloy_primitives::address;
 
     async fn pool() -> Pool<NoTickDataProvider> {
@@ -208,7 +209,7 @@ mod tests {
             address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
             address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
             FeeAmount::LOW,
-            Arc::new(make_provider().await),
+            PROVIDER.clone(),
             Some(BlockId::from(17000000)),
         )
         .await
@@ -220,16 +221,15 @@ mod tests {
         let pool = pool().await;
         assert_eq!(pool.token0.symbol.unwrap(), "WBTC");
         assert_eq!(pool.token1.symbol.unwrap(), "WETH");
-        assert_eq!(pool.tick_current, 257344);
+        assert_eq!(pool.tick_current, I24::from_limbs([257344]));
         assert_eq!(pool.liquidity, 786352807736110014);
     }
 
     #[tokio::test]
     async fn test_get_liquidity_array_for_pool() {
         let pool = pool().await;
-        const DOUBLE_TICK: i32 = 6932;
-        let tick_current_aligned =
-            pool.tick_current.div_mod_floor(&pool.tick_spacing()).0 * pool.tick_spacing();
+        const DOUBLE_TICK: I24 = I24::from_limbs([6932]);
+        let tick_current_aligned = pool.tick_current.div(pool.tick_spacing()) * pool.tick_spacing();
         let liquidity = pool.liquidity;
         let tick_lower = pool.tick_current - DOUBLE_TICK;
         let tick_upper = pool.tick_current + DOUBLE_TICK;
@@ -237,7 +237,7 @@ mod tests {
             pool,
             tick_lower,
             tick_upper,
-            Arc::new(make_provider().await),
+            PROVIDER.clone(),
             Some(BlockId::from(17000000)),
             None,
             None,

@@ -1,7 +1,8 @@
 use alloy_primitives::{aliases::I24, U160};
 use uniswap_sdk_core::error::Error as CoreError;
 
-#[derive(Clone, Copy, Debug)]
+#[allow(missing_copy_implementations)]
+#[derive(Debug)]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum Error {
     #[cfg_attr(feature = "std", error("{0}"))]
@@ -40,10 +41,29 @@ pub enum Error {
 
     #[cfg_attr(feature = "std", error("No tick data provider was given"))]
     NoTickDataError,
+
+    #[cfg(feature = "extensions")]
+    #[cfg_attr(feature = "std", error("Invalid tick range"))]
+    InvalidRange,
+
+    #[cfg(feature = "extensions")]
+    #[cfg_attr(feature = "std", error("{0}"))]
+    ContractError(alloy::contract::Error),
+
+    #[cfg(feature = "extensions")]
+    #[cfg_attr(feature = "std", error("Error calling lens contract"))]
+    LensError,
 }
 
 impl From<CoreError> for Error {
     fn from(error: CoreError) -> Self {
         Error::Core(error)
+    }
+}
+
+#[cfg(feature = "extensions")]
+impl From<alloy::contract::Error> for Error {
+    fn from(error: alloy::contract::Error) -> Self {
+        Error::ContractError(error)
     }
 }

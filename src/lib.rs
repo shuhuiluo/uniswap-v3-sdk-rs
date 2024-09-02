@@ -53,8 +53,8 @@ pub mod staker;
 pub mod swap_router;
 pub mod utils;
 
-// #[cfg(feature = "extensions")]
-// pub mod extensions;
+#[cfg(feature = "extensions")]
+pub mod extensions;
 
 #[cfg(test)]
 mod tests;
@@ -71,6 +71,6 @@ pub mod prelude {
         vec::Vec,
     };
 
-    // #[cfg(feature = "extensions")]
-    // pub use crate::extensions::*;
+    #[cfg(feature = "extensions")]
+    pub use crate::extensions::*;
 }

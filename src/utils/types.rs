@@ -65,3 +65,7 @@ pub const fn u256_to_u160_unchecked(x: U256) -> U160 {
 pub fn u256_to_big_decimal(x: U256) -> BigDecimal {
     BigDecimal::from(u256_to_big_int(x))
 }
+
+pub fn u160_to_big_decimal(x: U160) -> BigDecimal {
+    BigDecimal::from(u160_to_big_int(x))
+}
