@@ -79,7 +79,7 @@ where
         factory,
         token0,
         token1,
-        (fee.into_limbs()[0] as u32).into(),
+        fee.into(),
         provider,
         block_id,
     )
@@ -124,11 +124,9 @@ impl Position<NoTickDataProvider> {
         )
         .await
         .map_err(|_| Error::LensError)?;
-        let token0: Address = position.token0;
-        let token1: Address = position.token1;
         let pool = Pool::new(
-            token!(chain_id, token0, decimals0),
-            token!(chain_id, token1, decimals1),
+            token!(chain_id, position.token0, decimals0),
+            token!(chain_id, position.token1, decimals1),
             position.fee.into(),
             slot0.sqrtPriceX96,
             active_liquidity,

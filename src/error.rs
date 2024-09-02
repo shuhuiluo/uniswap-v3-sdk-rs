@@ -47,7 +47,7 @@ pub enum Error {
     InvalidRange,
 
     #[cfg(feature = "extensions")]
-    #[cfg_attr(feature = "std", error("Invalid tick range"))]
+    #[cfg_attr(feature = "std", error("{0}"))]
     ContractError(alloy::contract::Error),
 
     #[cfg(feature = "extensions")]
