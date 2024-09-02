@@ -1,4 +1,4 @@
-use super::big_int_to_u160;
+use super::FromBig;
 use alloy_primitives::U160;
 use num_bigint::BigInt;
 use uniswap_sdk_core::utils::sqrt::sqrt;
@@ -14,7 +14,7 @@ use uniswap_sdk_core::utils::sqrt::sqrt;
 pub fn encode_sqrt_ratio_x96(amount1: impl Into<BigInt>, amount0: impl Into<BigInt>) -> U160 {
     let numerator = amount1.into() << 192;
     let denominator = amount0.into();
-    big_int_to_u160(sqrt(&(numerator / denominator)).unwrap())
+    U160::from_big_int(sqrt(&(numerator / denominator)).unwrap())
 }
 
 #[cfg(test)]

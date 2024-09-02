@@ -1,71 +1,128 @@
-use alloy_primitives::{I256, U160, U256};
+use alloy_primitives::{Signed, Uint};
 use bigdecimal::BigDecimal;
-use core::ops::Neg;
 use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::{Signed, ToBytes};
+use num_traits::{Signed as _, ToBytes};
 
-pub fn u256_to_big_uint(x: U256) -> BigUint {
-    BigUint::from_bytes_be(&x.to_be_bytes::<32>())
+pub trait ToBig {
+    fn to_big_uint(&self) -> BigUint;
+    fn to_big_int(&self) -> BigInt;
+    fn to_big_decimal(&self) -> BigDecimal;
 }
 
-pub fn u160_to_big_uint(x: U160) -> BigUint {
-    BigUint::from_bytes_be(&x.to_be_bytes::<20>())
-}
+impl<const BITS: usize, const LIMBS: usize> ToBig for Uint<BITS, LIMBS> {
+    fn to_big_uint(&self) -> BigUint {
+        BigUint::from_bytes_le(self.as_le_slice())
+    }
 
-pub fn u256_to_big_int(x: U256) -> BigInt {
-    BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<32>())
-}
+    fn to_big_int(&self) -> BigInt {
+        BigInt::from_biguint(Sign::Plus, self.to_big_uint())
+    }
 
-pub fn u160_to_big_int(x: U160) -> BigInt {
-    BigInt::from_bytes_be(Sign::Plus, &x.to_be_bytes::<20>())
-}
-
-pub fn i256_to_big_int(x: I256) -> BigInt {
-    if x.is_positive() {
-        u256_to_big_int(x.into_raw())
-    } else {
-        u256_to_big_int(x.neg().into_raw()).neg()
+    fn to_big_decimal(&self) -> BigDecimal {
+        BigDecimal::from(self.to_big_int())
     }
 }
 
-pub fn big_uint_to_u256(x: BigUint) -> U256 {
-    U256::from_be_slice(&x.to_be_bytes())
-}
+impl<const BITS: usize, const LIMBS: usize> ToBig for Signed<BITS, LIMBS> {
+    fn to_big_uint(&self) -> BigUint {
+        self.into_raw().to_big_uint()
+    }
 
-pub fn big_int_to_u256(x: BigInt) -> U256 {
-    U256::from_le_slice(&x.to_le_bytes())
-}
+    fn to_big_int(&self) -> BigInt {
+        BigInt::from_signed_bytes_le(self.into_raw().as_le_slice())
+    }
 
-pub fn big_int_to_u160(x: BigInt) -> U160 {
-    U160::from_le_slice(&x.to_le_bytes())
-}
-
-pub fn big_int_to_i256(x: BigInt) -> I256 {
-    if x.is_positive() {
-        I256::from_raw(big_int_to_u256(x))
-    } else {
-        I256::from_raw(big_int_to_u256(x.neg())).neg()
+    fn to_big_decimal(&self) -> BigDecimal {
+        BigDecimal::from(self.to_big_int())
     }
 }
 
-pub const fn u128_to_u256(x: u128) -> U256 {
-    U256::from_limbs([x as u64, (x >> 64) as u64, 0, 0])
+pub trait FromBig {
+    fn from_big_uint(x: BigUint) -> Self;
+    fn from_big_int(x: BigInt) -> Self;
 }
 
-pub const fn u160_to_u256(x: U160) -> U256 {
-    let limbs = x.into_limbs();
-    U256::from_limbs([limbs[0], limbs[1], limbs[2], 0])
+impl<const BITS: usize, const LIMBS: usize> FromBig for Uint<BITS, LIMBS> {
+    fn from_big_uint(x: BigUint) -> Self {
+        Self::from_le_slice(&x.to_le_bytes())
+    }
+
+    fn from_big_int(x: BigInt) -> Self {
+        Self::from_big_uint(x.to_biguint().unwrap())
+    }
 }
 
-pub const fn u256_to_u160_unchecked(x: U256) -> U160 {
-    let limbs = x.into_limbs();
-    U160::from_limbs([limbs[0], limbs[1], limbs[2]])
+impl<const BITS: usize, const LIMBS: usize> FromBig for Signed<BITS, LIMBS> {
+    fn from_big_uint(x: BigUint) -> Self {
+        Self::from_raw(Uint::from_big_uint(x))
+    }
+
+    fn from_big_int(x: BigInt) -> Self {
+        if x.is_positive() {
+            Self::from_raw(Uint::from_big_int(x))
+        } else {
+            -Self::from_raw(Uint::from_big_int(-x))
+        }
+    }
 }
 
-pub fn u256_to_big_decimal(x: U256) -> BigDecimal {
-    BigDecimal::from(u256_to_big_int(x))
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_primitives::{I256, U256};
 
-pub fn u160_to_big_decimal(x: U160) -> BigDecimal {
-    BigDecimal::from(u160_to_big_int(x))
+    #[test]
+    fn test_uint_to_big() {
+        let x = U256::from_limbs([1, 2, 3, 4]);
+        let y = BigUint::from(1_u64)
+            + (BigUint::from(2_u64) << 64)
+            + (BigUint::from(3_u64) << 128)
+            + (BigUint::from(4_u64) << 192);
+        assert_eq!(x.to_big_uint(), y);
+        assert_eq!(x.to_big_int(), BigInt::from_biguint(Sign::Plus, y.clone()));
+        assert_eq!(
+            x.to_big_decimal(),
+            BigDecimal::from(BigInt::from_biguint(Sign::Plus, y))
+        );
+    }
+
+    #[test]
+    fn test_signed_to_big() {
+        let x = I256::from_raw(U256::from_limbs([1, 2, 3, 4]));
+        let y: BigInt = BigInt::from(1)
+            + (BigInt::from(2) << 64)
+            + (BigInt::from(3) << 128)
+            + (BigInt::from(4) << 192);
+        assert_eq!(x.to_big_uint(), y.to_biguint().unwrap());
+        assert_eq!(x.to_big_int(), y);
+        assert_eq!(x.to_big_decimal(), BigDecimal::from(y.clone()));
+
+        let x = -x;
+        let z: BigInt = (BigInt::from(1) << 256) - y.clone();
+        assert_eq!(x.to_big_uint(), z.to_biguint().unwrap());
+        assert_eq!(x.to_big_int(), -y.clone());
+        assert_eq!(x.to_big_decimal(), BigDecimal::from(-y));
+    }
+
+    #[test]
+    fn test_uint_from_big() {
+        let x = U256::from_limbs([1, 2, 3, 4]);
+        assert_eq!(U256::from_big_uint(x.to_big_uint()), x);
+        assert_eq!(U256::from_big_int(x.to_big_int()), x);
+    }
+
+    #[test]
+    fn test_signed_from_big() {
+        let x = I256::from_raw(U256::from_limbs([1, 2, 3, 4]));
+        assert_eq!(I256::from_big_uint(x.to_big_uint()), x);
+        assert_eq!(I256::from_big_int(x.to_big_int()), x);
+
+        let x = -x;
+        assert_eq!(I256::from_big_uint(x.to_big_uint()), x);
+        assert_eq!(I256::from_big_int(x.to_big_int()), x);
+        assert_eq!(
+            x.to_big_uint() + (-x.to_big_int()).to_biguint().unwrap(),
+            BigUint::from(1_u64) << 256
+        );
+    }
 }

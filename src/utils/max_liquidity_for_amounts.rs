@@ -1,4 +1,4 @@
-use super::{u160_to_big_uint, u256_to_big_uint};
+use super::ToBig;
 use alloy_primitives::{U160, U256};
 use num_bigint::BigUint;
 
@@ -24,11 +24,11 @@ pub fn max_liquidity_for_amount0_imprecise(
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
-    let sqrt_ratio_a_x96 = u160_to_big_uint(sqrt_ratio_a_x96);
-    let sqrt_ratio_b_x96 = u160_to_big_uint(sqrt_ratio_b_x96);
+    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
+    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
 
     let intermediate = (&sqrt_ratio_a_x96 * &sqrt_ratio_b_x96) >> 96;
-    u256_to_big_uint(amount0) * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
+    amount0.to_big_uint() * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
 /// Returns a precise maximum amount of liquidity received for a given amount of token 0 by dividing
@@ -50,10 +50,10 @@ pub fn max_liquidity_for_amount0_precise(
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
-    let sqrt_ratio_a_x96 = u160_to_big_uint(sqrt_ratio_a_x96);
-    let sqrt_ratio_b_x96 = u160_to_big_uint(sqrt_ratio_b_x96);
+    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
+    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
 
-    let numerator = u256_to_big_uint(amount0) * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
+    let numerator = amount0.to_big_uint() * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
     let denominator = (sqrt_ratio_b_x96 - sqrt_ratio_a_x96) << 96;
 
     numerator / denominator
@@ -76,10 +76,10 @@ pub fn max_liquidity_for_amount1(
     if sqrt_ratio_a_x96 > sqrt_ratio_b_x96 {
         (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
     }
-    let sqrt_ratio_a_x96 = u160_to_big_uint(sqrt_ratio_a_x96);
-    let sqrt_ratio_b_x96 = u160_to_big_uint(sqrt_ratio_b_x96);
+    let sqrt_ratio_a_x96 = sqrt_ratio_a_x96.to_big_uint();
+    let sqrt_ratio_b_x96 = sqrt_ratio_b_x96.to_big_uint();
 
-    (u256_to_big_uint(amount1) << 96) / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
+    (amount1.to_big_uint() << 96) / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
 /// Computes the maximum amount of liquidity received for a given amount of token0, token1,

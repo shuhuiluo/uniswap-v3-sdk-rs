@@ -5,7 +5,7 @@ use core::{fmt, ops::Neg};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
 
-static _Q192: Lazy<BigUint> = Lazy::new(|| u256_to_big_uint(Q192));
+static _Q192: Lazy<BigUint> = Lazy::new(|| Q192.to_big_uint());
 
 /// Represents a V3 pool
 #[derive(Clone)]
@@ -147,7 +147,7 @@ impl<P> Pool<P> {
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over
     /// token0
     pub fn token0_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u160_to_big_uint(self.sqrt_ratio_x96);
+        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
         Price::new(
             self.token0.clone(),
             self.token1.clone(),
@@ -159,7 +159,7 @@ impl<P> Pool<P> {
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over
     /// token1
     pub fn token1_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96: BigUint = u160_to_big_uint(self.sqrt_ratio_x96);
+        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
         Price::new(
             self.token1.clone(),
             self.token0.clone(),
@@ -246,7 +246,7 @@ where
 
         let (output_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
             zero_for_one,
-            big_int_to_i256(input_amount.quotient()),
+            I256::from_big_int(input_amount.quotient()),
             sqrt_price_limit_x96,
         )?;
         let output_token = if zero_for_one {
@@ -255,7 +255,7 @@ where
             self.token0.clone()
         };
         Ok((
-            CurrencyAmount::from_raw_amount(output_token, i256_to_big_int(output_amount.neg()))?,
+            CurrencyAmount::from_raw_amount(output_token, output_amount.neg().to_big_int())?,
             Pool::new_with_tick_data_provider(
                 self.token0.clone(),
                 self.token1.clone(),
@@ -289,7 +289,7 @@ where
 
         let (input_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
             zero_for_one,
-            big_int_to_i256(output_amount.quotient()).neg(),
+            I256::from_big_int(output_amount.quotient()).neg(),
             sqrt_price_limit_x96,
         )?;
         let input_token = if zero_for_one {
@@ -298,7 +298,7 @@ where
             self.token1.clone()
         };
         Ok((
-            CurrencyAmount::from_raw_amount(input_token, i256_to_big_int(input_amount))?,
+            CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,
             Pool::new_with_tick_data_provider(
                 self.token0.clone(),
                 self.token1.clone(),

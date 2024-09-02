@@ -65,7 +65,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
             .minimum_amount_out(slippage_tolerance.clone(), None)?
             .quotient();
     }
-    let total_amount_out = big_int_to_u256(total_amount_out);
+    let total_amount_out = U256::from_big_int(total_amount_out);
 
     // flag for whether a refund needs to happen
     let input_is_native = sample_trade.input_amount()?.currency.is_native();
@@ -102,12 +102,12 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
             output_amount,
         } in trade.swaps.clone().iter_mut()
         {
-            let amount_in = big_int_to_u256(
+            let amount_in = U256::from_big_int(
                 trade
                     .maximum_amount_in(slippage_tolerance.clone(), Some(input_amount.clone()))?
                     .quotient(),
             );
-            let amount_out = big_int_to_u256(
+            let amount_out = U256::from_big_int(
                 trade
                     .minimum_amount_out(slippage_tolerance.clone(), Some(output_amount.clone()))?
                     .quotient(),
@@ -214,7 +214,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
 
     Ok(MethodParameters {
         calldata: encode_multicall(calldatas),
-        value: big_int_to_u256(total_value),
+        value: U256::from_big_int(total_value),
     })
 }
 

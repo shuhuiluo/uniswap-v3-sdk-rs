@@ -271,8 +271,8 @@ where
         fee_growth_inside_1x128,
     );
     Ok((
-        u128_to_u256(position.tokensOwed0) + tokens_owed_0,
-        u128_to_u256(position.tokensOwed1) + tokens_owed_1,
+        U256::from(position.tokensOwed0) + tokens_owed_0,
+        U256::from(position.tokensOwed1) + tokens_owed_1,
     ))
 }
 
@@ -336,8 +336,8 @@ pub fn get_rebalanced_position<P: Clone>(
         position.pool.clone(),
         new_tick_lower,
         new_tick_upper,
-        big_int_to_u256(amount0_after.to_bigint().unwrap()),
-        big_int_to_u256(amount1_after.to_bigint().unwrap()),
+        U256::from_big_int(amount0_after.to_bigint().unwrap()),
+        U256::from_big_int(amount1_after.to_bigint().unwrap()),
         false,
     )
 }

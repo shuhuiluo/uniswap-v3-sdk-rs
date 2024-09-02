@@ -3,18 +3,10 @@
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/SqrtPriceMath.sol).
 
 use crate::prelude::*;
-use alloy_primitives::{I256, U160, U256};
+use alloy_primitives::{ruint::UintTryFrom, I256, U160, U256};
 use num_traits::Zero;
 
 const MAX_U160: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
-
-fn to_uint160(x: U256) -> Result<U160, Error> {
-    if x > MAX_U160 {
-        Err(Error::SafeCastToU160Overflow)
-    } else {
-        Ok(u256_to_u160_unchecked(x))
-    }
-}
 
 /// Gets the next sqrt price given a delta of token0
 ///
@@ -44,8 +36,8 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
     if amount.is_zero() {
         return Ok(sqrt_price_x96);
     }
-    let sqrt_price_x96 = u160_to_u256(sqrt_price_x96);
-    let numerator_1 = u128_to_u256(liquidity) << 96;
+    let sqrt_price_x96 = U256::from(sqrt_price_x96);
+    let numerator_1 = U256::from(liquidity) << 96;
 
     if add {
         let product = amount * sqrt_price_x96;
@@ -53,7 +45,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
         if product / amount == sqrt_price_x96 {
             let denominator = numerator_1 + product;
             if denominator >= numerator_1 {
-                return Ok(u256_to_u160_unchecked(mul_div_rounding_up(
+                return Ok(U160::from(mul_div_rounding_up(
                     numerator_1,
                     sqrt_price_x96,
                     denominator,
@@ -61,7 +53,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
             }
         }
 
-        Ok(u256_to_u160_unchecked(
+        Ok(U160::from(
             numerator_1.div_ceil(numerator_1 / sqrt_price_x96 + amount),
         ))
     } else {
@@ -71,11 +63,12 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
         } else {
             let denominator = numerator_1 - product;
 
-            to_uint160(mul_div_rounding_up(
+            U160::uint_try_from(mul_div_rounding_up(
                 numerator_1,
                 sqrt_price_x96,
                 denominator,
             )?)
+            .map_err(|_| Error::SafeCastToU160Overflow)
         }
     }
 }
@@ -103,8 +96,8 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
     amount: U256,
     add: bool,
 ) -> Result<U160, Error> {
-    let sqrt_price_x96 = u160_to_u256(sqrt_price_x96);
-    let liquidity = u128_to_u256(liquidity);
+    let sqrt_price_x96 = U256::from(sqrt_price_x96);
+    let liquidity = U256::from(liquidity);
     if add {
         let quotient = if amount <= MAX_U160 {
             (amount << 96) / liquidity
@@ -112,7 +105,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
             mul_div(amount, Q96, liquidity)?
         };
 
-        to_uint160(sqrt_price_x96 + quotient)
+        U160::uint_try_from(sqrt_price_x96 + quotient).map_err(|_| Error::SafeCastToU160Overflow)
     } else {
         let quotient = if amount <= MAX_U160 {
             (amount << 96_i32).div_ceil(liquidity)
@@ -121,7 +114,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
         };
 
         if sqrt_price_x96 > quotient {
-            Ok(u256_to_u160_unchecked(sqrt_price_x96 - quotient))
+            Ok(U160::from(sqrt_price_x96 - quotient))
         } else {
             Err(Error::InsufficientLiquidity)
         }
@@ -194,9 +187,9 @@ pub fn get_next_sqrt_price_from_output(
 #[inline]
 fn sort(a: U160, b: U160) -> (U256, U256) {
     if a > b {
-        (u160_to_u256(b), u160_to_u256(a))
+        (U256::from(b), U256::from(a))
     } else {
-        (u160_to_u256(a), u160_to_u256(b))
+        (U256::from(a), U256::from(b))
     }
 }
 
@@ -226,7 +219,7 @@ pub fn get_amount_0_delta(
         return Err(Error::InvalidPrice);
     }
 
-    let numerator_1 = u128_to_u256(liquidity) << 96;
+    let numerator_1 = U256::from(liquidity) << 96;
     let numerator_2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
 
     let (amount_0, rem) =
@@ -260,7 +253,7 @@ pub fn get_amount_1_delta(
     let numerator = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
     let denominator = Q96;
 
-    let liquidity = u128_to_u256(liquidity);
+    let liquidity = U256::from(liquidity);
     let amount_1 = mul_div_96(liquidity, numerator)?;
     let carry = liquidity.mul_mod(numerator, denominator).gt(&U256::ZERO) && round_up;
     Ok(amount_1 + U256::from_limbs([carry as u64, 0, 0, 0]))
@@ -362,24 +355,19 @@ mod tests {
         }
     }
 
-    const fn wrap_to_uint160(x: U256) -> U160 {
-        let limbs = x.into_limbs();
-        U160::from_limbs([limbs[0], limbs[1], limbs[2] % (1 << 32)])
-    }
-
     #[test]
     fn test_get_next_sqrt_price_from_input() {
         let inputs = generate_inputs();
         for (sqrt_price_x_96, liquidity, amount, add) in inputs {
-            let sqrt_price_x_96 = wrap_to_uint160(sqrt_price_x_96);
+            let sqrt_price_x_96 = U160::saturating_from(sqrt_price_x_96);
             let res = get_next_sqrt_price_from_input(sqrt_price_x_96, liquidity, amount, add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_input(
-                u160_to_u256(sqrt_price_x_96),
+                U256::from(sqrt_price_x_96),
                 liquidity,
                 amount,
                 add,
             );
-            match_u256(res.map(u160_to_u256), ref_);
+            match_u256(res.map(U256::from), ref_);
         }
     }
 
@@ -387,15 +375,15 @@ mod tests {
     fn test_get_next_sqrt_price_from_output() {
         let inputs = generate_inputs();
         for (sqrt_price_x_96, liquidity, amount, add) in inputs {
-            let sqrt_price_x_96 = wrap_to_uint160(sqrt_price_x_96);
+            let sqrt_price_x_96 = U160::saturating_from(sqrt_price_x_96);
             let res = get_next_sqrt_price_from_output(sqrt_price_x_96, liquidity, amount, add);
             let ref_ = sqrt_price_math::get_next_sqrt_price_from_output(
-                u160_to_u256(sqrt_price_x_96),
+                U256::from(sqrt_price_x_96),
                 liquidity,
                 amount,
                 add,
             );
-            match_u256(res.map(u160_to_u256), ref_);
+            match_u256(res.map(U256::from), ref_);
         }
     }
 
@@ -403,12 +391,12 @@ mod tests {
     fn test_get_amount_0_delta() {
         let inputs = generate_inputs();
         for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in inputs {
-            let sqrt_ratio_a_x96 = wrap_to_uint160(sqrt_ratio_a_x96);
-            let sqrt_ratio_b_x96 = wrap_to_uint160(sqrt_ratio_b_x96);
+            let sqrt_ratio_a_x96 = U160::saturating_from(sqrt_ratio_a_x96);
+            let sqrt_ratio_b_x96 = U160::saturating_from(sqrt_ratio_b_x96);
             let res = get_amount_0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
             let ref_ = sqrt_price_math::_get_amount_0_delta(
-                u160_to_u256(sqrt_ratio_a_x96),
-                u160_to_u256(sqrt_ratio_b_x96),
+                U256::from(sqrt_ratio_a_x96),
+                U256::from(sqrt_ratio_b_x96),
                 liquidity,
                 round_up,
             );
@@ -420,12 +408,12 @@ mod tests {
     fn test_get_amount_1_delta() {
         let inputs = generate_inputs();
         for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, round_up) in inputs {
-            let sqrt_ratio_a_x96 = wrap_to_uint160(sqrt_ratio_a_x96);
-            let sqrt_ratio_b_x96 = wrap_to_uint160(sqrt_ratio_b_x96);
+            let sqrt_ratio_a_x96 = U160::saturating_from(sqrt_ratio_a_x96);
+            let sqrt_ratio_b_x96 = U160::saturating_from(sqrt_ratio_b_x96);
             let res = get_amount_1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
             let ref_ = sqrt_price_math::_get_amount_1_delta(
-                u160_to_u256(sqrt_ratio_a_x96),
-                u160_to_u256(sqrt_ratio_b_x96),
+                U256::from(sqrt_ratio_a_x96),
+                U256::from(sqrt_ratio_b_x96),
                 liquidity,
                 round_up,
             );
@@ -437,14 +425,14 @@ mod tests {
     fn test_get_amount_0_delta_signed() {
         let inputs = generate_inputs();
         for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in inputs {
-            let sqrt_ratio_a_x96 = wrap_to_uint160(sqrt_ratio_a_x96);
-            let sqrt_ratio_b_x96 = wrap_to_uint160(sqrt_ratio_b_x96);
+            let sqrt_ratio_a_x96 = U160::saturating_from(sqrt_ratio_a_x96);
+            let sqrt_ratio_b_x96 = U160::saturating_from(sqrt_ratio_b_x96);
             let res =
                 get_amount_0_delta_signed(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_0_delta(
-                u160_to_u256(sqrt_ratio_a_x96),
-                u160_to_u256(sqrt_ratio_b_x96),
+                U256::from(sqrt_ratio_a_x96),
+                U256::from(sqrt_ratio_b_x96),
                 liquidity as i128,
             );
             match ref_ {
@@ -462,14 +450,14 @@ mod tests {
     fn test_get_amount_1_delta_signed() {
         let inputs = generate_inputs();
         for (sqrt_ratio_a_x96, liquidity, sqrt_ratio_b_x96, _) in inputs {
-            let sqrt_ratio_a_x96 = wrap_to_uint160(sqrt_ratio_a_x96);
-            let sqrt_ratio_b_x96 = wrap_to_uint160(sqrt_ratio_b_x96);
+            let sqrt_ratio_a_x96 = U160::saturating_from(sqrt_ratio_a_x96);
+            let sqrt_ratio_b_x96 = U160::saturating_from(sqrt_ratio_b_x96);
             let res =
                 get_amount_1_delta_signed(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity as i128)
                     .map(I256::into_raw);
             let ref_ = sqrt_price_math::get_amount_1_delta(
-                u160_to_u256(sqrt_ratio_a_x96),
-                u160_to_u256(sqrt_ratio_b_x96),
+                U256::from(sqrt_ratio_a_x96),
+                U256::from(sqrt_ratio_b_x96),
                 liquidity as i128,
             );
             match ref_ {

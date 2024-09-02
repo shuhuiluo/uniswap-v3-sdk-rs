@@ -20,8 +20,8 @@ pub fn tick_to_price(
     tick: I24,
 ) -> Result<Price<Token, Token>, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    let ratio_x192 = u160_to_big_uint(sqrt_ratio_x96).pow(2);
-    let q192 = u256_to_big_uint(Q192);
+    let ratio_x192 = sqrt_ratio_x96.to_big_uint().pow(2);
+    let q192 = Q192.to_big_uint();
     Ok(if base_token.sorts_before(&quote_token)? {
         Price::new(base_token, quote_token, q192, ratio_x192)
     } else {

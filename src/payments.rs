@@ -1,5 +1,4 @@
-use super::abi::IPeripheryPaymentsWithFee;
-use crate::utils::big_int_to_u256;
+use crate::prelude::{FromBig, IPeripheryPaymentsWithFee};
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::prelude::{FractionBase, Percent};
@@ -13,7 +12,7 @@ pub struct FeeOptions {
 }
 
 fn encode_fee_bips(fee: Percent) -> U256 {
-    big_int_to_u256((fee * Percent::new(10000, 1)).quotient())
+    U256::from_big_int((fee * Percent::new(10000, 1)).quotient())
 }
 
 pub fn encode_unwrap_weth9(
