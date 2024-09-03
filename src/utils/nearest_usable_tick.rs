@@ -9,7 +9,9 @@ use num_integer::Integer;
 /// * `tick`: the target tick
 /// * `tick_spacing`: the spacing of the pool
 ///
-/// returns: i32
+/// ## Returns
+///
+/// The closest tick to the input tick that is usable for the given tick spacing
 pub fn nearest_usable_tick(tick: I24, tick_spacing: I24) -> I24 {
     let tick = tick.as_i32();
     let tick_spacing = tick_spacing.as_i32();

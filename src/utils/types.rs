@@ -1,7 +1,6 @@
 use alloy_primitives::{Signed, Uint};
 use bigdecimal::BigDecimal;
 use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::{Signed as _, ToBytes};
 
 pub trait ToBig {
     fn to_big_uint(&self) -> BigUint;
@@ -10,28 +9,34 @@ pub trait ToBig {
 }
 
 impl<const BITS: usize, const LIMBS: usize> ToBig for Uint<BITS, LIMBS> {
+    #[inline]
     fn to_big_uint(&self) -> BigUint {
-        BigUint::from_bytes_le(self.as_le_slice())
+        BigUint::from_bytes_le(&self.as_le_bytes())
     }
 
+    #[inline]
     fn to_big_int(&self) -> BigInt {
         BigInt::from_biguint(Sign::Plus, self.to_big_uint())
     }
 
+    #[inline]
     fn to_big_decimal(&self) -> BigDecimal {
         BigDecimal::from(self.to_big_int())
     }
 }
 
 impl<const BITS: usize, const LIMBS: usize> ToBig for Signed<BITS, LIMBS> {
+    #[inline]
     fn to_big_uint(&self) -> BigUint {
         self.into_raw().to_big_uint()
     }
 
+    #[inline]
     fn to_big_int(&self) -> BigInt {
-        BigInt::from_signed_bytes_le(self.into_raw().as_le_slice())
+        BigInt::from_signed_bytes_le(&self.into_raw().as_le_bytes())
     }
 
+    #[inline]
     fn to_big_decimal(&self) -> BigDecimal {
         BigDecimal::from(self.to_big_int())
     }
@@ -43,26 +48,31 @@ pub trait FromBig {
 }
 
 impl<const BITS: usize, const LIMBS: usize> FromBig for Uint<BITS, LIMBS> {
+    #[inline]
     fn from_big_uint(x: BigUint) -> Self {
-        Self::from_le_slice(&x.to_le_bytes())
+        Self::from_limbs_slice(&x.to_u64_digits())
     }
 
+    #[inline]
     fn from_big_int(x: BigInt) -> Self {
-        Self::from_big_uint(x.to_biguint().unwrap())
+        let (sign, data) = x.to_u64_digits();
+        match sign {
+            Sign::Plus => Self::from_limbs_slice(&data),
+            Sign::NoSign => Self::ZERO,
+            Sign::Minus => -Self::from_limbs_slice(&data),
+        }
     }
 }
 
 impl<const BITS: usize, const LIMBS: usize> FromBig for Signed<BITS, LIMBS> {
+    #[inline]
     fn from_big_uint(x: BigUint) -> Self {
         Self::from_raw(Uint::from_big_uint(x))
     }
 
+    #[inline]
     fn from_big_int(x: BigInt) -> Self {
-        if x.is_positive() {
-            Self::from_raw(Uint::from_big_int(x))
-        } else {
-            -Self::from_raw(Uint::from_big_int(-x))
-        }
+        Self::from_raw(Uint::from_big_int(x))
     }
 }
 
@@ -107,6 +117,10 @@ mod tests {
     #[test]
     fn test_uint_from_big() {
         let x = U256::from_limbs([1, 2, 3, 4]);
+        assert_eq!(U256::from_big_uint(x.to_big_uint()), x);
+        assert_eq!(U256::from_big_int(x.to_big_int()), x);
+
+        let x = -x;
         assert_eq!(U256::from_big_uint(x.to_big_uint()), x);
         assert_eq!(U256::from_big_int(x.to_big_int()), x);
     }
