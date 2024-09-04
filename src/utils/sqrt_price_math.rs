@@ -175,7 +175,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up<const BITS: usize, const LI
         return Ok(sqrt_price_x96);
     }
     let sqrt_price_x96 = U256::from(sqrt_price_x96);
-    let numerator_1 = U256::from(liquidity) << 96;
+    let numerator_1: U256 = U256::from(liquidity) << 96;
 
     if add {
         let product = amount * sqrt_price_x96;
@@ -183,11 +183,9 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up<const BITS: usize, const LI
         if product / amount == sqrt_price_x96 {
             let denominator = numerator_1 + product;
             if denominator >= numerator_1 {
-                return Ok(Uint::from(mul_div_rounding_up(
-                    numerator_1,
-                    sqrt_price_x96,
-                    denominator,
-                )?));
+                return Ok(Uint::from(
+                    numerator_1.mul_div_rounding_up(sqrt_price_x96, denominator)?,
+                ));
             }
         }
 
@@ -201,12 +199,8 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up<const BITS: usize, const LI
         } else {
             let denominator = numerator_1 - product;
 
-            Uint::uint_try_from(mul_div_rounding_up(
-                numerator_1,
-                sqrt_price_x96,
-                denominator,
-            )?)
-            .map_err(|_| Error::SafeCastToU160Overflow)
+            Uint::uint_try_from(numerator_1.mul_div_rounding_up(sqrt_price_x96, denominator)?)
+                .map_err(|_| Error::SafeCastToU160Overflow)
         }
     }
 }
@@ -241,7 +235,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down<const BITS: usize, const 
         let quotient = if amount <= U160_MAX {
             (amount << 96) / liquidity
         } else {
-            mul_div(amount, Q96, liquidity)?
+            amount.mul_div(Q96, liquidity)?
         };
 
         Uint::uint_try_from(sqrt_price_x96 + quotient).map_err(|_| Error::SafeCastToU160Overflow)
@@ -249,7 +243,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down<const BITS: usize, const 
         let quotient = if amount <= U160_MAX {
             (amount << 96_i32).div_ceil(liquidity)
         } else {
-            mul_div_rounding_up(amount, Q96, liquidity)?
+            amount.mul_div_rounding_up(Q96, liquidity)?
         };
 
         if sqrt_price_x96 > quotient {
@@ -369,13 +363,15 @@ pub fn get_amount_0_delta<const BITS: usize, const LIMBS: usize>(
         return Err(Error::InvalidPrice);
     }
 
-    let numerator_1 = U256::from(liquidity) << 96;
+    let numerator_1: U256 = U256::from(liquidity) << 96;
     let numerator_2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
 
     Ok(if round_up {
-        mul_div_rounding_up(numerator_1, numerator_2, sqrt_ratio_b_x96)?.div_ceil(sqrt_ratio_a_x96)
+        numerator_1
+            .mul_div_rounding_up(numerator_2, sqrt_ratio_b_x96)?
+            .div_ceil(sqrt_ratio_a_x96)
     } else {
-        mul_div(numerator_1, numerator_2, sqrt_ratio_b_x96)? / sqrt_ratio_a_x96
+        numerator_1.mul_div(numerator_2, sqrt_ratio_b_x96)? / sqrt_ratio_a_x96
     })
 }
 
@@ -406,7 +402,7 @@ pub fn get_amount_1_delta<const BITS: usize, const LIMBS: usize>(
     let denominator = Q96;
 
     let liquidity = U256::from(liquidity);
-    let amount_1 = mul_div_q96(liquidity, numerator)?;
+    let amount_1 = liquidity.mul_div_q96(numerator)?;
     let carry = liquidity.mul_mod(numerator, denominator) > U256::ZERO && round_up;
     Ok(amount_1 + U256::from_limbs([carry as u64, 0, 0, 0]))
 }

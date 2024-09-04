@@ -1,8 +1,32 @@
 use super::{Q96, THREE, TWO};
 use crate::error::Error;
-use alloy_primitives::{uint, U256};
+use alloy_primitives::{uint, Uint, U256};
 
 const ONE: U256 = uint!(1_U256);
+
+/// Full precision arithmetic operations for `Uint` types.
+pub trait FullMath {
+    fn mul_div(self, b: U256, denominator: U256) -> Result<U256, Error>;
+    fn mul_div_rounding_up(self, b: U256, denominator: U256) -> Result<U256, Error>;
+    fn mul_div_q96(self, b: U256) -> Result<U256, Error>;
+}
+
+impl<const BITS: usize, const LIMBS: usize> FullMath for Uint<BITS, LIMBS> {
+    #[inline]
+    fn mul_div(self, b: U256, denominator: U256) -> Result<U256, Error> {
+        mul_div(U256::from(self), b, denominator)
+    }
+
+    #[inline]
+    fn mul_div_rounding_up(self, b: U256, denominator: U256) -> Result<U256, Error> {
+        mul_div_rounding_up(U256::from(self), b, denominator)
+    }
+
+    #[inline]
+    fn mul_div_q96(self, b: U256) -> Result<U256, Error> {
+        mul_div_q96(U256::from(self), b)
+    }
+}
 
 /// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or
 /// denominator == 0
