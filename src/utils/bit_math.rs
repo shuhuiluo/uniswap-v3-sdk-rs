@@ -4,6 +4,8 @@
 
 use alloy_primitives::U256;
 
+#[inline]
+#[must_use]
 pub fn most_significant_bit(x: U256) -> u8 {
     if x.is_zero() {
         panic!("ZERO")
@@ -11,6 +13,8 @@ pub fn most_significant_bit(x: U256) -> u8 {
     255 - x.leading_zeros() as u8
 }
 
+#[inline]
+#[must_use]
 pub fn least_significant_bit(x: U256) -> u8 {
     if x.is_zero() {
         panic!("ZERO")

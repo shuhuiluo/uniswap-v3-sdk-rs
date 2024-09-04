@@ -35,6 +35,7 @@ const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U160 =
 /// ## Returns
 ///
 /// The sqrt ratio as a Q64.96
+#[inline]
 pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
     let abs_tick = tick.abs().as_i32();
 
@@ -43,10 +44,11 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
     }
 
     // Equivalent: ratio = 2**128 / sqrt(1.0001) if abs_tick & 0x1 else 1 << 128
-    // TODO: optimize this
-    let mut ratio = uint!(0xfffcb933bd6fad37aa2d162d1a59400100000000000000000000000000000000_U256)
-        .shr((abs_tick & 0x1) << 7)
-        & uint!(0x1ffffffffffffffffffffffffffffffff_U256);
+    let mut ratio = if abs_tick & 0x1 != 0 {
+        uint!(0xfffcb933bd6fad37aa2d162d1a594001_U256)
+    } else {
+        uint!(0x100000000000000000000000000000000_U256)
+    };
 
     // Iterate through 1th to 19th bit of abs_tick because MAX_TICK < 2**20
     // Equivalent to:
@@ -130,6 +132,7 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
 /// ## Returns
 ///
 /// The tick corresponding to the given sqrt ratio
+#[inline]
 pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, Error> {
     // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO)
     // revert("R");
@@ -155,85 +158,83 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, Error> {
     // sqrt_ratio = 2**(msb - 96) * r / 2**127, in floating point math
     // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
     // let r := shr(sub(msb, 31), shl(96, sqrt_ratio_x96))
-    let mut r: U256 = sqrt_ratio_x96_u256.shl(96_u8).shr(msb - 31_u8);
-
-    const fn to_u8(x: U256) -> u8 {
-        x.into_limbs()[0] as u8
-    }
+    let r = sqrt_ratio_x96_u256.shl(96_u8).shr(msb - 31_u8);
 
     // Approximate `log_2_x64` to 14 binary digits after decimal
     // Check whether r >= sqrt(2) * 2**127
     // 2**256 > r**2 >= 2**254
-    let mut square: U256 = r * r;
+    let square = r * r;
     // f = (r**2 >= 2**255)
-    let mut f: U256 = square >> 255;
+    let f = square.as_limbs()[3] >> 63;
     // r = r**2 >> 128 if r**2 >= 2**255 else r**2 >> 127
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 63;
+    let r = square >> (127 + f as u8);
+    let mut decimals = f << 63;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 62;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 62;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 61;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 61;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 60;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 60;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 59;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 59;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 58;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 58;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 57;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 57;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 56;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 56;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 55;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 55;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 54;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 54;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 53;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 53;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 52;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 52;
 
-    square = r * r;
-    f = square >> 255;
-    r = square >> (to_u8(f) + 127);
-    log_2_x64 |= f << 51;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    let r = square >> (127 + f as u8);
+    decimals |= f << 51;
 
-    square = r * r;
-    f = square >> 255;
-    log_2_x64 |= f << 50;
+    let square = r * r;
+    let f = square.as_limbs()[3] >> 63;
+    decimals |= f << 50;
+
+    log_2_x64 |= U256::from_limbs([decimals, 0, 0, 0]);
 
     // sqrt_ratio = sqrt(1.0001^tick)
     // tick = log_{sqrt(1.0001)}(sqrt_ratio) = log_2(sqrt_ratio) / log_2(sqrt(1.0001))
