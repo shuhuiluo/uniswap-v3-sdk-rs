@@ -179,7 +179,7 @@ pub fn get_tick_at_sqrt_ratio<const BITS: usize, const LIMBS: usize>(
     // sqrt_ratio = 2**(msb - 96) * r / 2**127, in floating point math
     // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
     // let r := shr(sub(msb, 31), shl(96, sqrt_ratio_x96))
-    let r = sqrt_ratio_x96_u256.shl(96_u8).shr(msb - 31_u8);
+    let r = sqrt_ratio_x96_u256.shl(96_u8).shr(msb - 31);
 
     // Approximate `log_2_x64` to 14 binary digits after decimal
     // Check whether r >= sqrt(2) * 2**127
