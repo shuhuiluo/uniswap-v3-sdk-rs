@@ -4,7 +4,7 @@
 
 use super::most_significant_bit;
 use crate::error::Error;
-use alloy_primitives::{aliases::I24, uint, U160, U256};
+use alloy_primitives::{aliases::I24, uint, Uint, U160, U256};
 use core::ops::{Shl, Shr, Sub};
 
 /// The maximum tick that can be passed to `get_sqrt_ratio_at_tick`.
@@ -24,6 +24,24 @@ pub const MAX_SQRT_RATIO: U160 = uint!(14614467034852101032872730522039888223787
 /// A threshold used for optimized bounds check, equals `MAX_SQRT_RATIO - MIN_SQRT_RATIO - 1`
 const MAX_SQRT_RATIO_MINUS_MIN_SQRT_RATIO_MINUS_ONE: U160 =
     uint!(1461446703485210103287273052203988822374428841602_U160);
+
+/// Trait to provide tick math functions for [`Uint`] types.
+pub trait TickMath: Sized {
+    fn get_sqrt_ratio_at_tick(tick: I24) -> Result<Self, Error>;
+    fn get_tick_at_sqrt_ratio(self) -> Result<I24, Error>;
+}
+
+impl<const BITS: usize, const LIMBS: usize> TickMath for Uint<BITS, LIMBS> {
+    #[inline]
+    fn get_sqrt_ratio_at_tick(tick: I24) -> Result<Self, Error> {
+        get_sqrt_ratio_at_tick(tick).map(Self::from)
+    }
+
+    #[inline]
+    fn get_tick_at_sqrt_ratio(self) -> Result<I24, Error> {
+        get_tick_at_sqrt_ratio(self)
+    }
+}
 
 /// Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as
 /// sqrt(1.0001)^tick
@@ -133,7 +151,10 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
 ///
 /// The tick corresponding to the given sqrt ratio
 #[inline]
-pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: U160) -> Result<I24, Error> {
+pub fn get_tick_at_sqrt_ratio<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_x96: Uint<BITS, LIMBS>,
+) -> Result<I24, Error> {
+    let sqrt_ratio_x96 = U160::from(sqrt_ratio_x96);
     // Equivalent: if (sqrt_ratio_x96 < MIN_SQRT_RATIO || sqrt_ratio_x96 >= MAX_SQRT_RATIO)
     // revert("R");
     // if sqrt_ratio_x96 < MIN_SQRT_RATIO, the `sub` underflows and `gt` is true

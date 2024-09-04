@@ -4,7 +4,7 @@ use alloy_primitives::{uint, Uint, U256};
 
 const ONE: U256 = uint!(1_U256);
 
-/// Full precision arithmetic operations for `Uint` types.
+/// Full precision arithmetic operations for [`Uint`] types.
 pub trait FullMath {
     fn mul_div(self, b: U256, denominator: U256) -> Result<U256, Error>;
     fn mul_div_rounding_up(self, b: U256, denominator: U256) -> Result<U256, Error>;

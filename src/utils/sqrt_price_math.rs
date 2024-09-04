@@ -8,7 +8,7 @@ use num_traits::Zero;
 
 const U160_MAX: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
 
-/// Trait to associate the SqrtPriceMath functions with the [`Uint`] type
+/// Trait to associate the SqrtPriceMath functions with the [`Uint`] types.
 pub trait SqrtPriceMath: Sized {
     fn get_next_sqrt_price_from_amount_0_rounding_up(
         self,

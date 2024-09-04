@@ -43,7 +43,7 @@ pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24, Error> 
     } else {
         encode_sqrt_ratio_x96(price.denominator(), price.numerator())
     };
-    let tick = get_tick_at_sqrt_ratio(sqrt_ratio_x96)?;
+    let tick = sqrt_ratio_x96.get_tick_at_sqrt_ratio()?;
     let next_tick_price = tick_to_price(
         price.base_currency.clone(),
         price.quote_currency.clone(),
