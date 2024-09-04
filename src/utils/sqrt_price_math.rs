@@ -6,7 +6,7 @@ use crate::prelude::*;
 use alloy_primitives::{ruint::UintTryFrom, I256, U160, U256};
 use num_traits::Zero;
 
-const MAX_U160: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
+const U160_MAX: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
 
 /// Gets the next sqrt price given a delta of token0
 ///
@@ -27,6 +27,7 @@ const MAX_U160: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]
 /// ## Returns
 ///
 /// The price after adding or removing amount, depending on add
+#[inline]
 pub fn get_next_sqrt_price_from_amount_0_rounding_up(
     sqrt_price_x96: U160,
     liquidity: u128,
@@ -90,6 +91,7 @@ pub fn get_next_sqrt_price_from_amount_0_rounding_up(
 /// ## Returns
 ///
 /// The price after adding or removing `amount`
+#[inline]
 pub fn get_next_sqrt_price_from_amount_1_rounding_down(
     sqrt_price_x96: U160,
     liquidity: u128,
@@ -99,7 +101,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
     let sqrt_price_x96 = U256::from(sqrt_price_x96);
     let liquidity = U256::from(liquidity);
     if add {
-        let quotient = if amount <= MAX_U160 {
+        let quotient = if amount <= U160_MAX {
             (amount << 96) / liquidity
         } else {
             mul_div(amount, Q96, liquidity)?
@@ -107,7 +109,7 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
 
         U160::uint_try_from(sqrt_price_x96 + quotient).map_err(|_| Error::SafeCastToU160Overflow)
     } else {
-        let quotient = if amount <= MAX_U160 {
+        let quotient = if amount <= U160_MAX {
             (amount << 96_i32).div_ceil(liquidity)
         } else {
             mul_div_rounding_up(amount, Q96, liquidity)?
@@ -132,7 +134,10 @@ pub fn get_next_sqrt_price_from_amount_1_rounding_down(
 /// * `amount_in`: How much of token0, or token1, is being swapped in
 /// * `zero_for_one`: Whether the amount in is token0 or token1
 ///
-/// returns: The price after adding the input amount to token0 or token1
+/// ## Returns
+///
+/// The price after adding the input amount to token0, or token1
+#[inline]
 pub fn get_next_sqrt_price_from_input(
     sqrt_price_x96: U160,
     liquidity: u128,
@@ -161,7 +166,10 @@ pub fn get_next_sqrt_price_from_input(
 /// * `amount_out`: How much of token0, or token1, is being swapped out
 /// * `zero_for_one`: Whether the amount out is token0 or token1
 ///
-/// returns: The price after removing the output amount of token0 or token1
+/// ## Returns
+///
+/// The price after removing the output amount of token0, or token1
+#[inline]
 pub fn get_next_sqrt_price_from_output(
     sqrt_price_x96: U160,
     liquidity: u128,
@@ -205,8 +213,10 @@ fn sort(a: U160, b: U160) -> (U256, U256) {
 /// * `liquidity`: The amount of usable liquidity
 /// * `round_up`: Whether to round the amount up or down
 ///
-/// returns: Amount of token0 required to cover a position of size liquidity between the two passed
-/// prices
+/// ## Returns
+///
+/// Amount of token0 required to cover a position of size liquidity between the two passed prices
+#[inline]
 pub fn get_amount_0_delta(
     sqrt_ratio_a_x96: U160,
     sqrt_ratio_b_x96: U160,
@@ -222,11 +232,11 @@ pub fn get_amount_0_delta(
     let numerator_1 = U256::from(liquidity) << 96;
     let numerator_2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
 
-    let (amount_0, rem) =
-        mul_div(numerator_1, numerator_2, sqrt_ratio_b_x96)?.div_rem(sqrt_ratio_a_x96);
-    let carry =
-        (rem | numerator_1.mul_mod(numerator_2, sqrt_ratio_b_x96)).gt(&U256::ZERO) && round_up;
-    Ok(amount_0 + U256::from_limbs([carry as u64, 0, 0, 0]))
+    Ok(if round_up {
+        mul_div_rounding_up(numerator_1, numerator_2, sqrt_ratio_b_x96)?.div_ceil(sqrt_ratio_a_x96)
+    } else {
+        mul_div(numerator_1, numerator_2, sqrt_ratio_b_x96)? / sqrt_ratio_a_x96
+    })
 }
 
 /// Gets the amount1 delta between two prices
@@ -240,8 +250,10 @@ pub fn get_amount_0_delta(
 /// * `liquidity`: The amount of usable liquidity
 /// * `round_up`: Whether to round the amount up, or down
 ///
-/// returns: Amount of token1 required to cover a position of size liquidity between the two passed
-/// prices
+/// ## Returns
+///
+/// Amount of token1 required to cover a position of size liquidity between the two passed prices
+#[inline]
 pub fn get_amount_1_delta(
     sqrt_ratio_a_x96: U160,
     sqrt_ratio_b_x96: U160,
@@ -254,8 +266,8 @@ pub fn get_amount_1_delta(
     let denominator = Q96;
 
     let liquidity = U256::from(liquidity);
-    let amount_1 = mul_div_96(liquidity, numerator)?;
-    let carry = liquidity.mul_mod(numerator, denominator).gt(&U256::ZERO) && round_up;
+    let amount_1 = mul_div_q96(liquidity, numerator)?;
+    let carry = liquidity.mul_mod(numerator, denominator) > U256::ZERO && round_up;
     Ok(amount_1 + U256::from_limbs([carry as u64, 0, 0, 0]))
 }
 
@@ -267,7 +279,10 @@ pub fn get_amount_1_delta(
 /// * `sqrt_ratio_b_x96`: Another sqrt price
 /// * `liquidity`: The change in liquidity for which to compute the amount0 delta
 ///
-/// returns: Amount of token0 corresponding to the passed liquidityDelta between the two prices
+/// ## Returns
+///
+/// Amount of token0 corresponding to the passed liquidityDelta between the two prices
+#[inline]
 pub fn get_amount_0_delta_signed(
     sqrt_ratio_a_x96: U160,
     sqrt_ratio_b_x96: U160,
@@ -295,7 +310,10 @@ pub fn get_amount_0_delta_signed(
 /// * `sqrt_ratio_b_x96`: Another sqrt price
 /// * `liquidity`: The change in liquidity for which to compute the amount1 delta
 ///
-/// returns: Amount of token1 corresponding to the passed liquidityDelta between the two prices
+/// ## Returns
+///
+/// Amount of token1 corresponding to the passed liquidityDelta between the two prices
+#[inline]
 pub fn get_amount_1_delta_signed(
     sqrt_ratio_a_x96: U160,
     sqrt_ratio_b_x96: U160,

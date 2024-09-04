@@ -2,7 +2,7 @@ use super::{Q96, THREE, TWO};
 use crate::error::Error;
 use alloy_primitives::{uint, U256};
 
-const _ONE: U256 = uint!(1_U256);
+const ONE: U256 = uint!(1_U256);
 
 /// Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or
 /// denominator == 0
@@ -12,8 +12,7 @@ const _ONE: U256 = uint!(1_U256);
 /// * `a`: The multiplicand
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
-///
-/// returns: Result<U256, Error>
+#[inline]
 pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, Error> {
     // 512-bit multiply [prod1 prod0] = a * b
     // Compute the product mod 2**256 and mod 2**256 - 1
@@ -52,7 +51,7 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, Error> {
     // Factor powers of two out of denominator
     // Compute largest power of two divisor of denominator.
     // Always >= 1.
-    let mut twos = (U256::ZERO - denominator) & denominator;
+    let mut twos = (-denominator) & denominator;
 
     // Divide denominator by power of two
     denominator /= twos;
@@ -63,7 +62,7 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, Error> {
     // Shift in bits from prod1 into prod0. For this we need
     // to flip `twos` such that it is 2**256 / twos.
     // If twos is zero, then it becomes one
-    twos = (U256::ZERO - twos) / twos + _ONE;
+    twos = (-twos) / twos + ONE;
 
     prod_0 |= prod_1 * twos;
 
@@ -102,8 +101,7 @@ pub fn mul_div(a: U256, b: U256, mut denominator: U256) -> Result<U256, Error> {
 /// * `a`: The multiplicand
 /// * `b`: The multiplier
 /// * `denominator`: The divisor
-///
-/// returns: Result<U256, Error>
+#[inline]
 pub fn mul_div_rounding_up(a: U256, b: U256, denominator: U256) -> Result<U256, Error> {
     let result = mul_div(a, b, denominator)?;
 
@@ -112,16 +110,17 @@ pub fn mul_div_rounding_up(a: U256, b: U256, denominator: U256) -> Result<U256, 
     } else if result == U256::MAX {
         Err(Error::MulDivOverflow)
     } else {
-        Ok(result + _ONE)
+        Ok(result + ONE)
     }
 }
 
 /// Calculates a * b / 2^96 with full precision.
-pub fn mul_div_96(a: U256, b: U256) -> Result<U256, Error> {
+#[inline]
+pub fn mul_div_q96(a: U256, b: U256) -> Result<U256, Error> {
     let prod0 = a * b;
     let mm = a.mul_mod(b, U256::MAX);
     let prod1 = mm - prod0 - U256::from_limbs([(mm < prod0) as u64, 0, 0, 0]);
-    if prod1.ge(&Q96) {
+    if prod1 >= Q96 {
         return Err(Error::MulDivOverflow);
     }
     Ok((prod0 >> 96) | (prod1 << 160))
