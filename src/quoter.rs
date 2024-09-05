@@ -121,7 +121,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
@@ -139,7 +139,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
@@ -157,7 +157,7 @@ mod tests {
 
         #[test]
         fn multi_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(
                     vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
                     TOKEN0.clone(),
@@ -168,7 +168,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -182,7 +182,7 @@ mod tests {
 
         #[test]
         fn multi_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(
                     vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
                     TOKEN0.clone(),
@@ -193,7 +193,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.output_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -207,14 +207,14 @@ mod tests {
 
         #[test]
         fn sqrt_price_limit_x96() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
@@ -236,7 +236,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
@@ -260,7 +260,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
