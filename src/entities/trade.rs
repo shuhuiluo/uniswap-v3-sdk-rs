@@ -277,7 +277,7 @@ where
             return Ok(price_impact.clone());
         }
         let mut spot_output_amount =
-            CurrencyAmount::from_raw_amount(self.output_amount_cached()?.currency.clone(), 0)?;
+            CurrencyAmount::from_raw_amount(self.output_currency().clone(), 0)?;
         for Swap {
             route,
             input_amount,
@@ -365,8 +365,8 @@ where
         slippage_tolerance: Percent,
     ) -> Result<Price<TInput, TOutput>, Error> {
         Ok(Price::new(
-            self.input_amount_cached()?.currency.clone(),
-            self.output_amount_cached()?.currency.clone(),
+            self.input_currency().clone(),
+            self.output_currency().clone(),
             self.maximum_amount_in(slippage_tolerance.clone(), None)?
                 .quotient(),
             self.minimum_amount_out(slippage_tolerance, None)?

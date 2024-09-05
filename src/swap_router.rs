@@ -39,29 +39,25 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
         sqrt_price_limit_x96,
         fee,
     } = options;
-    let mut sample_trade = trades[0].clone();
-    // TODO: refactor
-    let input_amount = sample_trade.input_amount_cached()?;
-    let token_in = input_amount.currency.wrapped();
-    let out_amount = sample_trade.output_amount_cached()?;
-    let token_out = out_amount.currency.wrapped();
+    let sample_trade = &trades[0];
+    let input_currency = sample_trade.input_currency();
+    let token_in = input_currency.wrapped();
+    let token_in_clone = token_in.clone();
+    let input_is_native = input_currency.is_native();
+    let output_currency = sample_trade.output_currency();
+    let token_out = output_currency.wrapped();
+    let output_currency_address = output_currency.address();
+    let output_is_native = output_currency.is_native();
+    let trade_type = sample_trade.trade_type;
 
     // All trades should have the same starting and ending token.
-    for trade in trades.iter_mut() {
+    for trade in trades.iter() {
         assert!(
-            trade
-                .input_amount_cached()?
-                .currency
-                .wrapped()
-                .equals(token_in),
+            trade.input_currency().wrapped().equals(token_in),
             "TOKEN_IN_DIFF"
         );
         assert!(
-            trade
-                .output_amount_cached()?
-                .currency
-                .wrapped()
-                .equals(token_out),
+            trade.output_currency().wrapped().equals(token_out),
             "TOKEN_OUT_DIFF"
         );
     }
@@ -79,10 +75,8 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
     let total_amount_out = U256::from_big_int(total_amount_out);
 
     // flag for whether a refund needs to happen
-    let input_is_native = sample_trade.input_amount_cached()?.currency.is_native();
-    let must_refund = input_is_native && sample_trade.trade_type == TradeType::ExactOutput;
+    let must_refund = input_is_native && trade_type == TradeType::ExactOutput;
     // flags for whether funds should be sent first to the router
-    let output_is_native = sample_trade.output_amount_cached()?.currency.is_native();
     let router_must_custody = output_is_native || fee.is_some();
 
     let mut total_value = BigInt::zero();
@@ -96,18 +90,8 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
 
     // encode permit if necessary
     if let Some(input_token_permit) = input_token_permit {
-        assert!(
-            !sample_trade.input_amount_cached()?.currency.is_native(),
-            "NON_TOKEN_PERMIT"
-        );
-        calldatas.push(encode_permit(
-            sample_trade
-                .input_amount_cached()?
-                .currency
-                .wrapped()
-                .clone(),
-            input_token_permit,
-        ));
+        assert!(!input_is_native, "NON_TOKEN_PERMIT");
+        calldatas.push(encode_permit(token_in_clone, input_token_permit));
     }
 
     for trade in trades.iter_mut() {
@@ -214,7 +198,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
             calldatas.push(encode_unwrap_weth9(total_amount_out, recipient, fee));
         } else {
             calldatas.push(encode_sweep_token(
-                sample_trade.output_amount_cached()?.currency.address(),
+                output_currency_address,
                 total_amount_out,
                 recipient,
                 fee,
