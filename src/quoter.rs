@@ -36,8 +36,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                 if options.use_quoter_v2 {
                     IQuoterV2::quoteExactInputSingleCall {
                         params: IQuoterV2::QuoteExactInputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             amountIn: quote_amount,
                             fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -46,8 +46,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                     .abi_encode()
                 } else {
                     IQuoter::quoteExactInputSingleCall {
-                        tokenIn: route.token_path[0].address(),
-                        tokenOut: route.token_path[1].address(),
+                        tokenIn: route.input.wrapped().address(),
+                        tokenOut: route.output.wrapped().address(),
                         amountIn: quote_amount,
                         fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -59,8 +59,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                 if options.use_quoter_v2 {
                     IQuoterV2::quoteExactOutputSingleCall {
                         params: IQuoterV2::QuoteExactOutputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             amount: quote_amount,
                             fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -69,8 +69,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                     .abi_encode()
                 } else {
                     IQuoter::quoteExactOutputSingleCall {
-                        tokenIn: route.token_path[0].address(),
-                        tokenOut: route.token_path[1].address(),
+                        tokenIn: route.input.wrapped().address(),
+                        tokenOut: route.output.wrapped().address(),
                         amountOut: quote_amount,
                         fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,

@@ -6,7 +6,6 @@ use uniswap_sdk_core::prelude::*;
 #[derive(Clone, PartialEq, Debug)]
 pub struct Route<TInput: Currency, TOutput: Currency, P> {
     pub pools: Vec<Pool<P>>,
-    pub token_path: Vec<Token>,
     /// The input token
     pub input: TInput,
     /// The output token
@@ -32,36 +31,45 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
         let wrapped_input = input.wrapped();
         assert!(pools[0].involves_token(wrapped_input), "INPUT");
 
+        let wrapped_output = output.wrapped();
         assert!(
-            pools.last().unwrap().involves_token(output.wrapped()),
+            pools.last().unwrap().involves_token(wrapped_output),
             "OUTPUT"
         );
 
-        let mut token_path: Vec<Token> = Vec::with_capacity(pools.len() + 1);
-        token_path.push(wrapped_input.clone());
-        for (i, pool) in pools.iter().enumerate() {
-            let current_input_token = &token_path[i];
-            assert!(
-                current_input_token.equals(&pool.token0)
-                    || current_input_token.equals(&pool.token1),
-                "PATH"
-            );
-            let next_token = if current_input_token.equals(&pool.token0) {
+        let mut current_input_token = wrapped_input;
+        for pool in pools.iter() {
+            current_input_token = if current_input_token.equals(&pool.token0) {
+                &pool.token1
+            } else if current_input_token.equals(&pool.token1) {
+                &pool.token0
+            } else {
+                panic!("PATH")
+            };
+        }
+        assert!(current_input_token.equals(wrapped_output), "PATH");
+
+        Route {
+            pools,
+            input,
+            output,
+            _mid_price: None,
+        }
+    }
+
+    /// Returns the path of tokens that the route will take
+    pub fn token_path(&self) -> Vec<Token> {
+        let mut token_path: Vec<Token> = Vec::with_capacity(self.pools.len() + 1);
+        token_path.push(self.input.wrapped().clone());
+        for (i, pool) in self.pools.iter().enumerate() {
+            let next_token = if token_path[i].equals(&pool.token0) {
                 pool.token1.clone()
             } else {
                 pool.token0.clone()
             };
             token_path.push(next_token);
         }
-        assert!(token_path.last().unwrap().equals(output.wrapped()), "PATH");
-
-        Route {
-            pools,
-            token_path,
-            input,
-            output,
-            _mid_price: None,
-        }
+        token_path
     }
 
     pub fn chain_id(&self) -> ChainId {
@@ -114,7 +122,7 @@ mod tests {
         fn constructs_a_path_from_the_tokens() {
             let route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
             assert_eq!(route.pools, vec![POOL_0_1.clone()]);
-            assert_eq!(route.token_path, vec![TOKEN0.clone(), TOKEN1.clone()]);
+            assert_eq!(route.token_path(), vec![TOKEN0.clone(), TOKEN1.clone()]);
             assert_eq!(route.input, TOKEN0.clone());
             assert_eq!(route.output, TOKEN1.clone());
             assert_eq!(route.chain_id(), 1);

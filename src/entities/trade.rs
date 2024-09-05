@@ -32,12 +32,12 @@ pub fn trade_comparator<TInput: Currency, TOutput: Currency, P: Clone>(
             let a_hops = a
                 .swaps
                 .iter()
-                .map(|s| s.route.token_path.len())
+                .map(|s| s.route.pools.len() + 1)
                 .sum::<usize>();
             let b_hops = b
                 .swaps
                 .iter()
-                .map(|s| s.route.token_path.len())
+                .map(|s| s.route.pools.len() + 1)
                 .sum::<usize>();
             return a_hops.cmp(&b_hops);
         }
@@ -420,7 +420,7 @@ where
         amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
-        let length = route.token_path.len();
+        let length = route.pools.len() + 1;
         let mut token_amount: CurrencyAmount<Token> = amount.wrapped()?;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
@@ -1585,7 +1585,7 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].swaps[0].route.pools.len(), 1);
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN2.clone()]
             );
             assert_eq!(
@@ -1598,7 +1598,7 @@ mod tests {
             );
             assert_eq!(result[1].swaps[0].route.pools.len(), 2);
             assert_eq!(
-                result[1].swaps[0].route.token_path,
+                result[1].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN1.clone(), TOKEN2.clone()]
             );
             assert_eq!(
@@ -1630,7 +1630,7 @@ mod tests {
             assert_eq!(result.len(), 1);
             assert_eq!(result[0].swaps[0].route.pools.len(), 1);
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN2.clone()]
             );
         }
@@ -1651,7 +1651,7 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].swaps[0].route.pools.len(), 1);
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN2.clone()]
             );
             assert_eq!(
@@ -1716,7 +1716,7 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![
                     ETHER.wrapped().clone(),
                     TOKEN0.clone(),
@@ -1727,7 +1727,7 @@ mod tests {
             assert_eq!(result[0].output_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
-                result[1].swaps[0].route.token_path,
+                result[1].swaps[0].route.token_path(),
                 vec![ETHER.wrapped().clone(), TOKEN0.clone(), TOKEN3.clone()]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, TOKEN3.clone());
@@ -1754,13 +1754,13 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped().clone()]
             );
             assert_eq!(result[0].output_amount().unwrap().currency, ETHER.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
-                result[1].swaps[0].route.token_path,
+                result[1].swaps[0].route.token_path(),
                 vec![
                     TOKEN3.clone(),
                     TOKEN1.clone(),
@@ -2058,7 +2058,7 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].swaps[0].route.pools.len(), 1);
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN2.clone()]
             );
             assert_eq!(
@@ -2071,7 +2071,7 @@ mod tests {
             );
             assert_eq!(result[1].swaps[0].route.pools.len(), 2);
             assert_eq!(
-                result[1].swaps[0].route.token_path.clone(),
+                result[1].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN1.clone(), TOKEN2.clone()]
             );
             assert_eq!(
@@ -2103,7 +2103,7 @@ mod tests {
             assert_eq!(result.len(), 1);
             assert_eq!(result[0].swaps[0].route.pools.len(), 1);
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN0.clone(), TOKEN2.clone()]
             );
         }
@@ -2198,7 +2198,7 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![
                     ETHER.wrapped().clone(),
                     TOKEN0.clone(),
@@ -2209,7 +2209,7 @@ mod tests {
             assert_eq!(result[0].output_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
-                result[1].swaps[0].route.token_path,
+                result[1].swaps[0].route.token_path(),
                 vec![ETHER.wrapped().clone(), TOKEN0.clone(), TOKEN3.clone()]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, TOKEN3.clone());
@@ -2236,13 +2236,13 @@ mod tests {
             assert_eq!(result.len(), 2);
             assert_eq!(result[0].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
-                result[0].swaps[0].route.token_path,
+                result[0].swaps[0].route.token_path(),
                 vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped().clone()]
             );
             assert_eq!(result[0].output_amount().unwrap().currency, ETHER.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
-                result[1].swaps[0].route.token_path,
+                result[1].swaps[0].route.token_path(),
                 vec![
                     TOKEN3.clone(),
                     TOKEN1.clone(),

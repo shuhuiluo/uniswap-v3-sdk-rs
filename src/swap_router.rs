@@ -116,8 +116,8 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
                 calldatas.push(match trade.trade_type {
                     TradeType::ExactInput => ISwapRouter::exactInputSingleCall {
                         params: ISwapRouter::ExactInputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             fee: route.pools[0].fee.into(),
                             recipient: if router_must_custody {
                                 Address::ZERO
@@ -134,8 +134,8 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
                     .into(),
                     TradeType::ExactOutput => ISwapRouter::exactOutputSingleCall {
                         params: ISwapRouter::ExactOutputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             fee: route.pools[0].fee.into(),
                             recipient: if router_must_custody {
                                 Address::ZERO
