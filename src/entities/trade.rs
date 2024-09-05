@@ -530,8 +530,7 @@ where
         let token_out = currency_out.wrapped();
         for pool in pools.iter() {
             // pool irrelevant
-            if !pool.token0.equals(&amount_in.currency) && !pool.token1.equals(&amount_in.currency)
-            {
+            if !pool.involves_token(&amount_in.currency) {
                 continue;
             }
             let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
@@ -615,9 +614,7 @@ where
         let token_in = currency_in.wrapped();
         for pool in pools.iter() {
             // pool irrelevant
-            if !pool.token0.equals(&amount_out.currency)
-                && !pool.token1.equals(&amount_out.currency)
-            {
+            if !pool.involves_token(&amount_out.currency) {
                 continue;
             }
             let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;

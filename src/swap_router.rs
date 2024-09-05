@@ -42,7 +42,6 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
     let sample_trade = &trades[0];
     let input_currency = sample_trade.input_currency();
     let token_in = input_currency.wrapped();
-    let token_in_clone = token_in.clone();
     let input_is_native = input_currency.is_native();
     let output_currency = sample_trade.output_currency();
     let token_out = output_currency.wrapped();
@@ -66,6 +65,12 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
 
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(num_swaps + 3);
 
+    // encode permit if necessary
+    if let Some(input_token_permit) = input_token_permit {
+        assert!(!input_is_native, "NON_TOKEN_PERMIT");
+        calldatas.push(encode_permit(token_in, input_token_permit));
+    }
+
     let mut total_amount_out = BigInt::zero();
     for trade in trades.iter_mut() {
         total_amount_out += trade
@@ -86,12 +91,6 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
                 .maximum_amount_in(slippage_tolerance.clone(), None)?
                 .quotient();
         }
-    }
-
-    // encode permit if necessary
-    if let Some(input_token_permit) = input_token_permit {
-        assert!(!input_is_native, "NON_TOKEN_PERMIT");
-        calldatas.push(encode_permit(token_in_clone, input_token_permit));
     }
 
     for trade in trades.iter_mut() {

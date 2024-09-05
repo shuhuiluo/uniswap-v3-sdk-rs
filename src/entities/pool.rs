@@ -176,11 +176,12 @@ impl<P> Pool<P> {
     ///
     /// returns: Price<Token, Token>
     pub fn price_of(&self, token: &Token) -> Price<Token, Token> {
-        assert!(self.involves_token(token), "TOKEN");
         if self.token0.equals(token) {
             self.token0_price()
-        } else {
+        } else if self.token1.equals(token) {
             self.token1_price()
+        } else {
+            panic!("TOKEN")
         }
     }
 }
