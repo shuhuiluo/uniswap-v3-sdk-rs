@@ -183,7 +183,7 @@ impl<P> Position<P> {
             * ((one + slippage_tolerance.clone()).as_fraction());
 
         let mut sqrt_ratio_x96_lower =
-            encode_sqrt_ratio_x96(price_lower.numerator(), price_lower.denominator());
+            encode_sqrt_ratio_x96(price_lower.numerator, price_lower.denominator);
         if sqrt_ratio_x96_lower <= MIN_SQRT_RATIO {
             sqrt_ratio_x96_lower = MIN_SQRT_RATIO + ONE;
         }
@@ -193,7 +193,7 @@ impl<P> Position<P> {
         {
             MAX_SQRT_RATIO - ONE
         } else {
-            encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator())
+            encode_sqrt_ratio_x96(price_upper.numerator, price_upper.denominator)
         };
 
         (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)

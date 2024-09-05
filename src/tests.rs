@@ -43,7 +43,7 @@ pub(crate) static TOKEN3: Lazy<Token> = Lazy::new(|| {
         "token3"
     )
 });
-pub(crate) static WETH: Lazy<Token> = Lazy::new(|| ETHER.wrapped());
+pub(crate) static WETH: Lazy<Token> = Lazy::new(|| ETHER.wrapped().clone());
 pub(crate) static USDC: Lazy<Token> = Lazy::new(|| {
     token!(
         1,

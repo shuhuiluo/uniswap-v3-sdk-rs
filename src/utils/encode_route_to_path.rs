@@ -29,7 +29,7 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
 ) -> Bytes {
     let mut path: Vec<u8> = Vec::with_capacity(23 * route.pools.len() + 20);
     if exact_output {
-        let mut output_token = &route.output.wrapped();
+        let mut output_token = route.output.wrapped();
         for pool in route.pools.iter().rev() {
             let (input_token, leg) = encode_leg(pool, output_token);
             output_token = input_token;
@@ -37,7 +37,7 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
         }
         path.extend(route.input.address().abi_encode_packed());
     } else {
-        let mut input_token = &route.input.wrapped();
+        let mut input_token = route.input.wrapped();
         for pool in route.pools.iter() {
             let (output_token, leg) = encode_leg(pool, input_token);
             input_token = output_token;

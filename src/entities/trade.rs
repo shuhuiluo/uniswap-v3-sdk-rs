@@ -117,15 +117,15 @@ where
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
     fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self, Error> {
-        let input_currency = &swaps[0].input_amount.currency.wrapped();
-        let output_currency = &swaps[0].output_amount.currency.wrapped();
+        let input_currency = swaps[0].input_amount.currency.wrapped();
+        let output_currency = swaps[0].output_amount.currency.wrapped();
         for Swap { route, .. } in &swaps {
             assert!(
-                input_currency.equals(&route.input.wrapped()),
+                input_currency.equals(route.input.wrapped()),
                 "INPUT_CURRENCY_MATCH"
             );
             assert!(
-                output_currency.equals(&route.output.wrapped()),
+                output_currency.equals(route.output.wrapped()),
                 "OUTPUT_CURRENCY_MATCH"
             );
         }
@@ -195,7 +195,7 @@ where
         match trade_type {
             TradeType::ExactInput => {
                 assert!(
-                    amount.currency.wrapped().equals(&route.input.wrapped()),
+                    amount.currency.wrapped().equals(route.input.wrapped()),
                     "INPUT"
                 );
                 for i in 0..length - 1 {
@@ -205,18 +205,18 @@ where
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
-                    amount.numerator(),
-                    amount.denominator(),
+                    amount.numerator,
+                    amount.denominator,
                 )?;
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
-                    token_amount.numerator(),
-                    token_amount.denominator(),
+                    token_amount.numerator,
+                    token_amount.denominator,
                 )?;
             }
             TradeType::ExactOutput => {
                 assert!(
-                    amount.currency.wrapped().equals(&route.output.wrapped()),
+                    amount.currency.wrapped().equals(route.output.wrapped()),
                     "OUTPUT"
                 );
                 for i in (1..length).rev() {
@@ -226,13 +226,13 @@ where
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
-                    token_amount.numerator(),
-                    token_amount.denominator(),
+                    token_amount.numerator,
+                    token_amount.denominator,
                 )?;
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
-                    amount.numerator(),
-                    amount.denominator(),
+                    amount.numerator,
+                    amount.denominator,
                 )?;
             }
         }
@@ -335,7 +335,7 @@ where
             }
             let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
             // we have arrived at the output token, so this is the final trade of one of the paths
-            if !amount_out.currency.is_native() && amount_out.currency.equals(&token_out) {
+            if !amount_out.currency.is_native() && amount_out.currency.equals(token_out) {
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
                 let trade = Self::from_route(
@@ -421,7 +421,7 @@ where
             }
             let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;
             // we have arrived at the input token, so this is the first trade of one of the paths
-            if amount_in.currency.equals(&token_in) {
+            if amount_in.currency.equals(token_in) {
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
                 let trade = Self::from_route(
@@ -543,14 +543,14 @@ where
         } in &mut self.swaps
         {
             let mid_price = route.mid_price()?;
-            spot_output_amount = spot_output_amount.add(&mid_price.quote(input_amount.clone())?)?;
+            spot_output_amount = spot_output_amount.add(&mid_price.quote(input_amount)?)?;
         }
         let price_impact = spot_output_amount
             .subtract(&self.output_amount()?)?
             .divide(&spot_output_amount)?;
         self._price_impact = Some(Percent::new(
-            price_impact.numerator(),
-            price_impact.denominator(),
+            price_impact.numerator,
+            price_impact.denominator,
         ));
         Ok(self._price_impact.clone().unwrap())
     }
@@ -715,21 +715,21 @@ mod tests {
     });
     static POOL_WETH_0: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
         v2_style_pool(
-            CurrencyAmount::from_raw_amount(ETHER.wrapped(), 100000).unwrap(),
+            CurrencyAmount::from_raw_amount(ETHER.wrapped().clone(), 100000).unwrap(),
             CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100000).unwrap(),
             None,
         )
     });
     static POOL_WETH_1: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
         v2_style_pool(
-            CurrencyAmount::from_raw_amount(ETHER.wrapped(), 100000).unwrap(),
+            CurrencyAmount::from_raw_amount(ETHER.wrapped().clone(), 100000).unwrap(),
             CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100000).unwrap(),
             None,
         )
     });
     static POOL_WETH_2: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
         v2_style_pool(
-            CurrencyAmount::from_raw_amount(ETHER.wrapped(), 100000).unwrap(),
+            CurrencyAmount::from_raw_amount(ETHER.wrapped().clone(), 100000).unwrap(),
             CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100000).unwrap(),
             None,
         )
@@ -1688,7 +1688,7 @@ mod tests {
             assert_eq!(
                 result[0].swaps[0].route.token_path,
                 vec![
-                    ETHER.wrapped(),
+                    ETHER.wrapped().clone(),
                     TOKEN0.clone(),
                     TOKEN1.clone(),
                     TOKEN3.clone(),
@@ -1698,7 +1698,7 @@ mod tests {
             assert_eq!(result[1].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
                 result[1].swaps[0].route.token_path,
-                vec![ETHER.wrapped(), TOKEN0.clone(), TOKEN3.clone()]
+                vec![ETHER.wrapped().clone(), TOKEN0.clone(), TOKEN3.clone()]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, TOKEN3.clone());
         }
@@ -1725,7 +1725,7 @@ mod tests {
             assert_eq!(result[0].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
                 result[0].swaps[0].route.token_path,
-                vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped()]
+                vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped().clone()]
             );
             assert_eq!(result[0].output_amount().unwrap().currency, ETHER.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, TOKEN3.clone());
@@ -1735,7 +1735,7 @@ mod tests {
                     TOKEN3.clone(),
                     TOKEN1.clone(),
                     TOKEN0.clone(),
-                    ETHER.wrapped(),
+                    ETHER.wrapped().clone(),
                 ]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, ETHER.clone());
@@ -2170,7 +2170,7 @@ mod tests {
             assert_eq!(
                 result[0].swaps[0].route.token_path,
                 vec![
-                    ETHER.wrapped(),
+                    ETHER.wrapped().clone(),
                     TOKEN0.clone(),
                     TOKEN1.clone(),
                     TOKEN3.clone(),
@@ -2180,7 +2180,7 @@ mod tests {
             assert_eq!(result[1].input_amount().unwrap().currency, ETHER.clone());
             assert_eq!(
                 result[1].swaps[0].route.token_path,
-                vec![ETHER.wrapped(), TOKEN0.clone(), TOKEN3.clone()]
+                vec![ETHER.wrapped().clone(), TOKEN0.clone(), TOKEN3.clone()]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, TOKEN3.clone());
         }
@@ -2207,7 +2207,7 @@ mod tests {
             assert_eq!(result[0].input_amount().unwrap().currency, TOKEN3.clone());
             assert_eq!(
                 result[0].swaps[0].route.token_path,
-                vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped()]
+                vec![TOKEN3.clone(), TOKEN0.clone(), ETHER.wrapped().clone()]
             );
             assert_eq!(result[0].output_amount().unwrap().currency, ETHER.clone());
             assert_eq!(result[1].input_amount().unwrap().currency, TOKEN3.clone());
@@ -2217,7 +2217,7 @@ mod tests {
                     TOKEN3.clone(),
                     TOKEN1.clone(),
                     TOKEN0.clone(),
-                    ETHER.wrapped(),
+                    ETHER.wrapped().clone(),
                 ]
             );
             assert_eq!(result[1].output_amount().unwrap().currency, ETHER.clone());

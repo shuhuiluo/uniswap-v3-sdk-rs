@@ -30,15 +30,15 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
         assert!(all_on_same_chain, "CHAIN_IDS");
 
         let wrapped_input = input.wrapped();
-        assert!(pools[0].involves_token(&wrapped_input), "INPUT");
+        assert!(pools[0].involves_token(wrapped_input), "INPUT");
 
         assert!(
-            pools.last().unwrap().involves_token(&output.wrapped()),
+            pools.last().unwrap().involves_token(output.wrapped()),
             "OUTPUT"
         );
 
         let mut token_path: Vec<Token> = Vec::with_capacity(pools.len() + 1);
-        token_path.push(wrapped_input);
+        token_path.push(wrapped_input.clone());
         for (i, pool) in pools.iter().enumerate() {
             let current_input_token = &token_path[i];
             assert!(
@@ -53,7 +53,7 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
             };
             token_path.push(next_token);
         }
-        assert!(token_path.last().unwrap().equals(&output.wrapped()), "PATH");
+        assert!(token_path.last().unwrap().equals(output.wrapped()), "PATH");
 
         Route {
             pools,
@@ -75,7 +75,7 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
         }
         let mut price: Price<Token, Token>;
         let mut next_input: Token;
-        if self.pools[0].token0.equals(&self.input.wrapped()) {
+        if self.pools[0].token0.equals(self.input.wrapped()) {
             price = self.pools[0].token0_price();
             next_input = self.pools[0].token1.clone();
         } else {
@@ -94,8 +94,8 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
         self._mid_price = Some(Price::new(
             self.input.clone(),
             self.output.clone(),
-            price.denominator(),
-            price.numerator(),
+            price.denominator,
+            price.numerator,
         ));
         Ok(self._mid_price.clone().unwrap())
     }

@@ -194,11 +194,11 @@ pub fn add_call_parameters<P>(
     if let Some(ether) = options.use_native {
         let wrapped = ether.wrapped();
         assert!(
-            position.pool.token0.equals(&wrapped) || position.pool.token1.equals(&wrapped),
+            position.pool.token0.equals(wrapped) || position.pool.token1.equals(wrapped),
             "NO_WETH"
         );
 
-        let wrapped_value = if position.pool.token0.equals(&wrapped) {
+        let wrapped_value = if position.pool.token0.equals(wrapped) {
             amount0_desired
         } else {
             amount1_desired
@@ -245,7 +245,7 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
 
     if involves_eth {
         let eth_amount: U256;
-        let token: Token;
+        let token: &Token;
         let token_amount: U256;
         if options.expected_currency_owed0.currency.is_native() {
             eth_amount = U256::from_big_int(options.expected_currency_owed0.quotient());

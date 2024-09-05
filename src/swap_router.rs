@@ -40,17 +40,20 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
         fee,
     } = options;
     let mut sample_trade = trades[0].clone();
-    let token_in = sample_trade.input_amount()?.currency.wrapped();
-    let token_out = sample_trade.output_amount()?.currency.wrapped();
+    // TODO: refactor
+    let input_amount = sample_trade.input_amount()?;
+    let token_in = input_amount.currency.wrapped();
+    let out_amount = sample_trade.output_amount()?;
+    let token_out = out_amount.currency.wrapped();
 
     // All trades should have the same starting and ending token.
     for trade in trades.iter_mut() {
         assert!(
-            trade.input_amount()?.currency.wrapped().equals(&token_in),
+            trade.input_amount()?.currency.wrapped().equals(token_in),
             "TOKEN_IN_DIFF"
         );
         assert!(
-            trade.output_amount()?.currency.wrapped().equals(&token_out),
+            trade.output_amount()?.currency.wrapped().equals(token_out),
             "TOKEN_OUT_DIFF"
         );
     }
@@ -90,7 +93,7 @@ pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
             "NON_TOKEN_PERMIT"
         );
         calldatas.push(encode_permit(
-            sample_trade.input_amount()?.currency.wrapped(),
+            sample_trade.input_amount()?.currency.wrapped().clone(),
             input_token_permit,
         ));
     }

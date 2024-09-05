@@ -324,7 +324,7 @@ pub fn get_rebalanced_position<P: Clone>(
     let price = position.pool.token0_price();
     // Calculate the position equity denominated in token1 before rebalance.
     let equity_in_token1_before = price
-        .quote(position.amount0()?)?
+        .quote(&position.amount0()?)?
         .add(&position.amount1()?)?;
     let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
     let price = fraction_to_big_decimal(&price);

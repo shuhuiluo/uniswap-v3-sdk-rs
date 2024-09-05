@@ -65,7 +65,7 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
     let mut ratio = if abs_tick & 0x1 != 0 {
         uint!(0xfffcb933bd6fad37aa2d162d1a594001_U256)
     } else {
-        uint!(0x100000000000000000000000000000000_U256)
+        U256::from_limbs([0, 0, 1, 0])
     };
 
     // Iterate through 1th to 19th bit of abs_tick because MAX_TICK < 2**20
