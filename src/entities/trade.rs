@@ -79,6 +79,40 @@ pub struct Swap<TInput: Currency, TOutput: Currency, P> {
     pub output_amount: CurrencyAmount<TOutput>,
 }
 
+impl<TInput: Currency, TOutput: Currency, P> Swap<TInput, TOutput, P> {
+    /// Constructs a swap
+    ///
+    /// ## Arguments
+    ///
+    /// * `route`: The route of the swap
+    /// * `input_amount`: The amount being passed in
+    /// * `output_amount`: The amount returned by the swap
+    #[inline]
+    pub fn new(
+        route: Route<TInput, TOutput, P>,
+        input_amount: CurrencyAmount<TInput>,
+        output_amount: CurrencyAmount<TOutput>,
+    ) -> Self {
+        Swap {
+            route,
+            input_amount,
+            output_amount,
+        }
+    }
+
+    /// Returns the input currency of the swap
+    #[inline]
+    pub fn input_currency(&self) -> &TInput {
+        &self.input_amount.currency
+    }
+
+    /// Returns the output currency of the swap
+    #[inline]
+    pub fn output_currency(&self) -> &TOutput {
+        &self.output_amount.currency
+    }
+}
+
 /// Represents a trade executed against a set of routes where some percentage of the input is split
 /// across each route.
 ///
@@ -117,8 +151,8 @@ where
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
     fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self, Error> {
-        let input_currency = swaps[0].input_amount.currency.wrapped();
-        let output_currency = swaps[0].output_amount.currency.wrapped();
+        let input_currency = swaps[0].input_currency().wrapped();
+        let output_currency = swaps[0].output_currency().wrapped();
         for Swap { route, .. } in &swaps {
             assert!(
                 input_currency.equals(route.input.wrapped()),
@@ -237,11 +271,7 @@ where
             }
         }
         Self::new(
-            vec![Swap {
-                route,
-                input_amount,
-                output_amount,
-            }],
+            vec![Swap::new(route, input_amount, output_amount)],
             trade_type,
         )
     }
@@ -274,11 +304,7 @@ where
         trade_type: TradeType,
     ) -> Result<Self, Error> {
         Self::new(
-            vec![Swap {
-                route,
-                input_amount,
-                output_amount,
-            }],
+            vec![Swap::new(route, input_amount, output_amount)],
             trade_type,
         )
     }
