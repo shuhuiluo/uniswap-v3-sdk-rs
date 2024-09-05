@@ -33,10 +33,10 @@ expect. The error handling is still a work in progress.
 
 | Function               | Time      | Reference |
 |------------------------|-----------|-----------|
-| most_significant_bit   | 8.3693 µs | 39.691 µs |
-| least_significant_bit  | 5.0592 µs | 16.619 µs |
-| get_sqrt_ratio_at_tick | 5.2105 µs | 71.137 µs |
-| get_tick_at_sqrt_ratio | 34.331 µs | 191.08 µs |
+| get_sqrt_ratio_at_tick | 4.0437 µs | 8.8094 µs |
+| get_tick_at_sqrt_ratio | 21.232 µs | 31.547 µs |
+| get_amount_0_delta     | 3.6099 µs | 4.4475 µs |
+| get_amount_1_delta     | 2.5942 µs | 3.5725 µs |
 
 </details>
 

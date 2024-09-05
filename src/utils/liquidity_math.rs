@@ -10,21 +10,7 @@ use crate::error::Error;
 /// ## Returns
 ///
 /// The liquidity delta
-pub const fn add_delta(x: u128, y: i128) -> Result<u128, Error> {
-    if y < 0 {
-        let z = x.overflowing_sub(-y as u128);
-
-        if z.1 {
-            Err(Error::AddDeltaOverflow)
-        } else {
-            Ok(z.0)
-        }
-    } else {
-        let z = x.overflowing_add(y as u128);
-        if z.0 < x {
-            Err(Error::AddDeltaOverflow)
-        } else {
-            Ok(z.0)
-        }
-    }
+#[inline]
+pub fn add_delta(x: u128, y: i128) -> Result<u128, Error> {
+    x.checked_add_signed(y).ok_or(Error::AddDeltaOverflow)
 }

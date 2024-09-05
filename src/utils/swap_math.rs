@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{I256, U160, U256};
+use alloy_primitives::{Uint, I256, U256};
 
 /// Computes the result of swapping some amount in, or amount out, given the parameters of the swap
 ///
@@ -24,20 +24,20 @@ use alloy_primitives::{I256, U160, U256};
 /// * `amount_out`: The amount to be received, of either token0 or token1, based on the direction of
 ///   the swap
 /// * `fee_amount`: The amount of input that will be taken as a fee
-pub fn compute_swap_step(
-    sqrt_ratio_current_x96: U160,
-    sqrt_ratio_target_x96: U160,
+pub fn compute_swap_step<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_current_x96: Uint<BITS, LIMBS>,
+    sqrt_ratio_target_x96: Uint<BITS, LIMBS>,
     liquidity: u128,
     amount_remaining: I256,
     fee_pips: u32,
-) -> Result<(U160, U256, U256, U256), Error> {
+) -> Result<(Uint<BITS, LIMBS>, U256, U256, U256), Error> {
     const MAX_FEE: U256 = U256::from_limbs([1000000, 0, 0, 0]);
     let fee_pips = U256::from_limbs([fee_pips as u64, 0, 0, 0]);
     let fee_complement = MAX_FEE - fee_pips;
     let zero_for_one = sqrt_ratio_current_x96 >= sqrt_ratio_target_x96;
     let exact_in = amount_remaining >= I256::ZERO;
 
-    let sqrt_ratio_next_x96: U160;
+    let sqrt_ratio_next_x96: Uint<BITS, LIMBS>;
     let mut amount_in: U256;
     let mut amount_out: U256;
     let fee_amount: U256;

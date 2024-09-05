@@ -317,7 +317,7 @@ pub fn token0_price_to_ratio(
         return Err(Error::InvalidRange);
     }
     let sqrt_price_x96 = price_to_sqrt_ratio_x96(&price);
-    let tick = get_tick_at_sqrt_ratio(sqrt_price_x96)?;
+    let tick = sqrt_price_x96.get_tick_at_sqrt_ratio()?;
     // only token0
     if tick < tick_lower {
         Ok(BigDecimal::from(1))
@@ -402,9 +402,8 @@ pub fn tick_range_from_width_and_ratio(
         let price_lower_sqrt =
             ((&b * &b - &a * &c * BigDecimal::from(4)).sqrt().unwrap() - &b) / (&a * two);
         let sqrt_ratio_lower_x96 = price_lower_sqrt * Q96.to_big_decimal();
-        let tick_lower = get_tick_at_sqrt_ratio(U160::from_big_int(
-            sqrt_ratio_lower_x96.to_bigint().unwrap(),
-        ))?;
+        let tick_lower = U160::from_big_int(sqrt_ratio_lower_x96.to_bigint().unwrap())
+            .get_tick_at_sqrt_ratio()?;
         (tick_lower, tick_lower + width)
     };
     Ok((tick_lower, tick_upper))

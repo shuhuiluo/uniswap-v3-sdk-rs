@@ -221,7 +221,7 @@ where
             fee,
             sqrt_ratio_x96,
             liquidity,
-            tick_current: get_tick_at_sqrt_ratio(sqrt_ratio_x96)?,
+            tick_current: sqrt_ratio_x96.get_tick_at_sqrt_ratio()?,
             tick_data_provider,
         })
     }
@@ -417,7 +417,7 @@ where
             } else {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned
                 // ticks), and haven't moved
-                state.tick = get_tick_at_sqrt_ratio(state.sqrt_price_x96)?.as_i32();
+                state.tick = state.sqrt_price_x96.get_tick_at_sqrt_ratio()?.as_i32();
             }
         }
 

@@ -1,8 +1,12 @@
 use super::ToBig;
-use alloy_primitives::{U160, U256};
+use alloy_primitives::{Uint, U256};
 use num_bigint::BigUint;
 
-fn sort_to_big_uint(a: U160, b: U160) -> (BigUint, BigUint) {
+#[inline]
+fn sort_to_big_uint<const BITS: usize, const LIMBS: usize>(
+    a: Uint<BITS, LIMBS>,
+    b: Uint<BITS, LIMBS>,
+) -> (BigUint, BigUint) {
     if a > b {
         (b.to_big_uint(), a.to_big_uint())
     } else {
@@ -24,9 +28,10 @@ fn sort_to_big_uint(a: U160, b: U160) -> (BigUint, BigUint) {
 /// * `amount0`: The token0 amount
 ///
 /// returns: liquidity for amount0, imprecise
-pub fn max_liquidity_for_amount0_imprecise(
-    sqrt_ratio_a_x96: U160,
-    sqrt_ratio_b_x96: U160,
+#[inline]
+pub fn max_liquidity_for_amount0_imprecise<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
+    sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
     amount0: U256,
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
@@ -46,9 +51,10 @@ pub fn max_liquidity_for_amount0_imprecise(
 /// * `amount0`: The token0 amount
 ///
 /// returns: liquidity for amount0, precise
-pub fn max_liquidity_for_amount0_precise(
-    sqrt_ratio_a_x96: U160,
-    sqrt_ratio_b_x96: U160,
+#[inline]
+pub fn max_liquidity_for_amount0_precise<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
+    sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
     amount0: U256,
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
@@ -68,9 +74,10 @@ pub fn max_liquidity_for_amount0_precise(
 /// * `amount1`: The token1 amount
 ///
 /// returns: liquidity for amount1
-pub fn max_liquidity_for_amount1(
-    sqrt_ratio_a_x96: U160,
-    sqrt_ratio_b_x96: U160,
+#[inline]
+pub fn max_liquidity_for_amount1<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
+    sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
     amount1: U256,
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
@@ -92,10 +99,11 @@ pub fn max_liquidity_for_amount1(
 ///   calculate, not what core can theoretically support
 ///
 /// returns: maximum liquidity for the given amounts
-pub fn max_liquidity_for_amounts(
-    sqrt_ratio_current_x96: U160,
-    mut sqrt_ratio_a_x96: U160,
-    mut sqrt_ratio_b_x96: U160,
+#[inline]
+pub fn max_liquidity_for_amounts<const BITS: usize, const LIMBS: usize>(
+    sqrt_ratio_current_x96: Uint<BITS, LIMBS>,
+    mut sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
+    mut sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
     amount0: U256,
     amount1: U256,
     use_full_precision: bool,
@@ -138,7 +146,7 @@ mod tests {
     #[test]
     fn imprecise_price_inside_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(1, 1),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -152,7 +160,7 @@ mod tests {
 
     #[test]
     fn imprecise_price_inside_100_token0_max_token1() {
-        let res = max_liquidity_for_amounts(
+        let res = max_liquidity_for_amounts::<256, 4>(
             encode_sqrt_ratio_x96(1, 1),
             encode_sqrt_ratio_x96(100, 110),
             encode_sqrt_ratio_x96(110, 100),
@@ -166,7 +174,7 @@ mod tests {
     #[test]
     fn imprecise_price_inside_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(1, 1),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -181,7 +189,7 @@ mod tests {
     #[test]
     fn imprecise_price_below_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -196,7 +204,7 @@ mod tests {
     #[test]
     fn imprecise_price_below_100_token0_max_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -211,7 +219,7 @@ mod tests {
     #[test]
     fn imprecise_price_below_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -230,7 +238,7 @@ mod tests {
     #[test]
     fn imprecise_price_above_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -245,7 +253,7 @@ mod tests {
     #[test]
     fn imprecise_price_above_100_token0_max_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -264,7 +272,7 @@ mod tests {
     #[test]
     fn imprecise_price_above_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -279,7 +287,7 @@ mod tests {
     #[test]
     fn precise_price_inside_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(1, 1),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -294,7 +302,7 @@ mod tests {
     #[test]
     fn precise_price_inside_100_token0_max_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(1, 1),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -309,7 +317,7 @@ mod tests {
     #[test]
     fn precise_price_inside_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(1, 1),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -324,7 +332,7 @@ mod tests {
     #[test]
     fn precise_price_below_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -339,7 +347,7 @@ mod tests {
     #[test]
     fn precise_price_below_100_token0_max_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -354,7 +362,7 @@ mod tests {
     #[test]
     fn precise_price_below_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(99, 110),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -373,7 +381,7 @@ mod tests {
     #[test]
     fn precise_price_above_100_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -388,7 +396,7 @@ mod tests {
     #[test]
     fn precise_price_above_100_token0_max_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),
@@ -407,7 +415,7 @@ mod tests {
     #[test]
     fn precise_price_above_max_token0_200_token1() {
         assert_eq!(
-            max_liquidity_for_amounts(
+            max_liquidity_for_amounts::<256, 4>(
                 encode_sqrt_ratio_x96(111, 100),
                 encode_sqrt_ratio_x96(100, 110),
                 encode_sqrt_ratio_x96(110, 100),

@@ -1,16 +1,28 @@
-use crate::prelude::Route;
+use crate::prelude::*;
 use alloy_primitives::{aliases::U24, Bytes};
-use alloy_sol_types::{sol, SolType, SolValue};
+use alloy_sol_types::SolValue;
 use uniswap_sdk_core::prelude::*;
 
-type TokenFee = sol!((address, uint24));
+#[inline]
+fn encode_leg<'a, P>(pool: &'a Pool<P>, input_token: &'a Token) -> (&'a Token, Vec<u8>) {
+    let output_token;
+    let leg: (Address, U24) = if pool.token0.equals(input_token) {
+        output_token = &pool.token1;
+        (pool.token0.address(), pool.fee.into())
+    } else {
+        output_token = &pool.token0;
+        (pool.token1.address(), pool.fee.into())
+    };
+    (output_token, leg.abi_encode_packed())
+}
 
-/// Converts a route to a hex encoded path
+/// Converts a route to a hex encoded path.
 ///
 /// ## Arguments
 ///
 /// * `route`: the v3 path to convert to an encoded path
 /// * `exact_output`: whether the route should be encoded in reverse, for making exact output swaps
+#[inline]
 pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
     route: &Route<TInput, TOutput, P>,
     exact_output: bool,
@@ -19,27 +31,17 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
     if exact_output {
         let mut output_token = &route.output.wrapped();
         for pool in route.pools.iter().rev() {
-            let leg: (Address, U24) = if pool.token0.equals(output_token) {
-                output_token = &pool.token1;
-                (pool.token0.address(), pool.fee.into())
-            } else {
-                output_token = &pool.token0;
-                (pool.token1.address(), pool.fee.into())
-            };
-            path.extend(TokenFee::abi_encode_packed(&leg));
+            let (input_token, leg) = encode_leg(pool, output_token);
+            output_token = input_token;
+            path.extend(leg);
         }
         path.extend(route.input.address().abi_encode_packed());
     } else {
         let mut input_token = &route.input.wrapped();
         for pool in route.pools.iter() {
-            let leg: (Address, U24) = if pool.token0.equals(input_token) {
-                input_token = &pool.token1;
-                (pool.token0.address(), pool.fee.into())
-            } else {
-                input_token = &pool.token0;
-                (pool.token1.address(), pool.fee.into())
-            };
-            path.extend(TokenFee::abi_encode_packed(&leg));
+            let (output_token, leg) = encode_leg(pool, input_token);
+            input_token = output_token;
+            path.extend(leg);
         }
         path.extend(route.output.address().abi_encode_packed());
     }
@@ -49,7 +51,7 @@ pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{prelude::*, tests::*};
+    use crate::tests::*;
     use alloy_primitives::hex;
     use once_cell::sync::Lazy;
 
