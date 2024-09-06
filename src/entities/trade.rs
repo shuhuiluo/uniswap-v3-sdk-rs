@@ -143,6 +143,7 @@ where
     ///
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
+    #[inline]
     fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self, Error> {
         let input_currency = swaps[0].input_currency().wrapped();
         let output_currency = swaps[0].output_currency().wrapped();
@@ -179,6 +180,7 @@ where
 
     /// Creates a trade without computing the result of swapping through the route.
     /// Useful when you have simulated the trade elsewhere and do not have any tick data
+    #[inline]
     pub fn create_unchecked_trade(
         route: Route<TInput, TOutput, P>,
         input_amount: CurrencyAmount<TInput>,
@@ -193,6 +195,7 @@ where
 
     /// Creates a trade without computing the result of swapping through the routes.
     /// Useful when you have simulated the trade elsewhere and do not have any tick data
+    #[inline]
     pub fn create_unchecked_trade_with_multiple_routes(
         swaps: Vec<Swap<TInput, TOutput, P>>,
         trade_type: TradeType,
@@ -201,6 +204,7 @@ where
     }
 
     /// When the trade consists of just a single route, this returns the route of the trade.
+    #[inline]
     pub fn route(&self) -> &Route<TInput, TOutput, P> {
         assert_eq!(self.swaps.len(), 1, "MULTIPLE_ROUTES");
         &self.swaps[0].route
@@ -213,10 +217,8 @@ where
     }
 
     /// The input amount for the trade assuming no slippage.
+    #[inline]
     pub fn input_amount(&self) -> Result<CurrencyAmount<TInput>, Error> {
-        if let Some(ref input_amount) = self._input_amount {
-            return Ok(input_amount.clone());
-        }
         let mut total = CurrencyAmount::from_raw_amount(self.input_currency().clone(), 0)?;
         for Swap { input_amount, .. } in &self.swaps {
             total = total.add(input_amount)?;
@@ -225,9 +227,14 @@ where
     }
 
     /// The input amount for the trade assuming no slippage.
+    #[inline]
     pub fn input_amount_cached(&mut self) -> Result<CurrencyAmount<TInput>, Error> {
-        self._input_amount = Some(self.input_amount()?);
-        Ok(self._input_amount.clone().unwrap())
+        if let Some(input_amount) = &self._input_amount {
+            return Ok(input_amount.clone());
+        }
+        let input_amount = self.input_amount()?;
+        self._input_amount = Some(input_amount.clone());
+        Ok(input_amount)
     }
 
     /// Returns the output currency of the swap
@@ -237,10 +244,8 @@ where
     }
 
     /// The output amount for the trade assuming no slippage.
+    #[inline]
     pub fn output_amount(&self) -> Result<CurrencyAmount<TOutput>, Error> {
-        if let Some(ref output_amount) = self._output_amount {
-            return Ok(output_amount.clone());
-        }
         let mut total = CurrencyAmount::from_raw_amount(self.output_currency().clone(), 0)?;
         for Swap { output_amount, .. } in &self.swaps {
             total = total.add(output_amount)?;
@@ -249,31 +254,78 @@ where
     }
 
     /// The output amount for the trade assuming no slippage.
+    #[inline]
     pub fn output_amount_cached(&mut self) -> Result<CurrencyAmount<TOutput>, Error> {
-        self._output_amount = Some(self.output_amount()?);
-        Ok(self._output_amount.clone().unwrap())
+        if let Some(output_amount) = &self._output_amount {
+            return Ok(output_amount.clone());
+        }
+        let output_amount = self.output_amount()?;
+        self._output_amount = Some(output_amount.clone());
+        Ok(output_amount)
     }
 
     /// The price expressed in terms of output amount/input amount.
-    pub fn execution_price(&mut self) -> Result<Price<TInput, TOutput>, Error> {
-        if let Some(ref execution_price) = self._execution_price {
+    #[inline]
+    pub fn execution_price(&self) -> Result<Price<TInput, TOutput>, Error> {
+        let input_amount = self.input_amount()?;
+        let output_amount = self.output_amount()?;
+        let denominator = input_amount.quotient();
+        let numerator = output_amount.quotient();
+        Ok(Price::new(
+            input_amount.meta.currency,
+            output_amount.meta.currency,
+            denominator,
+            numerator,
+        ))
+    }
+
+    /// The price expressed in terms of output amount/input amount.
+    #[inline]
+    pub fn execution_price_cached(&mut self) -> Result<Price<TInput, TOutput>, Error> {
+        if let Some(execution_price) = &self._execution_price {
             return Ok(execution_price.clone());
         }
         let input_amount = self.input_amount_cached()?;
         let output_amount = self.output_amount_cached()?;
+        let denominator = input_amount.quotient();
+        let numerator = output_amount.quotient();
         let execution_price = Price::new(
-            input_amount.currency.clone(),
-            output_amount.currency.clone(),
-            input_amount.quotient(),
-            output_amount.quotient(),
+            input_amount.meta.currency,
+            output_amount.meta.currency,
+            denominator,
+            numerator,
         );
         self._execution_price = Some(execution_price.clone());
         Ok(execution_price)
     }
 
     /// Returns the percent difference between the route's mid price and the price impact
-    pub fn price_impact(&mut self) -> Result<Percent, Error> {
-        if let Some(ref price_impact) = self._price_impact {
+    #[inline]
+    pub fn price_impact(&self) -> Result<Percent, Error> {
+        let mut spot_output_amount =
+            CurrencyAmount::from_raw_amount(self.output_currency().clone(), 0)?;
+        for Swap {
+            route,
+            input_amount,
+            ..
+        } in &self.swaps
+        {
+            let mid_price = route.mid_price()?;
+            spot_output_amount = spot_output_amount.add(&mid_price.quote(input_amount)?)?;
+        }
+        let price_impact = spot_output_amount
+            .subtract(&self.output_amount()?)?
+            .divide(&spot_output_amount)?;
+        Ok(Percent::new(
+            price_impact.numerator,
+            price_impact.denominator,
+        ))
+    }
+
+    /// Returns the percent difference between the route's mid price and the price impact
+    #[inline]
+    pub fn price_impact_cached(&mut self) -> Result<Percent, Error> {
+        if let Some(price_impact) = &self._price_impact {
             return Ok(price_impact.clone());
         }
         let mut spot_output_amount =
@@ -305,13 +357,43 @@ where
     /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
     ///   this trade
     /// * `amount_out`: The amount to receive
+    #[inline]
     pub fn minimum_amount_out(
+        &self,
+        slippage_tolerance: Percent,
+        amount_out: Option<CurrencyAmount<TOutput>>,
+    ) -> Result<CurrencyAmount<TOutput>, Error> {
+        assert!(
+            slippage_tolerance >= Percent::default(),
+            "SLIPPAGE_TOLERANCE"
+        );
+        let output_amount = amount_out.unwrap_or(self.output_amount()?);
+        if self.trade_type == TradeType::ExactOutput {
+            return Ok(output_amount);
+        }
+        let slippage_adjusted_amount_out = ((Percent::new(1, 1) + slippage_tolerance).invert()
+            * Percent::new(output_amount.quotient(), 1))
+        .quotient();
+        CurrencyAmount::from_raw_amount(output_amount.meta.currency, slippage_adjusted_amount_out)
+            .map_err(|e| e.into())
+    }
+
+    /// Get the minimum amount that must be received from this trade for the given slippage
+    /// tolerance
+    ///
+    /// ## Arguments
+    ///
+    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
+    ///   this trade
+    /// * `amount_out`: The amount to receive
+    #[inline]
+    pub fn minimum_amount_out_cached(
         &mut self,
         slippage_tolerance: Percent,
         amount_out: Option<CurrencyAmount<TOutput>>,
     ) -> Result<CurrencyAmount<TOutput>, Error> {
         assert!(
-            slippage_tolerance >= Percent::new(0, 1),
+            slippage_tolerance >= Percent::default(),
             "SLIPPAGE_TOLERANCE"
         );
         let output_amount = amount_out.unwrap_or(self.output_amount_cached()?);
@@ -321,11 +403,8 @@ where
         let slippage_adjusted_amount_out = ((Percent::new(1, 1) + slippage_tolerance).invert()
             * Percent::new(output_amount.quotient(), 1))
         .quotient();
-        CurrencyAmount::from_raw_amount(
-            output_amount.currency.clone(),
-            slippage_adjusted_amount_out,
-        )
-        .map_err(|e| e.into())
+        CurrencyAmount::from_raw_amount(output_amount.meta.currency, slippage_adjusted_amount_out)
+            .map_err(|e| e.into())
     }
 
     /// Get the maximum amount in that can be spent via this trade for the given slippage tolerance
@@ -335,13 +414,42 @@ where
     /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
     ///   this trade
     /// * `amount_in`: The amount to spend
+    #[inline]
     pub fn maximum_amount_in(
+        &self,
+        slippage_tolerance: Percent,
+        amount_in: Option<CurrencyAmount<TInput>>,
+    ) -> Result<CurrencyAmount<TInput>, Error> {
+        assert!(
+            slippage_tolerance >= Percent::default(),
+            "SLIPPAGE_TOLERANCE"
+        );
+        let amount_in = amount_in.unwrap_or(self.input_amount()?);
+        if self.trade_type == TradeType::ExactInput {
+            return Ok(amount_in);
+        }
+        let slippage_adjusted_amount_in = ((Percent::new(1, 1) + slippage_tolerance)
+            * Percent::new(amount_in.quotient(), 1))
+        .quotient();
+        CurrencyAmount::from_raw_amount(amount_in.meta.currency, slippage_adjusted_amount_in)
+            .map_err(|e| e.into())
+    }
+
+    /// Get the maximum amount in that can be spent via this trade for the given slippage tolerance
+    ///
+    /// ## Arguments
+    ///
+    /// * `slippage_tolerance`: The tolerance of unfavorable slippage from the execution price of
+    ///   this trade
+    /// * `amount_in`: The amount to spend
+    #[inline]
+    pub fn maximum_amount_in_cached(
         &mut self,
         slippage_tolerance: Percent,
         amount_in: Option<CurrencyAmount<TInput>>,
     ) -> Result<CurrencyAmount<TInput>, Error> {
         assert!(
-            slippage_tolerance >= Percent::new(0, 1),
+            slippage_tolerance >= Percent::default(),
             "SLIPPAGE_TOLERANCE"
         );
         let amount_in = amount_in.unwrap_or(self.input_amount_cached()?);
@@ -351,17 +459,18 @@ where
         let slippage_adjusted_amount_in = ((Percent::new(1, 1) + slippage_tolerance)
             * Percent::new(amount_in.quotient(), 1))
         .quotient();
-        CurrencyAmount::from_raw_amount(amount_in.currency.clone(), slippage_adjusted_amount_in)
+        CurrencyAmount::from_raw_amount(amount_in.meta.currency, slippage_adjusted_amount_in)
             .map_err(|e| e.into())
     }
 
-    /// Return the execution price after accounting for slippage tolerance
+    /// Return ution price after accounting for slippage tolerance
     ///
     /// ## Arguments
     ///
     /// * `slippage_tolerance`: The allowed tolerated slippage
+    #[inline]
     pub fn worst_execution_price(
-        &mut self,
+        &self,
         slippage_tolerance: Percent,
     ) -> Result<Price<TInput, TOutput>, Error> {
         Ok(Price::new(
@@ -370,6 +479,26 @@ where
             self.maximum_amount_in(slippage_tolerance.clone(), None)?
                 .quotient(),
             self.minimum_amount_out(slippage_tolerance, None)?
+                .quotient(),
+        ))
+    }
+
+    /// Return ution price after accounting for slippage tolerance
+    ///
+    /// ## Arguments
+    ///
+    /// * `slippage_tolerance`: The allowed tolerated slippage
+    #[inline]
+    pub fn worst_execution_price_cached(
+        &mut self,
+        slippage_tolerance: Percent,
+    ) -> Result<Price<TInput, TOutput>, Error> {
+        Ok(Price::new(
+            self.input_currency().clone(),
+            self.output_currency().clone(),
+            self.maximum_amount_in_cached(slippage_tolerance.clone(), None)?
+                .quotient(),
+            self.minimum_amount_out_cached(slippage_tolerance, None)?
                 .quotient(),
         ))
     }
@@ -388,6 +517,7 @@ where
     ///
     /// * `route`: The route of the exact in trade
     /// * `amount_in`: The amount being passed in
+    #[inline]
     pub fn exact_in(
         route: Route<TInput, TOutput, P>,
         amount_in: CurrencyAmount<Token>,
@@ -401,6 +531,7 @@ where
     ///
     /// * `route`: The route of the exact out trade
     /// * `amount_out`: The amount returned by the trade
+    #[inline]
     pub fn exact_out(
         route: Route<TInput, TOutput, P>,
         amount_out: CurrencyAmount<Token>,
@@ -415,6 +546,7 @@ where
     /// * `route`: The route to swap through
     /// * `amount`: The amount specified, either input or output, depending on `trade_type`
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
+    #[inline]
     pub fn from_route(
         route: Route<TInput, TOutput, P>,
         amount: CurrencyAmount<impl Currency>,
@@ -479,6 +611,7 @@ where
     /// * `routes`: The routes to swap through and how much of the amount should be routed through
     ///   each
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
+    #[inline]
     pub fn from_routes(
         routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, P>)>,
         trade_type: TradeType,
@@ -679,8 +812,8 @@ mod tests {
             .to_u128()
             .unwrap();
         Pool::new_with_tick_data_provider(
-            reserve0.currency.clone(),
-            reserve1.currency.clone(),
+            reserve0.meta.currency,
+            reserve1.meta.currency,
             fee_amount,
             sqrt_ratio_x96,
             liquidity,
@@ -1204,7 +1337,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     trade.execution_price().unwrap()
@@ -1213,7 +1346,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 69)
@@ -1230,7 +1363,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero_with_multiple_routes() {
-                let mut trade = EXACT_IN_MULTI_ROUTES.clone();
+                let trade = EXACT_IN_MULTI_ROUTES.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 69)
@@ -1304,7 +1437,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     trade.execution_price().unwrap()
@@ -1313,7 +1446,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     Price::new(TOKEN0.clone(), TOKEN2.clone(), 156, 100)
@@ -1330,7 +1463,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero_with_multiple_routes() {
-                let mut trade = EXACT_OUT_MULTI_ROUTE.clone();
+                let trade = EXACT_OUT_MULTI_ROUTE.clone();
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(0, 100)).unwrap(),
                     Price::new(TOKEN0.clone(), TOKEN2.clone(), 156, 100)
@@ -1403,7 +1536,10 @@ mod tests {
             #[test]
             fn is_cached() {
                 let mut trade = EXACT_IN.clone();
-                assert_eq!(trade.price_impact().unwrap(), trade.price_impact().unwrap());
+                assert_eq!(
+                    trade.price_impact_cached().unwrap(),
+                    trade._price_impact.unwrap()
+                );
             }
 
             #[test]
@@ -1422,7 +1558,10 @@ mod tests {
             #[test]
             fn is_cached_with_multiple_routes() {
                 let mut trade = EXACT_IN_MULTI_ROUTES.clone();
-                assert_eq!(trade.price_impact().unwrap(), trade.price_impact().unwrap());
+                assert_eq!(
+                    trade.price_impact_cached().unwrap(),
+                    trade._price_impact.unwrap()
+                );
             }
 
             #[test]
@@ -1493,7 +1632,10 @@ mod tests {
             #[test]
             fn is_cached() {
                 let mut trade = EXACT_OUT.clone();
-                assert_eq!(trade.price_impact().unwrap(), trade.price_impact().unwrap());
+                assert_eq!(
+                    trade.price_impact_cached().unwrap(),
+                    trade._price_impact.unwrap()
+                );
             }
 
             #[test]
@@ -1512,7 +1654,10 @@ mod tests {
             #[test]
             fn is_cached_with_multiple_routes() {
                 let mut trade = EXACT_OUT_MULTI_ROUTES.clone();
-                assert_eq!(trade.price_impact().unwrap(), trade.price_impact().unwrap());
+                assert_eq!(
+                    trade.price_impact_cached().unwrap(),
+                    trade._price_impact.unwrap()
+                );
             }
 
             #[test]
@@ -1796,7 +1941,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade.maximum_amount_in(Percent::new(0, 100), None).unwrap(),
                     trade.input_amount().unwrap()
@@ -1805,7 +1950,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade.maximum_amount_in(Percent::new(0, 100), None).unwrap(),
                     CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap()
@@ -1849,7 +1994,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade
                         .maximum_amount_in(Percent::new(0, 10000), None)
@@ -1860,7 +2005,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade
                         .maximum_amount_in(Percent::new(0, 10000), None)
@@ -1910,7 +2055,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(0, 10000), None)
@@ -1921,7 +2066,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_IN.clone();
+                let trade = EXACT_IN.clone();
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(0, 100), None)
@@ -1969,7 +2114,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_0() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(0, 100), None)
@@ -1980,7 +2125,7 @@ mod tests {
 
             #[test]
             fn returns_exact_if_nonzero() {
-                let mut trade = EXACT_OUT.clone();
+                let trade = EXACT_OUT.clone();
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(0, 100), None)
