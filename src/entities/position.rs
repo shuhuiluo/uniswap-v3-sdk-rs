@@ -631,7 +631,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -647,7 +647,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -663,7 +663,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -766,7 +766,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -782,7 +782,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -798,7 +798,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();

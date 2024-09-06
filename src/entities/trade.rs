@@ -284,7 +284,7 @@ where
             ..
         } in &mut self.swaps
         {
-            let mid_price = route.mid_price()?;
+            let mid_price = route.mid_price_cached()?;
             spot_output_amount = spot_output_amount.add(&mid_price.quote(input_amount)?)?;
         }
         let price_impact = spot_output_amount
@@ -432,8 +432,7 @@ where
                 );
                 for i in 0..length - 1 {
                     let pool = &route.pools[i];
-                    let (output_amount, _) = pool.get_output_amount(&token_amount, None)?;
-                    token_amount = output_amount;
+                    (token_amount, _) = pool.get_output_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
@@ -453,8 +452,7 @@ where
                 );
                 for i in (1..length).rev() {
                     let pool = &route.pools[i - 1];
-                    let (input_amount, _) = pool.get_input_amount(&token_amount, None)?;
-                    token_amount = input_amount;
+                    (token_amount, _) = pool.get_input_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
