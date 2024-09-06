@@ -552,7 +552,6 @@ where
         amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
-        let length = route.pools.len() + 1;
         let mut token_amount: CurrencyAmount<Token> = amount.wrapped()?;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
@@ -562,8 +561,7 @@ where
                     amount.currency.wrapped().equals(route.input.wrapped()),
                     "INPUT"
                 );
-                for i in 0..length - 1 {
-                    let pool = &route.pools[i];
+                for pool in route.pools.iter() {
                     (token_amount, _) = pool.get_output_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
@@ -582,8 +580,7 @@ where
                     amount.currency.wrapped().equals(route.output.wrapped()),
                     "OUTPUT"
                 );
-                for i in (1..length).rev() {
-                    let pool = &route.pools[i - 1];
+                for pool in route.pools.iter().rev() {
                     (token_amount, _) = pool.get_input_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(

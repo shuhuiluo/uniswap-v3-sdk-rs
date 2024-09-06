@@ -70,9 +70,11 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
 
     // Iterate through 1th to 19th bit of abs_tick because MAX_TICK < 2**20
     // Equivalent to:
-    //      for i in range(1, 20):
-    //          if abs_tick & 2 ** i:
-    //              ratio = ratio * (2 ** 128 / 1.0001 ** (2 ** (i - 1))) / 2 ** 128
+    // for i in 1..20 {
+    //     if abs_tick & (1 << i) != 0 {
+    //         ratio = (ratio * ((1 << 128) / 1.0001.pow(1 << (i - 1)))) >> 128;
+    //     }
+    // }
     if abs_tick & 0x2 != 0 {
         ratio = (ratio * uint!(0xfff97272373d413259a46990580e213a_U256)) >> 128;
     }
