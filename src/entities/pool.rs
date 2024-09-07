@@ -1,7 +1,7 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, ChainId, B256, I256, U160, U256};
 use anyhow::Result;
-use core::{fmt, ops::Neg};
+use core::fmt;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
 
@@ -9,7 +9,7 @@ static _Q192: Lazy<BigUint> = Lazy::new(|| Q192.to_big_uint());
 
 /// Represents a V3 pool
 #[derive(Clone)]
-pub struct Pool<P> {
+pub struct Pool<P = NoTickDataProvider> {
     pub token0: Token,
     pub token1: Token,
     pub fee: FeeAmount,
@@ -33,6 +33,7 @@ impl<P> fmt::Debug for Pool<P> {
 }
 
 impl<P> PartialEq for Pool<P> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.token0 == other.token0
             && self.token1 == other.token1
@@ -62,7 +63,7 @@ struct StepComputations {
     fee_amount: U256,
 }
 
-impl Pool<NoTickDataProvider> {
+impl Pool {
     /// Construct a pool
     ///
     /// ## Arguments
@@ -74,13 +75,14 @@ impl Pool<NoTickDataProvider> {
     /// * `sqrt_ratio_x96`: The sqrt of the current ratio of amounts of token1 to token0
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
+    #[inline]
     pub fn new(
         token_a: Token,
         token_b: Token,
         fee: FeeAmount,
         sqrt_ratio_x96: U160,
         liquidity: u128,
-    ) -> Result<Pool<NoTickDataProvider>, Error> {
+    ) -> Result<Self, Error> {
         Self::new_with_tick_data_provider(
             token_a,
             token_b,
@@ -90,33 +92,62 @@ impl Pool<NoTickDataProvider> {
             NoTickDataProvider,
         )
     }
-}
 
-/// Compute the pool address
-pub fn get_address(
-    token_a: &Token,
-    token_b: &Token,
-    fee: FeeAmount,
-    init_code_hash_manual_override: Option<B256>,
-    factory_address_override: Option<Address>,
-) -> Address {
-    compute_pool_address(
-        factory_address_override.unwrap_or(FACTORY_ADDRESS),
-        token_a.address(),
-        token_b.address(),
-        fee,
-        init_code_hash_manual_override,
-    )
+    /// Compute the pool address
+    ///
+    /// ## Arguments
+    ///
+    /// * `token_a`: The first token of the pair, irrespective of sort order
+    /// * `token_b`: The second token of the pair, irrespective of sort order
+    /// * `fee`: The fee tier of the pool
+    /// * `init_code_hash_manual_override`: Override the init code hash used to compute the pool
+    ///   address if necessary
+    /// * `factory_address_override`: Override the factory address used to compute the pool address
+    ///   if necessary
+    ///
+    /// ## Returns
+    ///
+    /// The computed pool address
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use alloy_primitives::{address, Address};
+    /// use uniswap_sdk_core::{prelude::Token, token};
+    /// use uniswap_v3_sdk::prelude::*;
+    ///
+    /// let usdc = token!(1, "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", 6);
+    /// let dai = token!(1, "6B175474E89094C44Da98b954EedeAC495271d0F", 18);
+    /// let result = Pool::get_address(&usdc, &dai, FeeAmount::LOW, None, None);
+    /// assert_eq!(result, address!("6c6Bc977E13Df9b0de53b251522280BB72383700"));
+    /// ```
+    #[inline]
+    pub fn get_address(
+        token_a: &Token,
+        token_b: &Token,
+        fee: FeeAmount,
+        init_code_hash_manual_override: Option<B256>,
+        factory_address_override: Option<Address>,
+    ) -> Address {
+        compute_pool_address(
+            factory_address_override.unwrap_or(FACTORY_ADDRESS),
+            token_a.address(),
+            token_b.address(),
+            fee,
+            init_code_hash_manual_override,
+        )
+    }
 }
 
 impl<P> Pool<P> {
     /// Returns the pool address
+    #[inline]
     pub fn address(
         &self,
         init_code_hash_manual_override: Option<B256>,
         factory_address_override: Option<Address>,
     ) -> Address {
-        get_address(
+        Pool::get_address(
             &self.token0,
             &self.token1,
             self.fee,
@@ -125,10 +156,12 @@ impl<P> Pool<P> {
         )
     }
 
+    #[inline]
     pub fn chain_id(&self) -> ChainId {
         self.token0.chain_id()
     }
 
+    #[inline]
     pub const fn tick_spacing(&self) -> I24 {
         self.fee.tick_spacing()
     }
@@ -140,12 +173,14 @@ impl<P> Pool<P> {
     /// * `token`: The token to check
     ///
     /// returns: bool
+    #[inline]
     pub fn involves_token(&self, token: &Token) -> bool {
         self.token0.equals(token) || self.token1.equals(token)
     }
 
     /// Returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over
     /// token0
+    #[inline]
     pub fn token0_price(&self) -> Price<Token, Token> {
         let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
         Price::new(
@@ -158,6 +193,7 @@ impl<P> Pool<P> {
 
     /// Returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over
     /// token1
+    #[inline]
     pub fn token1_price(&self) -> Price<Token, Token> {
         let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
         Price::new(
@@ -175,6 +211,7 @@ impl<P> Pool<P> {
     /// * `token`: The token to return price of
     ///
     /// returns: Price<Token, Token>
+    #[inline]
     pub fn price_of(&self, token: &Token) -> Price<Token, Token> {
         if self.token0.equals(token) {
             self.token0_price()
@@ -203,6 +240,7 @@ where
     /// * `liquidity`: The current value of in range liquidity
     /// * `tick_current`: The current tick of the pool
     /// * `tick_data_provider`: A tick data provider that can return tick data
+    #[inline]
     pub fn new_with_tick_data_provider(
         token_a: Token,
         token_b: Token,
@@ -256,7 +294,7 @@ where
             self.token0.clone()
         };
         Ok((
-            CurrencyAmount::from_raw_amount(output_token, output_amount.neg().to_big_int())?,
+            CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
             Pool::new_with_tick_data_provider(
                 self.token0.clone(),
                 self.token1.clone(),
@@ -290,7 +328,7 @@ where
 
         let (input_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
             zero_for_one,
-            I256::from_big_int(output_amount.quotient()).neg(),
+            I256::from_big_int(-output_amount.quotient()),
             sqrt_price_limit_x96,
         )?;
         let input_token = if zero_for_one {
@@ -410,7 +448,7 @@ where
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
                     if zero_for_one {
-                        liquidity_net = liquidity_net.neg();
+                        liquidity_net = -liquidity_net;
                     }
                     state.liquidity = add_delta(state.liquidity, liquidity_net)?;
                 }
@@ -482,7 +520,7 @@ mod tests {
 
     #[test]
     fn get_address_matches_an_example() {
-        let result = get_address(&USDC, &DAI, FeeAmount::LOW, None, None);
+        let result = Pool::get_address(&USDC, &DAI, FeeAmount::LOW, None, None);
         assert_eq!(result, address!("6c6Bc977E13Df9b0de53b251522280BB72383700"));
     }
 
