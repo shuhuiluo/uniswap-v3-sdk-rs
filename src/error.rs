@@ -8,6 +8,10 @@ pub enum Error {
     #[cfg_attr(feature = "std", error("{0}"))]
     Core(CoreError),
 
+    /// Thrown when the token passed to [`Pool::price_of`] is not one of the pool's tokens.
+    #[cfg_attr(feature = "std", error("Invalid token"))]
+    InvalidToken,
+
     /// Thrown when the tick passed to [`get_sqrt_price_at_tick`] is not between [`MIN_TICK`] and
     /// [`MAX_TICK`].
     #[cfg_attr(feature = "std", error("Invalid tick: {0}"))]

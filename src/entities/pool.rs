@@ -211,13 +211,13 @@ impl<P> Pool<P> {
     ///
     /// returns: Price<Token, Token>
     #[inline]
-    pub fn price_of(&self, token: &Token) -> Price<Token, Token> {
+    pub fn price_of(&self, token: &Token) -> Result<Price<Token, Token>, Error> {
         if self.token0.equals(token) {
-            self.token0_price()
+            Ok(self.token0_price())
         } else if self.token1.equals(token) {
-            self.token1_price()
+            Ok(self.token1_price())
         } else {
-            panic!("TOKEN")
+            Err(Error::InvalidToken)
         }
     }
 }
@@ -641,12 +641,12 @@ mod tests {
             0,
         )
         .unwrap();
-        assert_eq!(pool.price_of(&DAI.clone()), pool.token0_price());
-        assert_eq!(pool.price_of(&USDC.clone()), pool.token1_price());
+        assert_eq!(pool.price_of(&DAI.clone()).unwrap(), pool.token0_price());
+        assert_eq!(pool.price_of(&USDC.clone()).unwrap(), pool.token1_price());
     }
 
     #[test]
-    #[should_panic(expected = "TOKEN")]
+    #[should_panic(expected = "InvalidToken")]
     fn price_of_throws_if_invalid_token() {
         let pool = Pool::new(
             USDC.clone(),
@@ -656,7 +656,8 @@ mod tests {
             0,
         )
         .unwrap();
-        pool.price_of(&WETH9::default().get(1).unwrap().clone());
+        pool.price_of(&WETH9::default().get(1).unwrap().clone())
+            .unwrap();
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use crate::prelude::Pool;
+use crate::prelude::{Error, Pool};
 use alloy_primitives::ChainId;
 use uniswap_sdk_core::prelude::*;
 
@@ -82,9 +82,9 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
     /// Returns the mid price of the route
     #[inline]
     pub fn mid_price(&self) -> Result<Price<TInput, TOutput>, Error> {
-        let mut price = self.pools[0].price_of(self.input.wrapped());
+        let mut price = self.pools[0].price_of(self.input.wrapped())?;
         for pool in self.pools[1..].iter() {
-            price = price.multiply(&pool.price_of(&price.quote_currency))?;
+            price = price.multiply(&pool.price_of(&price.quote_currency)?)?;
         }
         Ok(Price::new(
             self.input.clone(),
