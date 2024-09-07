@@ -1,6 +1,5 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, ChainId, B256, I256, U160, U256};
-use anyhow::Result;
 use core::fmt;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;

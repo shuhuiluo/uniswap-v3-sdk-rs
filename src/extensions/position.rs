@@ -324,8 +324,8 @@ pub fn get_rebalanced_position<P: Clone>(
     let price = position.pool.token0_price();
     // Calculate the position equity denominated in token1 before rebalance.
     let equity_in_token1_before = price
-        .quote(&position.amount0()?)?
-        .add(&position.amount1()?)?;
+        .quote(&position.amount0_cached()?)?
+        .add(&position.amount1_cached()?)?;
     let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
     let price = fraction_to_big_decimal(&price);
     let token0_ratio = token0_price_to_ratio(price.clone(), new_tick_lower, new_tick_upper)?;
@@ -481,7 +481,7 @@ mod tests {
         let mut new_position =
             get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
         assert!(new_position.amount1().unwrap().quotient().is_zero());
-        let mut reverted_position =
+        let reverted_position =
             get_rebalanced_position(&mut new_position, position.tick_lower, position.tick_upper)
                 .unwrap();
         let amount0 = position.amount0().unwrap().quotient();
@@ -517,7 +517,7 @@ mod tests {
         let mut position1 = get_position_at_price(position.clone(), small_price).unwrap();
         assert!(position1.amount0().unwrap().quotient().is_positive());
         assert!(position1.amount1().unwrap().quotient().is_zero());
-        let mut position2 = get_position_at_price(
+        let position2 = get_position_at_price(
             position.clone(),
             fraction_to_big_decimal(
                 &tick_to_price(
@@ -531,7 +531,7 @@ mod tests {
         .unwrap();
         assert!(position2.amount0().unwrap().quotient().is_zero());
         assert!(position2.amount1().unwrap().quotient().is_positive());
-        let mut rebalanced_position = get_rebalanced_position(
+        let rebalanced_position = get_rebalanced_position(
             &mut position1,
             I24::try_from(46080).unwrap(),
             I24::try_from(62160).unwrap(),
@@ -554,7 +554,7 @@ mod tests {
         let new_tick_lower = position.tick_upper;
         let new_tick_upper =
             new_tick_lower + I24::try_from(10).unwrap() * FeeAmount::MEDIUM.tick_spacing();
-        let mut position_rebalanced_at_current_price =
+        let position_rebalanced_at_current_price =
             get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
         let price_upper = tick_to_price(
             position.pool.token0.clone(),
@@ -562,7 +562,7 @@ mod tests {
             position.tick_upper,
         )
         .unwrap();
-        let mut position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(
+        let position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(
             position.clone(),
             fraction_to_big_decimal(&price_upper),
             new_tick_lower,

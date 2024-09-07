@@ -123,7 +123,7 @@ pub fn add_call_parameters<P>(
     let MintAmounts {
         amount0: amount0_desired,
         amount1: amount1_desired,
-    } = position.mint_amounts()?;
+    } = position.mint_amounts_cached()?;
 
     // adjust for slippage
     let MintAmounts {
