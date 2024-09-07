@@ -59,8 +59,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
       - name: Build
-        run: cargo build --all-features
+        run: cargo build
       - name: Run tests for core library
         run: cargo test
+      - name: Run tests for std feature
+        run: cargo test --features std
       - name: Run tests for extensions
-        run: cargo test --all-features --lib extensions -- --test-threads=1
+        run: cargo test --features extensions --lib extensions -- --test-threads=1
