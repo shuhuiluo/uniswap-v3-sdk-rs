@@ -45,7 +45,7 @@ expect. The error handling is still a work in progress.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "0.32.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "0.36.0", features = ["extensions", "std"] }
 ```
 
 ### Usage

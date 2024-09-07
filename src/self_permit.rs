@@ -43,7 +43,7 @@ impl AllowedPermitArguments {
     }
 }
 
-pub fn encode_permit(token: Token, options: PermitOptions) -> Bytes {
+pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
     match options {
         PermitOptions::Standard(args) => ISelfPermit::selfPermitCall {
             token: token.address(),
@@ -86,10 +86,7 @@ mod tests {
             uint!(123_U256),
             uint!(123_U256),
         );
-        let calldata = encode_permit(
-            TOKEN.clone(),
-            PermitOptions::Standard(standard_permit_options),
-        );
+        let calldata = encode_permit(&TOKEN, PermitOptions::Standard(standard_permit_options));
         assert_eq!(calldata, hex!("f3995c670000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
     }
 
@@ -102,10 +99,7 @@ mod tests {
             uint!(123_U256),
             uint!(123_U256),
         );
-        let calldata = encode_permit(
-            TOKEN.clone(),
-            PermitOptions::Allowed(allowed_permit_options),
-        );
+        let calldata = encode_permit(&TOKEN, PermitOptions::Allowed(allowed_permit_options));
         assert_eq!(calldata, hex!("4659a4940000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
     }
 }

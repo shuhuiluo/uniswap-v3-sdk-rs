@@ -123,7 +123,7 @@ pub fn add_call_parameters<P>(
     let MintAmounts {
         amount0: amount0_desired,
         amount1: amount1_desired,
-    } = position.mint_amounts()?;
+    } = position.mint_amounts_cached()?;
 
     // adjust for slippage
     let MintAmounts {
@@ -142,10 +142,10 @@ pub fn add_call_parameters<P>(
 
     // permits if necessary
     if let Some(permit) = options.token0_permit {
-        calldatas.push(encode_permit(position.pool.token0.clone(), permit));
+        calldatas.push(encode_permit(&position.pool.token0, permit));
     }
     if let Some(permit) = options.token1_permit {
-        calldatas.push(encode_permit(position.pool.token1.clone(), permit));
+        calldatas.push(encode_permit(&position.pool.token1, permit));
     }
 
     // mint
@@ -193,15 +193,12 @@ pub fn add_call_parameters<P>(
 
     if let Some(ether) = options.use_native {
         let wrapped = ether.wrapped();
-        assert!(
-            position.pool.token0.equals(&wrapped) || position.pool.token1.equals(&wrapped),
-            "NO_WETH"
-        );
-
-        let wrapped_value = if position.pool.token0.equals(&wrapped) {
+        let wrapped_value = if position.pool.token0.equals(wrapped) {
             amount0_desired
-        } else {
+        } else if position.pool.token1.equals(wrapped) {
             amount1_desired
+        } else {
+            panic!("NO_WETH");
         };
 
         // we only need to refund if we're actually sending ETH
@@ -245,7 +242,7 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
 
     if involves_eth {
         let eth_amount: U256;
-        let token: Token;
+        let token: &Token;
         let token_amount: U256;
         if options.expected_currency_owed0.currency.is_native() {
             eth_amount = U256::from_big_int(options.expected_currency_owed0.quotient());

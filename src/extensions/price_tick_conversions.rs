@@ -212,7 +212,11 @@ pub fn tick_to_big_price(tick: I24) -> Result<BigDecimal, Error> {
 }
 
 /// Convert a [`FractionBase`] object to a [`BigDecimal`].
-pub fn fraction_to_big_decimal<M>(price: &impl FractionBase<M>) -> BigDecimal {
+pub fn fraction_to_big_decimal<M, F>(price: &F) -> BigDecimal
+where
+    M: Clone,
+    F: FractionBase<M>,
+{
     price.to_decimal()
 }
 

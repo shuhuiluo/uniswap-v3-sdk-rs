@@ -36,8 +36,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                 if options.use_quoter_v2 {
                     IQuoterV2::quoteExactInputSingleCall {
                         params: IQuoterV2::QuoteExactInputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             amountIn: quote_amount,
                             fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -46,8 +46,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                     .abi_encode()
                 } else {
                     IQuoter::quoteExactInputSingleCall {
-                        tokenIn: route.token_path[0].address(),
-                        tokenOut: route.token_path[1].address(),
+                        tokenIn: route.input.wrapped().address(),
+                        tokenOut: route.output.wrapped().address(),
                         amountIn: quote_amount,
                         fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -59,8 +59,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                 if options.use_quoter_v2 {
                     IQuoterV2::quoteExactOutputSingleCall {
                         params: IQuoterV2::QuoteExactOutputSingleParams {
-                            tokenIn: route.token_path[0].address(),
-                            tokenOut: route.token_path[1].address(),
+                            tokenIn: route.input.wrapped().address(),
+                            tokenOut: route.output.wrapped().address(),
                             amount: quote_amount,
                             fee: route.pools[0].fee.into(),
                             sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -69,8 +69,8 @@ pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
                     .abi_encode()
                 } else {
                     IQuoter::quoteExactOutputSingleCall {
-                        tokenIn: route.token_path[0].address(),
-                        tokenOut: route.token_path[1].address(),
+                        tokenIn: route.input.wrapped().address(),
+                        tokenOut: route.output.wrapped().address(),
                         amountOut: quote_amount,
                         fee: route.pools[0].fee.into(),
                         sqrtPriceLimitX96: options.sqrt_price_limit_x96,
@@ -121,7 +121,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
@@ -139,7 +139,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
@@ -157,7 +157,7 @@ mod tests {
 
         #[test]
         fn multi_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(
                     vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
                     TOKEN0.clone(),
@@ -168,7 +168,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -182,7 +182,7 @@ mod tests {
 
         #[test]
         fn multi_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(
                     vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
                     TOKEN0.clone(),
@@ -193,7 +193,7 @@ mod tests {
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.output_amount().unwrap(),
                 trade.trade_type,
                 None,
@@ -207,14 +207,14 @@ mod tests {
 
         #[test]
         fn sqrt_price_limit_x96() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let params = quote_call_parameters(
-                &trade.route(),
+                trade.route(),
                 trade.input_amount().unwrap(),
                 trade.trade_type,
                 Some(QuoteOptions {
@@ -236,7 +236,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_input() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
@@ -260,7 +260,7 @@ mod tests {
 
         #[test]
         fn single_hop_exact_output() {
-            let mut trade = Trade::from_route(
+            let trade = Trade::from_route(
                 Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,

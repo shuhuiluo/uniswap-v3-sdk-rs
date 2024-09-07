@@ -1,9 +1,6 @@
-use crate::prelude::{
-    tick_math::{MAX_TICK, MIN_TICK},
-    Error, *,
-};
+use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, U160, U256};
-use core::{cmp::PartialEq, fmt};
+use core::fmt;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
@@ -30,6 +27,7 @@ impl<P> fmt::Debug for Position<P> {
 }
 
 impl<P> PartialEq for Position<P> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.pool == other.pool
             && self.tick_lower == other.tick_lower
@@ -53,6 +51,7 @@ impl<P> Position<P> {
     /// * `liquidity`: The amount of liquidity that is in the position
     /// * `tick_lower`: The lower tick of the position
     /// * `tick_upper`: The upper tick of the position
+    #[inline]
     pub fn new(pool: Pool<P>, liquidity: u128, tick_lower: I24, tick_upper: I24) -> Self {
         assert!(tick_lower < tick_upper, "TICK_ORDER");
         assert!(
@@ -75,6 +74,7 @@ impl<P> Position<P> {
     }
 
     /// Returns the price of token0 at the lower tick
+    #[inline]
     pub fn token0_price_lower(&self) -> Result<Price<Token, Token>, Error> {
         tick_to_price(
             self.pool.token0.clone(),
@@ -84,6 +84,7 @@ impl<P> Position<P> {
     }
 
     /// Returns the price of token0 at the upper tick
+    #[inline]
     pub fn token0_price_upper(&self) -> Result<Price<Token, Token>, Error> {
         tick_to_price(
             self.pool.token0.clone(),
@@ -94,74 +95,94 @@ impl<P> Position<P> {
 
     /// Returns the amount of token0 that this position's liquidity could be burned for at the
     /// current pool price
-    pub fn amount0(&mut self) -> Result<CurrencyAmount<Token>, Error> {
-        if self._token0_amount.is_none() {
-            if self.pool.tick_current < self.tick_lower {
-                self._token0_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token0.clone(),
-                    get_amount_0_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        false,
-                    )?
-                    .to_big_int(),
-                )?)
-            } else if self.pool.tick_current < self.tick_upper {
-                self._token0_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token0.clone(),
-                    get_amount_0_delta(
-                        self.pool.sqrt_ratio_x96,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        false,
-                    )?
-                    .to_big_int(),
-                )?)
-            } else {
-                self._token0_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token0.clone(),
-                    BigInt::zero(),
-                )?)
-            }
+    #[inline]
+    pub fn amount0(&self) -> Result<CurrencyAmount<Token>, Error> {
+        if self.pool.tick_current < self.tick_lower {
+            CurrencyAmount::from_raw_amount(
+                self.pool.token0.clone(),
+                get_amount_0_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    false,
+                )?
+                .to_big_int(),
+            )
+            .map_err(Error::Core)
+        } else if self.pool.tick_current < self.tick_upper {
+            CurrencyAmount::from_raw_amount(
+                self.pool.token0.clone(),
+                get_amount_0_delta(
+                    self.pool.sqrt_ratio_x96,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    false,
+                )?
+                .to_big_int(),
+            )
+            .map_err(Error::Core)
+        } else {
+            CurrencyAmount::from_raw_amount(self.pool.token0.clone(), BigInt::zero())
+                .map_err(Error::Core)
         }
-        Ok(self._token0_amount.clone().unwrap())
+    }
+
+    /// Returns the amount of token0 that this position's liquidity could be burned for at the
+    /// current pool price
+    #[inline]
+    pub fn amount0_cached(&mut self) -> Result<CurrencyAmount<Token>, Error> {
+        if let Some(amount) = &self._token0_amount {
+            return Ok(amount.clone());
+        }
+        let amount = self.amount0()?;
+        self._token0_amount = Some(amount.clone());
+        Ok(amount)
     }
 
     /// Returns the amount of token1 that this position's liquidity could be burned for at the
     /// current pool price
-    pub fn amount1(&mut self) -> Result<CurrencyAmount<Token>, Error> {
-        if self._token1_amount.is_none() {
-            if self.pool.tick_current < self.tick_lower {
-                self._token1_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token1.clone(),
-                    BigInt::zero(),
-                )?)
-            } else if self.pool.tick_current < self.tick_upper {
-                self._token1_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token1.clone(),
-                    get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        self.pool.sqrt_ratio_x96,
-                        self.liquidity,
-                        false,
-                    )?
-                    .to_big_int(),
-                )?)
-            } else {
-                self._token1_amount = Some(CurrencyAmount::from_raw_amount(
-                    self.pool.token1.clone(),
-                    get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        false,
-                    )?
-                    .to_big_int(),
-                )?)
-            }
+    #[inline]
+    pub fn amount1(&self) -> Result<CurrencyAmount<Token>, Error> {
+        if self.pool.tick_current < self.tick_lower {
+            CurrencyAmount::from_raw_amount(self.pool.token1.clone(), BigInt::zero())
+                .map_err(Error::Core)
+        } else if self.pool.tick_current < self.tick_upper {
+            CurrencyAmount::from_raw_amount(
+                self.pool.token1.clone(),
+                get_amount_1_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    self.pool.sqrt_ratio_x96,
+                    self.liquidity,
+                    false,
+                )?
+                .to_big_int(),
+            )
+            .map_err(Error::Core)
+        } else {
+            CurrencyAmount::from_raw_amount(
+                self.pool.token1.clone(),
+                get_amount_1_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    false,
+                )?
+                .to_big_int(),
+            )
+            .map_err(Error::Core)
         }
-        Ok(self._token1_amount.clone().unwrap())
+    }
+
+    /// Returns the amount of token1 that this position's liquidity could be burned for at the
+    /// current pool price
+    #[inline]
+    pub fn amount1_cached(&mut self) -> Result<CurrencyAmount<Token>, Error> {
+        if let Some(amount) = &self._token1_amount {
+            return Ok(amount.clone());
+        }
+        let amount = self.amount1()?;
+        self._token1_amount = Some(amount.clone());
+        Ok(amount)
     }
 
     /// Returns the lower and upper sqrt ratios if the price 'slips' up to slippage tolerance
@@ -177,13 +198,13 @@ impl<P> Position<P> {
     /// (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     fn ratios_after_slippage(&self, slippage_tolerance: &Percent) -> (U160, U160) {
         let one = Percent::new(1, 1);
-        let price_lower = self.pool.token0_price().as_fraction()
-            * ((one.clone() - slippage_tolerance.clone()).as_fraction());
-        let price_upper = self.pool.token0_price().as_fraction()
-            * ((one + slippage_tolerance.clone()).as_fraction());
+        let token0_price = self.pool.token0_price().as_fraction();
+        let price_lower =
+            token0_price.clone() * ((one.clone() - slippage_tolerance.clone()).as_fraction());
+        let price_upper = token0_price * ((one + slippage_tolerance.clone()).as_fraction());
 
         let mut sqrt_ratio_x96_lower =
-            encode_sqrt_ratio_x96(price_lower.numerator(), price_lower.denominator());
+            encode_sqrt_ratio_x96(price_lower.numerator, price_lower.denominator);
         if sqrt_ratio_x96_lower <= MIN_SQRT_RATIO {
             sqrt_ratio_x96_lower = MIN_SQRT_RATIO + ONE;
         }
@@ -193,7 +214,7 @@ impl<P> Position<P> {
         {
             MAX_SQRT_RATIO - ONE
         } else {
-            encode_sqrt_ratio_x96(price_upper.numerator(), price_upper.denominator())
+            encode_sqrt_ratio_x96(price_upper.numerator, price_upper.denominator)
         };
 
         (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
@@ -235,7 +256,7 @@ impl<P> Position<P> {
 
         // Because the router is imprecise, we need to calculate the position that will be created
         // (assuming no slippage)
-        let MintAmounts { amount0, amount1 } = self.mint_amounts()?;
+        let MintAmounts { amount0, amount1 } = self.mint_amounts_cached()?;
         let position_that_will_be_created = Position::from_amounts(
             Pool::new(
                 self.pool.token0.clone(),
@@ -323,46 +344,55 @@ impl<P> Position<P> {
 
     /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held
     /// by the position at the current price for the pool
-    pub fn mint_amounts(&mut self) -> Result<MintAmounts, Error> {
-        if self._mint_amounts.is_none() {
-            if self.pool.tick_current < self.tick_lower {
-                self._mint_amounts = Some(MintAmounts {
-                    amount0: get_amount_0_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        true,
-                    )?,
-                    amount1: U256::ZERO,
-                })
-            } else if self.pool.tick_current < self.tick_upper {
-                self._mint_amounts = Some(MintAmounts {
-                    amount0: get_amount_0_delta(
-                        self.pool.sqrt_ratio_x96,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        true,
-                    )?,
-                    amount1: get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        self.pool.sqrt_ratio_x96,
-                        self.liquidity,
-                        true,
-                    )?,
-                })
-            } else {
-                self._mint_amounts = Some(MintAmounts {
-                    amount0: U256::ZERO,
-                    amount1: get_amount_1_delta(
-                        get_sqrt_ratio_at_tick(self.tick_lower)?,
-                        get_sqrt_ratio_at_tick(self.tick_upper)?,
-                        self.liquidity,
-                        true,
-                    )?,
-                })
+    pub fn mint_amounts(&self) -> Result<MintAmounts, Error> {
+        Ok(if self.pool.tick_current < self.tick_lower {
+            MintAmounts {
+                amount0: get_amount_0_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    true,
+                )?,
+                amount1: U256::ZERO,
             }
+        } else if self.pool.tick_current < self.tick_upper {
+            MintAmounts {
+                amount0: get_amount_0_delta(
+                    self.pool.sqrt_ratio_x96,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    true,
+                )?,
+                amount1: get_amount_1_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    self.pool.sqrt_ratio_x96,
+                    self.liquidity,
+                    true,
+                )?,
+            }
+        } else {
+            MintAmounts {
+                amount0: U256::ZERO,
+                amount1: get_amount_1_delta(
+                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    self.liquidity,
+                    true,
+                )?,
+            }
+        })
+    }
+
+    /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held
+    /// by the position at the current price for the pool
+    #[inline]
+    pub fn mint_amounts_cached(&mut self) -> Result<MintAmounts, Error> {
+        if let Some(amounts) = &self._mint_amounts {
+            return Ok(*amounts);
         }
-        Ok(self._mint_amounts.unwrap())
+        let amounts = self.mint_amounts()?;
+        self._mint_amounts = Some(amounts);
+        Ok(amounts)
     }
 
     /// Computes the maximum amount of liquidity received for a given amount of token0, token1,
@@ -381,6 +411,7 @@ impl<P> Position<P> {
     /// ## Returns
     ///
     /// The position with the maximum amount of liquidity received
+    #[inline]
     pub fn from_amounts(
         pool: Pool<P>,
         tick_lower: I24,
@@ -418,6 +449,7 @@ impl<P> Position<P> {
     /// * `amount0`: The desired amount of token0
     /// * `use_full_precision`: If true, liquidity will be maximized according to what the router
     ///   can calculate, not what core can theoretically support
+    #[inline]
     pub fn from_amount0(
         pool: Pool<P>,
         tick_lower: I24,
@@ -444,6 +476,7 @@ impl<P> Position<P> {
     /// * `tick_lower`: The lower tick
     /// * `tick_upper`: The upper tick
     /// * `amount1`: The desired amount of token1
+    #[inline]
     pub fn from_amount1(
         pool: Pool<P>,
         tick_lower: I24,
@@ -464,7 +497,7 @@ mod tests {
     static POOL_SQRT_RATIO_START: Lazy<U160> =
         Lazy::new(|| encode_sqrt_ratio_x96(BigInt::from(10).pow(8), BigInt::from(10).pow(20)));
     static POOL_TICK_CURRENT: Lazy<I24> =
-        Lazy::new(|| get_tick_at_sqrt_ratio(*POOL_SQRT_RATIO_START).unwrap());
+        Lazy::new(|| POOL_SQRT_RATIO_START.get_tick_at_sqrt_ratio().unwrap());
     const TICK_SPACING: I24 = FeeAmount::LOW.tick_spacing();
 
     static DAI_USDC_POOL: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
@@ -547,7 +580,7 @@ mod tests {
 
     #[test]
     fn amount0_is_correct_for_price_above() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e12 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -561,7 +594,7 @@ mod tests {
 
     #[test]
     fn amount0_is_correct_for_price_below() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
@@ -572,7 +605,7 @@ mod tests {
 
     #[test]
     fn amount0_is_correct_for_in_range_position() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
@@ -586,7 +619,7 @@ mod tests {
 
     #[test]
     fn amount1_is_correct_for_price_above() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -597,7 +630,7 @@ mod tests {
 
     #[test]
     fn amount1_is_correct_for_price_below() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
@@ -611,7 +644,7 @@ mod tests {
 
     #[test]
     fn amount1_is_correct_for_in_range_position() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
@@ -631,7 +664,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -647,7 +680,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -663,7 +696,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
             .mint_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -766,7 +799,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -782,7 +815,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -798,7 +831,7 @@ mod tests {
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
         );
-        let slippage_tolerance = Percent::new(0, 1);
+        let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
             .burn_amounts_with_slippage(&slippage_tolerance)
             .unwrap();
@@ -895,7 +928,7 @@ mod tests {
 
     #[test]
     fn mint_amounts_is_correct_for_positions_above() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
@@ -908,7 +941,7 @@ mod tests {
 
     #[test]
     fn mint_amounts_is_correct_for_positions_below() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
@@ -921,7 +954,7 @@ mod tests {
 
     #[test]
     fn mint_amounts_is_correct_for_positions_within() {
-        let mut position = Position::new(
+        let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
             nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
