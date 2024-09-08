@@ -12,6 +12,7 @@ use num_integer::Integer;
 /// ## Returns
 ///
 /// The closest tick to the input tick that is usable for the given tick spacing
+// TODO: use [`TickIndex`]
 pub fn nearest_usable_tick(tick: I24, tick_spacing: I24) -> I24 {
     let tick = tick.as_i32();
     let tick_spacing = tick_spacing.as_i32();

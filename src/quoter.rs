@@ -21,12 +21,17 @@ pub struct QuoteOptions {
 /// * `amount`: The amount of the quote, either an amount in, or an amount out
 /// * `trade_type`: The trade type, either exact input or exact output
 /// * `options`: The optional params including price limit and Quoter contract switch
-pub fn quote_call_parameters<TInput: Currency, TOutput: Currency, P>(
-    route: &Route<TInput, TOutput, P>,
+pub fn quote_call_parameters<TInput, TOutput, TP>(
+    route: &Route<TInput, TOutput, TP>,
     amount: CurrencyAmount<impl Currency>,
     trade_type: TradeType,
     options: Option<QuoteOptions>,
-) -> MethodParameters {
+) -> MethodParameters
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     let options = options.unwrap_or_default();
     let quote_amount = U256::from_big_int(amount.quotient());
 

@@ -4,7 +4,10 @@ use alloy_sol_types::SolValue;
 use uniswap_sdk_core::prelude::*;
 
 #[inline]
-fn encode_leg<'a, P>(pool: &'a Pool<P>, input_token: &'a Token) -> (&'a Token, Vec<u8>) {
+fn encode_leg<'a, TP: TickDataProvider>(
+    pool: &'a Pool<TP>,
+    input_token: &'a Token,
+) -> (&'a Token, Vec<u8>) {
     let output_token;
     let leg: (Address, U24) = if pool.token0.equals(input_token) {
         output_token = &pool.token1;
@@ -23,10 +26,15 @@ fn encode_leg<'a, P>(pool: &'a Pool<P>, input_token: &'a Token) -> (&'a Token, V
 /// * `route`: the v3 path to convert to an encoded path
 /// * `exact_output`: whether the route should be encoded in reverse, for making exact output swaps
 #[inline]
-pub fn encode_route_to_path<TInput: Currency, TOutput: Currency, P>(
-    route: &Route<TInput, TOutput, P>,
+pub fn encode_route_to_path<TInput, TOutput, TP>(
+    route: &Route<TInput, TOutput, TP>,
     exact_output: bool,
-) -> Bytes {
+) -> Bytes
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     let mut path: Vec<u8> = Vec::with_capacity(23 * route.pools.len() + 20);
     if exact_output {
         let mut output_token = route.output.wrapped();
@@ -55,7 +63,7 @@ mod tests {
     use alloy_primitives::hex;
     use once_cell::sync::Lazy;
 
-    static POOL_1_2_LOW: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+    static POOL_1_2_LOW: Lazy<Pool> = Lazy::new(|| {
         Pool::new(
             TOKEN1.clone(),
             TOKEN2.clone(),

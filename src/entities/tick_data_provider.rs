@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 /// Provides information about ticks
 pub trait TickDataProvider: Clone {
-    type Tick;
+    type Index: TickIndex;
 
     /// Return information corresponding to a specific tick
     ///
@@ -10,8 +10,8 @@ pub trait TickDataProvider: Clone {
     ///
     /// * `tick`: The tick to load
     ///
-    /// returns: Result<&Self::Tick, Error>
-    fn get_tick(&self, tick: i32) -> Result<&Self::Tick, Error>;
+    /// returns: Result<&Tick<Self::Index>, Error>
+    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error>;
 
     /// Return the next tick that is initialized within a single word
     ///
@@ -21,13 +21,13 @@ pub trait TickDataProvider: Clone {
     /// * `lte`: Whether the next tick should be lte the current tick
     /// * `tick_spacing`: The tick spacing of the pool
     ///
-    /// returns: Result<(i32, bool), Error>
+    /// returns: Result<(Self::Index, bool), Error>
     fn next_initialized_tick_within_one_word(
         &self,
-        tick: i32,
+        tick: Self::Index,
         lte: bool,
-        tick_spacing: i32,
-    ) -> Result<(i32, bool), Error>;
+        tick_spacing: Self::Index,
+    ) -> Result<(Self::Index, bool), Error>;
 }
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is
@@ -36,7 +36,7 @@ pub trait TickDataProvider: Clone {
 pub struct NoTickDataProvider;
 
 impl TickDataProvider for NoTickDataProvider {
-    type Tick = Tick;
+    type Index = i32;
 
     fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
         Err(Error::NoTickDataError)

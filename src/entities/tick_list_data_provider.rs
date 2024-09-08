@@ -2,28 +2,28 @@ use crate::prelude::*;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct TickListDataProvider(Vec<Tick>);
+pub struct TickListDataProvider<I = i32>(Vec<Tick<I>>);
 
-impl TickListDataProvider {
-    pub fn new(ticks: Vec<Tick>, tick_spacing: i32) -> Self {
+impl<I: TickIndex> TickListDataProvider<I> {
+    pub fn new(ticks: Vec<Tick<I>>, tick_spacing: I) -> Self {
         ticks.validate_list(tick_spacing);
         Self(ticks)
     }
 }
 
-impl TickDataProvider for TickListDataProvider {
-    type Tick = Tick;
+impl<I: TickIndex> TickDataProvider for TickListDataProvider<I> {
+    type Index = I;
 
-    fn get_tick(&self, tick: i32) -> Result<&Tick, Error> {
+    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         Ok(self.0.get_tick(tick))
     }
 
     fn next_initialized_tick_within_one_word(
         &self,
-        tick: i32,
+        tick: I,
         lte: bool,
-        tick_spacing: i32,
-    ) -> Result<(i32, bool), Error> {
+        tick_spacing: I,
+    ) -> Result<(I, bool), Error> {
         Ok(self
             .0
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing))
@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn can_take_an_empty_list_of_ticks() {
-        TickListDataProvider::default();
+        TickListDataProvider::<i32>::default();
     }
 
     #[test]

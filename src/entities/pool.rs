@@ -1,5 +1,5 @@
 use crate::prelude::{Error, *};
-use alloy_primitives::{aliases::I24, ChainId, B256, I256, U160, U256};
+use alloy_primitives::{ChainId, B256, I256, U160, U256};
 use core::fmt;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
@@ -8,17 +8,23 @@ static _Q192: Lazy<BigUint> = Lazy::new(|| Q192.to_big_uint());
 
 /// Represents a V3 pool
 #[derive(Clone)]
-pub struct Pool<P = NoTickDataProvider> {
+pub struct Pool<TP = NoTickDataProvider>
+where
+    TP: TickDataProvider,
+{
     pub token0: Token,
     pub token1: Token,
     pub fee: FeeAmount,
     pub sqrt_ratio_x96: U160,
     pub liquidity: u128,
-    pub tick_current: I24,
-    pub tick_data_provider: P,
+    pub tick_current: TP::Index,
+    pub tick_data_provider: TP,
 }
 
-impl<P> fmt::Debug for Pool<P> {
+impl<TP> fmt::Debug for Pool<TP>
+where
+    TP: TickDataProvider<Index: fmt::Debug>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("token0", &self.token0)
@@ -31,7 +37,10 @@ impl<P> fmt::Debug for Pool<P> {
     }
 }
 
-impl<P> PartialEq for Pool<P> {
+impl<TP> PartialEq for Pool<TP>
+where
+    TP: TickDataProvider<Index: PartialEq>,
+{
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.token0 == other.token0
@@ -43,18 +52,18 @@ impl<P> PartialEq for Pool<P> {
     }
 }
 
-struct SwapState {
+struct SwapState<I = i32> {
     amount_specified_remaining: I256,
     amount_calculated: I256,
     sqrt_price_x96: U160,
-    tick: i32,
+    tick: I,
     liquidity: u128,
 }
 
 #[derive(Clone, Copy, Default)]
-struct StepComputations {
+struct StepComputations<I = i32> {
     sqrt_price_start_x96: U160,
-    tick_next: i32,
+    tick_next: I,
     initialized: bool,
     sqrt_price_next_x96: U160,
     amount_in: U256,
@@ -138,7 +147,7 @@ impl Pool {
     }
 }
 
-impl<P> Pool<P> {
+impl<TP: TickDataProvider> Pool<TP> {
     /// Returns the pool address
     #[inline]
     pub fn address(
@@ -161,8 +170,8 @@ impl<P> Pool<P> {
     }
 
     #[inline]
-    pub const fn tick_spacing(&self) -> I24 {
-        self.fee.tick_spacing()
+    pub fn tick_spacing(&self) -> TP::Index {
+        TP::Index::from_i24(self.fee.tick_spacing())
     }
 
     /// Returns true if the token is either token0 or token1
@@ -220,13 +229,7 @@ impl<P> Pool<P> {
             Err(Error::InvalidToken)
         }
     }
-}
 
-impl<T, P> Pool<P>
-where
-    T: TickTrait,
-    P: TickDataProvider<Tick = T>,
-{
     /// Construct a pool with a tick data provider
     ///
     /// ## Arguments
@@ -246,7 +249,7 @@ where
         fee: FeeAmount,
         sqrt_ratio_x96: U160,
         liquidity: u128,
-        tick_data_provider: P,
+        tick_data_provider: TP,
     ) -> Result<Self, Error> {
         let (token0, token1) = if token_a.sorts_before(&token_b)? {
             (token_a, token_b)
@@ -259,7 +262,7 @@ where
             fee,
             sqrt_ratio_x96,
             liquidity,
-            tick_current: sqrt_ratio_x96.get_tick_at_sqrt_ratio()?,
+            tick_current: TP::Index::from_i24(sqrt_ratio_x96.get_tick_at_sqrt_ratio()?),
             tick_data_provider,
         })
     }
@@ -353,7 +356,7 @@ where
         zero_for_one: bool,
         amount_specified: I256,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(I256, U160, u128, i32), Error> {
+    ) -> Result<(I256, U160, u128, TP::Index), Error> {
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
                 MIN_SQRT_RATIO + ONE
@@ -377,7 +380,7 @@ where
             amount_specified_remaining: amount_specified,
             amount_calculated: I256::ZERO,
             sqrt_price_x96: self.sqrt_ratio_x96,
-            tick: self.tick_current.as_i32(),
+            tick: self.tick_current,
             liquidity: self.liquidity,
         };
 
@@ -390,7 +393,6 @@ where
                 ..Default::default()
             };
 
-            step.sqrt_price_start_x96 = state.sqrt_price_x96;
             // because each iteration of the while loop rounds, we can't optimize this code
             // (relative to the smart contract) by simply traversing to the next available tick, we
             // instead need to exactly replicate
@@ -399,13 +401,12 @@ where
                 .next_initialized_tick_within_one_word(
                     state.tick,
                     zero_for_one,
-                    self.tick_spacing().as_i32(),
+                    self.tick_spacing(),
                 )?;
 
-            step.tick_next = step.tick_next.clamp(MIN_TICK_I32, MAX_TICK_I32);
+            step.tick_next = TP::Index::from_i24(step.tick_next.to_i24().clamp(MIN_TICK, MAX_TICK));
+            step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next.to_i24())?;
 
-            step.sqrt_price_next_x96 =
-                get_sqrt_ratio_at_tick(I24::try_from(step.tick_next).unwrap())?;
             (
                 state.sqrt_price_x96,
                 step.amount_in,
@@ -443,7 +444,7 @@ where
                     let mut liquidity_net = self
                         .tick_data_provider
                         .get_tick(step.tick_next)?
-                        .liquidity_net();
+                        .liquidity_net;
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
                     if zero_for_one {
@@ -451,11 +452,15 @@ where
                     }
                     state.liquidity = add_delta(state.liquidity, liquidity_net)?;
                 }
-                state.tick = step.tick_next - zero_for_one as i32;
+                state.tick = if zero_for_one {
+                    step.tick_next - TP::Index::one()
+                } else {
+                    step.tick_next
+                };
             } else {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned
                 // ticks), and haven't moved
-                state.tick = state.sqrt_price_x96.get_tick_at_sqrt_ratio()?.as_i32();
+                state.tick = TP::Index::from_i24(state.sqrt_price_x96.get_tick_at_sqrt_ratio()?);
             }
         }
 

@@ -66,7 +66,7 @@ pub(crate) const FEE_AMOUNT: FeeAmount = FeeAmount::MEDIUM;
 pub(crate) const SQRT_RATIO_X96: U160 = U160::from_limbs([0, 4294967296, 0]);
 pub(crate) const LIQUIDITY: u128 = 1_000_000;
 
-pub(crate) static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+pub(crate) static POOL_0_1: Lazy<Pool> = Lazy::new(|| {
     Pool::new(
         TOKEN0.clone(),
         TOKEN1.clone(),
@@ -76,7 +76,7 @@ pub(crate) static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
     )
     .unwrap()
 });
-pub(crate) static POOL_0_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+pub(crate) static POOL_0_WETH: Lazy<Pool> = Lazy::new(|| {
     Pool::new(
         TOKEN0.clone(),
         WETH.clone(),
@@ -86,7 +86,7 @@ pub(crate) static POOL_0_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
     )
     .unwrap()
 });
-pub(crate) static POOL_1_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+pub(crate) static POOL_1_WETH: Lazy<Pool> = Lazy::new(|| {
     Pool::new(
         TOKEN1.clone(),
         WETH.clone(),

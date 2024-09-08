@@ -1,21 +1,27 @@
 use crate::prelude::{Error, *};
-use alloy_primitives::{aliases::I24, U160, U256};
+use alloy_primitives::{U160, U256};
 use core::fmt;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
 #[derive(Clone)]
-pub struct Position<P> {
-    pub pool: Pool<P>,
-    pub tick_lower: I24,
-    pub tick_upper: I24,
+pub struct Position<TP = NoTickDataProvider>
+where
+    TP: TickDataProvider,
+{
+    pub pool: Pool<TP>,
+    pub tick_lower: TP::Index,
+    pub tick_upper: TP::Index,
     pub liquidity: u128,
     _token0_amount: Option<CurrencyAmount<Token>>,
     _token1_amount: Option<CurrencyAmount<Token>>,
     _mint_amounts: Option<MintAmounts>,
 }
 
-impl<P> fmt::Debug for Position<P> {
+impl<TP> fmt::Debug for Position<TP>
+where
+    TP: TickDataProvider<Index: fmt::Debug>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Position")
             .field("pool", &self.pool)
@@ -26,7 +32,10 @@ impl<P> fmt::Debug for Position<P> {
     }
 }
 
-impl<P> PartialEq for Position<P> {
+impl<TP> PartialEq for Position<TP>
+where
+    TP: TickDataProvider<Index: PartialEq>,
+{
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.pool == other.pool
@@ -42,7 +51,7 @@ pub struct MintAmounts {
     pub amount1: U256,
 }
 
-impl<P> Position<P> {
+impl<TP: TickDataProvider> Position<TP> {
     /// Constructs a position for a given pool with the given liquidity
     ///
     /// ## Arguments
@@ -52,14 +61,21 @@ impl<P> Position<P> {
     /// * `tick_lower`: The lower tick of the position
     /// * `tick_upper`: The upper tick of the position
     #[inline]
-    pub fn new(pool: Pool<P>, liquidity: u128, tick_lower: I24, tick_upper: I24) -> Self {
+    pub fn new(
+        pool: Pool<TP>,
+        liquidity: u128,
+        tick_lower: TP::Index,
+        tick_upper: TP::Index,
+    ) -> Self {
         assert!(tick_lower < tick_upper, "TICK_ORDER");
         assert!(
-            tick_lower >= MIN_TICK && (tick_lower % pool.tick_spacing()).is_zero(),
+            tick_lower >= TP::Index::from_i24(MIN_TICK)
+                && (tick_lower % pool.tick_spacing()).is_zero(),
             "TICK_LOWER"
         );
         assert!(
-            tick_upper <= MAX_TICK && (tick_upper % pool.tick_spacing()).is_zero(),
+            tick_upper <= TP::Index::from_i24(MAX_TICK)
+                && (tick_upper % pool.tick_spacing()).is_zero(),
             "TICK_UPPER"
         );
         Self {
@@ -79,7 +95,7 @@ impl<P> Position<P> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
-            self.tick_lower,
+            self.tick_lower.to_i24(),
         )
     }
 
@@ -89,7 +105,7 @@ impl<P> Position<P> {
         tick_to_price(
             self.pool.token0.clone(),
             self.pool.token1.clone(),
-            self.tick_upper,
+            self.tick_upper.to_i24(),
         )
     }
 
@@ -101,8 +117,8 @@ impl<P> Position<P> {
             CurrencyAmount::from_raw_amount(
                 self.pool.token0.clone(),
                 get_amount_0_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     false,
                 )?
@@ -114,7 +130,7 @@ impl<P> Position<P> {
                 self.pool.token0.clone(),
                 get_amount_0_delta(
                     self.pool.sqrt_ratio_x96,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     false,
                 )?
@@ -150,7 +166,7 @@ impl<P> Position<P> {
             CurrencyAmount::from_raw_amount(
                 self.pool.token1.clone(),
                 get_amount_1_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
                     self.pool.sqrt_ratio_x96,
                     self.liquidity,
                     false,
@@ -162,8 +178,8 @@ impl<P> Position<P> {
             CurrencyAmount::from_raw_amount(
                 self.pool.token1.clone(),
                 get_amount_1_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     false,
                 )?
@@ -265,8 +281,8 @@ impl<P> Position<P> {
                 self.pool.sqrt_ratio_x96,
                 self.pool.liquidity,
             )?,
-            self.tick_lower,
-            self.tick_upper,
+            self.tick_lower.try_into().unwrap(),
+            self.tick_upper.try_into().unwrap(),
             amount0,
             amount1,
             false,
@@ -277,8 +293,8 @@ impl<P> Position<P> {
         let amount0 = Position::new(
             pool_upper,
             position_that_will_be_created.liquidity,
-            self.tick_lower,
-            self.tick_upper,
+            self.tick_lower.try_into().unwrap(),
+            self.tick_upper.try_into().unwrap(),
         )
         .mint_amounts()?
         .amount0;
@@ -286,8 +302,8 @@ impl<P> Position<P> {
         let amount1 = Position::new(
             pool_lower,
             position_that_will_be_created.liquidity,
-            self.tick_lower,
-            self.tick_upper,
+            self.tick_lower.try_into().unwrap(),
+            self.tick_upper.try_into().unwrap(),
         )
         .mint_amounts()?
         .amount1;
@@ -331,13 +347,23 @@ impl<P> Position<P> {
 
         // we want the smaller amounts...
         // ...which occurs at the upper price for amount0...
-        let amount0 = Position::new(pool_upper, self.liquidity, self.tick_lower, self.tick_upper)
-            .amount0()?
-            .quotient();
+        let amount0 = Position::new(
+            pool_upper,
+            self.liquidity,
+            self.tick_lower.try_into().unwrap(),
+            self.tick_upper.try_into().unwrap(),
+        )
+        .amount0()?
+        .quotient();
         // ...and the lower for amount1
-        let amount1 = Position::new(pool_lower, self.liquidity, self.tick_lower, self.tick_upper)
-            .amount1()?
-            .quotient();
+        let amount1 = Position::new(
+            pool_lower,
+            self.liquidity,
+            self.tick_lower.try_into().unwrap(),
+            self.tick_upper.try_into().unwrap(),
+        )
+        .amount1()?
+        .quotient();
 
         Ok((U256::from_big_int(amount0), U256::from_big_int(amount1)))
     }
@@ -348,8 +374,8 @@ impl<P> Position<P> {
         Ok(if self.pool.tick_current < self.tick_lower {
             MintAmounts {
                 amount0: get_amount_0_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     true,
                 )?,
@@ -359,12 +385,12 @@ impl<P> Position<P> {
             MintAmounts {
                 amount0: get_amount_0_delta(
                     self.pool.sqrt_ratio_x96,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     true,
                 )?,
                 amount1: get_amount_1_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
                     self.pool.sqrt_ratio_x96,
                     self.liquidity,
                     true,
@@ -374,8 +400,8 @@ impl<P> Position<P> {
             MintAmounts {
                 amount0: U256::ZERO,
                 amount1: get_amount_1_delta(
-                    get_sqrt_ratio_at_tick(self.tick_lower)?,
-                    get_sqrt_ratio_at_tick(self.tick_upper)?,
+                    get_sqrt_ratio_at_tick(self.tick_lower.to_i24())?,
+                    get_sqrt_ratio_at_tick(self.tick_upper.to_i24())?,
                     self.liquidity,
                     true,
                 )?,
@@ -413,15 +439,15 @@ impl<P> Position<P> {
     /// The position with the maximum amount of liquidity received
     #[inline]
     pub fn from_amounts(
-        pool: Pool<P>,
-        tick_lower: I24,
-        tick_upper: I24,
+        pool: Pool<TP>,
+        tick_lower: TP::Index,
+        tick_upper: TP::Index,
         amount0: U256,
         amount1: U256,
         use_full_precision: bool,
     ) -> Result<Self, Error> {
-        let sqrt_ratio_a_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
-        let sqrt_ratio_b_x96 = get_sqrt_ratio_at_tick(tick_upper)?;
+        let sqrt_ratio_a_x96 = get_sqrt_ratio_at_tick(tick_lower.to_i24())?;
+        let sqrt_ratio_b_x96 = get_sqrt_ratio_at_tick(tick_upper.to_i24())?;
         let liquidity = max_liquidity_for_amounts(
             pool.sqrt_ratio_x96,
             sqrt_ratio_a_x96,
@@ -451,9 +477,9 @@ impl<P> Position<P> {
     ///   can calculate, not what core can theoretically support
     #[inline]
     pub fn from_amount0(
-        pool: Pool<P>,
-        tick_lower: I24,
-        tick_upper: I24,
+        pool: Pool<TP>,
+        tick_lower: TP::Index,
+        tick_upper: TP::Index,
         amount0: U256,
         use_full_precision: bool,
     ) -> Result<Self, Error> {
@@ -478,9 +504,9 @@ impl<P> Position<P> {
     /// * `amount1`: The desired amount of token1
     #[inline]
     pub fn from_amount1(
-        pool: Pool<P>,
-        tick_lower: I24,
-        tick_upper: I24,
+        pool: Pool<TP>,
+        tick_lower: TP::Index,
+        tick_upper: TP::Index,
         amount1: U256,
     ) -> Result<Self, Error> {
         // this function always uses full precision
@@ -492,6 +518,7 @@ impl<P> Position<P> {
 mod tests {
     use super::*;
     use crate::tests::*;
+    use alloy_primitives::aliases::I24;
     use once_cell::sync::Lazy;
 
     static POOL_SQRT_RATIO_START: Lazy<U160> =
@@ -500,7 +527,7 @@ mod tests {
         Lazy::new(|| POOL_SQRT_RATIO_START.get_tick_at_sqrt_ratio().unwrap());
     const TICK_SPACING: I24 = FeeAmount::LOW.tick_spacing();
 
-    static DAI_USDC_POOL: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+    static DAI_USDC_POOL: Lazy<Pool> = Lazy::new(|| {
         Pool::new(
             DAI.clone(),
             USDC.clone(),
@@ -512,12 +539,10 @@ mod tests {
     });
 
     const TWO: I24 = I24::from_limbs([2]);
-    const FIVE: I24 = I24::from_limbs([5]);
-    const TEN: I24 = I24::from_limbs([10]);
 
     #[test]
     fn can_be_constructed_around_0_tick() {
-        let position = Position::new(DAI_USDC_POOL.clone(), 1, -TEN, TEN);
+        let position = Position::new(DAI_USDC_POOL.clone(), 1, -10, 10);
         assert_eq!(position.liquidity, 1);
     }
 
@@ -526,8 +551,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             1,
-            nearest_usable_tick(MIN_TICK, TICK_SPACING),
-            nearest_usable_tick(MAX_TICK, TICK_SPACING),
+            nearest_usable_tick(MIN_TICK, TICK_SPACING).as_i32(),
+            nearest_usable_tick(MAX_TICK, TICK_SPACING).as_i32(),
         );
         assert_eq!(position.liquidity, 1);
     }
@@ -535,19 +560,19 @@ mod tests {
     #[test]
     #[should_panic(expected = "TICK_ORDER")]
     fn tick_lower_must_be_less_than_tick_upper() {
-        Position::new(DAI_USDC_POOL.clone(), 1, TEN, -TEN);
+        Position::new(DAI_USDC_POOL.clone(), 1, 10, -10);
     }
 
     #[test]
     #[should_panic(expected = "TICK_ORDER")]
     fn tick_lower_cannot_equal_tick_upper() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -TEN, -TEN);
+        Position::new(DAI_USDC_POOL.clone(), 1, -10, -10);
     }
 
     #[test]
     #[should_panic(expected = "TICK_LOWER")]
     fn tick_lower_must_be_multiple_of_tick_spacing() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -FIVE, TEN);
+        Position::new(DAI_USDC_POOL.clone(), 1, -5, 10);
     }
 
     #[test]
@@ -556,15 +581,15 @@ mod tests {
         Position::new(
             DAI_USDC_POOL.clone(),
             1,
-            nearest_usable_tick(MIN_TICK, TICK_SPACING) - TICK_SPACING,
-            TEN,
+            (nearest_usable_tick(MIN_TICK, TICK_SPACING) - TICK_SPACING).as_i32(),
+            10,
         );
     }
 
     #[test]
     #[should_panic(expected = "TICK_UPPER")]
     fn tick_upper_must_be_multiple_of_tick_spacing() {
-        Position::new(DAI_USDC_POOL.clone(), 1, -TEN, I24::from_limbs([15]));
+        Position::new(DAI_USDC_POOL.clone(), 1, -10, 15);
     }
 
     #[test]
@@ -573,8 +598,8 @@ mod tests {
         Position::new(
             DAI_USDC_POOL.clone(),
             1,
-            -TEN,
-            nearest_usable_tick(MAX_TICK, TICK_SPACING) + TICK_SPACING,
+            -10,
+            (nearest_usable_tick(MAX_TICK, TICK_SPACING) + TICK_SPACING).as_i32(),
         );
     }
 
@@ -583,8 +608,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e12 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         assert_eq!(
             position.amount0().unwrap().quotient().to_string(),
@@ -597,8 +622,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         assert_eq!(position.amount0().unwrap().quotient().to_string(), "0");
     }
@@ -608,8 +633,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         assert_eq!(
             position.amount0().unwrap().quotient().to_string(),
@@ -622,8 +647,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         assert_eq!(position.amount1().unwrap().quotient().to_string(), "0");
     }
@@ -633,8 +658,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         assert_eq!(
             position.amount1().unwrap().quotient().to_string(),
@@ -647,8 +672,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         assert_eq!(
             position.amount1().unwrap().quotient().to_string(),
@@ -661,8 +686,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
@@ -677,8 +702,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
@@ -693,8 +718,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let MintAmounts { amount0, amount1 } = position
@@ -709,8 +734,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let MintAmounts { amount0, amount1 } = position
@@ -725,8 +750,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let MintAmounts { amount0, amount1 } = position
@@ -741,8 +766,8 @@ mod tests {
         let mut position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let MintAmounts { amount0, amount1 } = position
@@ -757,8 +782,8 @@ mod tests {
         let position = Position::new(
             Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0).unwrap(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 100);
         let (amount0, amount1) = position
@@ -780,8 +805,8 @@ mod tests {
             )
             .unwrap(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 100);
         let (amount0, amount1) = position
@@ -796,8 +821,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
@@ -812,8 +837,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
@@ -828,8 +853,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::default();
         let (amount0, amount1) = position
@@ -844,8 +869,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let (amount0, amount1) = position
@@ -860,8 +885,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let (amount0, amount1) = position
@@ -876,8 +901,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 10000);
         let (amount0, amount1) = position
@@ -892,8 +917,8 @@ mod tests {
         let mut position = Position::new(
             Pool::new(DAI.clone(), USDC.clone(), FeeAmount::LOW, MIN_SQRT_RATIO, 0).unwrap(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 100);
         let MintAmounts { amount0, amount1 } = position
@@ -915,8 +940,8 @@ mod tests {
             )
             .unwrap(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let slippage_tolerance = Percent::new(5, 100);
         let MintAmounts { amount0, amount1 } = position
@@ -931,8 +956,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "49949961958869841754182");
@@ -944,8 +969,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING).as_i32(),
         );
         let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "0");
@@ -957,8 +982,8 @@ mod tests {
         let position = Position::new(
             DAI_USDC_POOL.clone(),
             100e18 as u128,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO,
-            nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO,
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) - TICK_SPACING * TWO).as_i32(),
+            (nearest_usable_tick(*POOL_TICK_CURRENT, TICK_SPACING) + TICK_SPACING * TWO).as_i32(),
         );
         let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "120054069145287995769397");
