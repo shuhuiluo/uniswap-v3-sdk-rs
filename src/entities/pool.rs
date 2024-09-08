@@ -457,7 +457,7 @@ impl<TP: TickDataProvider> Pool<TP> {
                 } else {
                     step.tick_next
                 };
-            } else {
+            } else if state.sqrt_price_x96 != step.sqrt_price_start_x96 {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned
                 // ticks), and haven't moved
                 state.tick = TP::Index::from_i24(state.sqrt_price_x96.get_tick_at_sqrt_ratio()?);
