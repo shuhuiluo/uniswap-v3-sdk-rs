@@ -9,49 +9,53 @@ use uniswap_lens::prelude::get_populated_ticks_in_range;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone, Debug, PartialEq)]
-pub struct EphemeralTickDataProvider {
+pub struct EphemeralTickDataProvider<I = I24> {
     pub pool: Address,
-    pub tick_lower: I24,
-    pub tick_upper: I24,
+    pub tick_lower: I,
+    pub tick_upper: I,
     pub block_id: Option<BlockId>,
-    pub ticks: Vec<Tick>,
+    pub ticks: Vec<Tick<I>>,
     /// the minimum distance between two ticks in the list
-    pub tick_spacing: I24,
+    pub tick_spacing: I,
 }
 
-impl EphemeralTickDataProvider {
+impl<I: TickIndex> EphemeralTickDataProvider<I> {
     pub async fn new<T, P>(
         pool: Address,
         provider: P,
-        tick_lower: Option<I24>,
-        tick_upper: Option<I24>,
+        tick_lower: Option<I>,
+        tick_upper: Option<I>,
         block_id: Option<BlockId>,
     ) -> Result<Self, Error>
     where
         T: Transport + Clone,
         P: Provider<T>,
     {
-        let tick_lower = tick_lower.unwrap_or(MIN_TICK);
-        let tick_upper = tick_upper.unwrap_or(MAX_TICK);
+        let tick_lower = tick_lower.map(I::to_i24).unwrap_or(MIN_TICK);
+        let tick_upper = tick_upper.map(I::to_i24).unwrap_or(MAX_TICK);
         let ticks = get_populated_ticks_in_range(pool, tick_lower, tick_upper, provider, block_id)
             .await
             .map_err(|_| Error::LensError)?;
         let ticks: Vec<_> = ticks
             .into_iter()
-            .map(|tick| Tick::new(tick.tick.as_i32(), tick.liquidityGross, tick.liquidityNet))
+            .map(|tick| {
+                Tick::new(
+                    I::from_i24(tick.tick),
+                    tick.liquidityGross,
+                    tick.liquidityNet,
+                )
+            })
             .collect();
         let tick_indices: Vec<_> = ticks.iter().map(|tick| tick.index).collect();
-        let tick_spacing: I24 = tick_indices
+        let tick_spacing = tick_indices
             .windows(2)
             .map(|window| window[1] - window[0])
             .min()
-            .unwrap()
-            .try_into()
             .unwrap();
         Ok(Self {
             pool,
-            tick_lower,
-            tick_upper,
+            tick_lower: I::from_i24(tick_lower),
+            tick_upper: I::from_i24(tick_upper),
             block_id,
             ticks,
             tick_spacing,
@@ -59,29 +63,29 @@ impl EphemeralTickDataProvider {
     }
 }
 
-impl TickDataProvider for EphemeralTickDataProvider {
-    type Tick = Tick;
+impl<I: TickIndex> TickDataProvider for EphemeralTickDataProvider<I> {
+    type Index = I;
 
-    fn get_tick(&self, tick: i32) -> Result<&Tick, Error> {
+    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         Ok(self.ticks.get_tick(tick))
     }
 
     fn next_initialized_tick_within_one_word(
         &self,
-        tick: i32,
+        tick: I,
         lte: bool,
-        tick_spacing: i32,
-    ) -> Result<(i32, bool), Error> {
+        tick_spacing: I,
+    ) -> Result<(I, bool), Error> {
         Ok(self
             .ticks
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing))
     }
 }
 
-impl From<EphemeralTickDataProvider> for TickListDataProvider {
-    fn from(provider: EphemeralTickDataProvider) -> Self {
+impl<I: TickIndex> From<EphemeralTickDataProvider<I>> for TickListDataProvider<I> {
+    fn from(provider: EphemeralTickDataProvider<I>) -> Self {
         assert!(!provider.ticks.is_empty());
-        Self::new(provider.ticks, provider.tick_spacing.as_i32())
+        Self::new(provider.ticks, provider.tick_spacing)
     }
 }
 
@@ -100,7 +104,7 @@ mod tests {
             PROVIDER.clone(),
             None,
             None,
-            Some(BlockId::from(17000000)),
+            *BLOCK_ID,
         )
         .await?;
         assert!(!provider.ticks.is_empty());

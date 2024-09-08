@@ -10,49 +10,49 @@ use uniswap_lens::prelude::get_populated_ticks_in_range;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone, Debug, PartialEq)]
-pub struct EphemeralTickMapDataProvider {
+pub struct EphemeralTickMapDataProvider<I = I24> {
     pub pool: Address,
-    pub tick_lower: I24,
-    pub tick_upper: I24,
+    pub tick_lower: I,
+    pub tick_upper: I,
     pub block_id: Option<BlockId>,
     pub tick_map: TickMap,
     /// the minimum distance between two ticks in the list
-    pub tick_spacing: I24,
+    pub tick_spacing: I,
 }
 
-impl EphemeralTickMapDataProvider {
+impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
     pub async fn new<T, P>(
         pool: Address,
         provider: P,
-        tick_lower: Option<I24>,
-        tick_upper: Option<I24>,
+        tick_lower: Option<I>,
+        tick_upper: Option<I>,
         block_id: Option<BlockId>,
     ) -> Result<Self>
     where
         T: Transport + Clone,
         P: Provider<T>,
     {
-        let tick_lower = tick_lower.unwrap_or(MIN_TICK);
-        let tick_upper = tick_upper.unwrap_or(MAX_TICK);
+        let tick_lower = tick_lower.map(I::to_i24).unwrap_or(MIN_TICK);
+        let tick_upper = tick_upper.map(I::to_i24).unwrap_or(MAX_TICK);
         let ticks =
             get_populated_ticks_in_range(pool, tick_lower, tick_upper, provider, block_id).await?;
         unimplemented!()
     }
 }
 
-impl TickDataProvider for EphemeralTickMapDataProvider {
-    type Tick = Tick;
+impl<I: TickIndex> TickDataProvider for EphemeralTickMapDataProvider<I> {
+    type Index = I;
 
-    fn get_tick(&self, tick: i32) -> Result<&Tick, Error> {
+    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         unimplemented!()
     }
 
     fn next_initialized_tick_within_one_word(
         &self,
-        tick: i32,
+        tick: I,
         lte: bool,
-        tick_spacing: i32,
-    ) -> Result<(i32, bool), Error> {
+        tick_spacing: I,
+    ) -> Result<(I, bool), Error> {
         unimplemented!()
     }
 }
