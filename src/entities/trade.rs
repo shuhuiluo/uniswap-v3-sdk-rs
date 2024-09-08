@@ -669,13 +669,16 @@ where
         };
         let token_out = currency_out.wrapped();
         for pool in pools.iter() {
-            // pool irrelevant
-            if !pool.involves_token(&amount_in.currency) {
+            let current_token_out = if pool.token0.equals(&amount_in.currency) {
+                &pool.token1
+            } else if pool.token1.equals(&amount_in.currency) {
+                &pool.token0
+            } else {
+                // pool irrelevant
                 continue;
-            }
-            let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
+            };
             // we have arrived at the output token, so this is the final trade of one of the paths
-            if !amount_out.currency.is_native() && amount_out.currency.equals(token_out) {
+            if !current_token_out.is_native() && current_token_out.equals(token_out) {
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
                 let trade = Self::from_route(
@@ -698,6 +701,8 @@ where
                 // have not exceeded maxHops
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
+
+                let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
                 Self::best_trade_exact_in(
                     pools_excluding_this_pool,
                     currency_amount_in.clone(),
@@ -753,13 +758,19 @@ where
         };
         let token_in = currency_in.wrapped();
         for pool in pools.iter() {
-            // pool irrelevant
+            let current_token_in = if pool.token0.equals(&amount_out.currency) {
+                &pool.token1
+            } else if pool.token1.equals(&amount_out.currency) {
+                &pool.token0
+            } else {
+                // pool irrelevant
+                continue;
+            };
             if !pool.involves_token(&amount_out.currency) {
                 continue;
             }
-            let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;
             // we have arrived at the input token, so this is the first trade of one of the paths
-            if amount_in.currency.equals(token_in) {
+            if current_token_in.equals(token_in) {
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
                 let trade = Self::from_route(
@@ -782,6 +793,8 @@ where
                 // have not exceeded maxHops
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
+
+                let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;
                 Self::best_trade_exact_out(
                     pools_excluding_this_pool,
                     currency_in.clone(),
