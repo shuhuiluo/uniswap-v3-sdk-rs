@@ -9,7 +9,7 @@ use alloy::{
     providers::Provider,
     transports::Transport,
 };
-use alloy_primitives::{aliases::I24, Address, ChainId, U256};
+use alloy_primitives::{Address, ChainId, U256};
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
 use uniswap_lens::{
@@ -50,7 +50,7 @@ pub async fn get_position<T, P>(
     token_id: U256,
     provider: P,
     block_id: Option<BlockId>,
-) -> Result<Position<NoTickDataProvider>, Error>
+) -> Result<Position, Error>
 where
     T: Transport + Clone,
     P: Provider<T> + Clone,
@@ -84,10 +84,15 @@ where
         block_id,
     )
     .await?;
-    Ok(Position::new(pool, liquidity, tick_lower, tick_upper))
+    Ok(Position::new(
+        pool,
+        liquidity,
+        tick_lower.as_i32(),
+        tick_upper.as_i32(),
+    ))
 }
 
-impl Position<NoTickDataProvider> {
+impl Position {
     /// Get a [`Position`] struct from the token id in a single call by deploying an ephemeral
     /// contract via `eth_call`
     ///
@@ -134,8 +139,8 @@ impl Position<NoTickDataProvider> {
         Ok(Position::new(
             pool,
             position.liquidity,
-            position.tickLower,
-            position.tickUpper,
+            position.tickLower.as_i32(),
+            position.tickUpper.as_i32(),
         ))
     }
 }
@@ -316,11 +321,11 @@ where
 /// * `position`: Position info before rebalance.
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
-pub fn get_rebalanced_position<P: Clone>(
-    position: &mut Position<P>,
-    new_tick_lower: I24,
-    new_tick_upper: I24,
-) -> Result<Position<P>, Error> {
+pub fn get_rebalanced_position<TP: TickDataProvider>(
+    position: &mut Position<TP>,
+    new_tick_lower: TP::Index,
+    new_tick_upper: TP::Index,
+) -> Result<Position<TP>, Error> {
     let price = position.pool.token0_price();
     // Calculate the position equity denominated in token1 before rebalance.
     let equity_in_token1_before = price
@@ -328,7 +333,11 @@ pub fn get_rebalanced_position<P: Clone>(
         .add(&position.amount1_cached()?)?;
     let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
     let price = fraction_to_big_decimal(&price);
-    let token0_ratio = token0_price_to_ratio(price.clone(), new_tick_lower, new_tick_upper)?;
+    let token0_ratio = token0_price_to_ratio(
+        price.clone(),
+        new_tick_lower.to_i24(),
+        new_tick_upper.to_i24(),
+    )?;
     let amount1_after = (BigDecimal::from(1) - token0_ratio) * &equity_before;
     // token0's equity denominated in token1 divided by the price
     let amount0_after = (equity_before - &amount1_after) / price;
@@ -348,13 +357,12 @@ pub fn get_rebalanced_position<P: Clone>(
 ///
 /// * `position`: Current position
 /// * `new_price`: The new pool price
-pub fn get_position_at_price<T, P>(
-    position: Position<P>,
+pub fn get_position_at_price<TP>(
+    position: Position<TP>,
     new_price: BigDecimal,
-) -> Result<Position<P>, Error>
+) -> Result<Position<TP>, Error>
 where
-    T: TickTrait,
-    P: TickDataProvider<Tick = T>,
+    TP: TickDataProvider,
 {
     let sqrt_price_x96 = price_to_sqrt_ratio_x96(&new_price);
     let pool_at_new_price = Pool::new_with_tick_data_provider(
@@ -381,15 +389,14 @@ where
 /// * `new_price`: The new pool price
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
-pub fn get_rebalanced_position_at_price<T, P>(
-    position: Position<P>,
+pub fn get_rebalanced_position_at_price<TP>(
+    position: Position<TP>,
     new_price: BigDecimal,
-    new_tick_lower: I24,
-    new_tick_upper: I24,
-) -> Result<Position<P>, Error>
+    new_tick_lower: TP::Index,
+    new_tick_upper: TP::Index,
+) -> Result<Position<TP>, Error>
 where
-    T: TickTrait,
-    P: TickDataProvider<Tick = T>,
+    TP: TickDataProvider,
 {
     get_rebalanced_position(
         &mut get_position_at_price(position, new_price)?,
@@ -414,8 +421,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(position.liquidity, 34399999543676);
-        assert_eq!(position.tick_lower.as_i32(), 253320);
-        assert_eq!(position.tick_upper.as_i32(), 264600);
+        assert_eq!(position.tick_lower, 253320);
+        assert_eq!(position.tick_upper, 264600);
     }
 
     #[tokio::test]
@@ -476,8 +483,7 @@ mod tests {
             .unwrap();
         // rebalance to an out of range position
         let new_tick_lower = position.tick_upper;
-        let new_tick_upper =
-            new_tick_lower + I24::try_from(10).unwrap() * FeeAmount::MEDIUM.tick_spacing();
+        let new_tick_upper = new_tick_lower + 10 * FeeAmount::MEDIUM.tick_spacing().as_i32();
         let mut new_position =
             get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
         assert!(new_position.amount1().unwrap().quotient().is_zero());
@@ -511,8 +517,8 @@ mod tests {
             )
             .unwrap(),
             68488980_u128,
-            I24::try_from(-887220).unwrap(),
-            I24::try_from(52980).unwrap(),
+            -887220,
+            52980,
         );
         let mut position1 = get_position_at_price(position.clone(), small_price).unwrap();
         assert!(position1.amount0().unwrap().quotient().is_positive());
@@ -523,7 +529,7 @@ mod tests {
                 &tick_to_price(
                     position.pool.token0,
                     position.pool.token1,
-                    position.tick_upper,
+                    position.tick_upper.try_into().unwrap(),
                 )
                 .unwrap(),
             ),
@@ -531,12 +537,7 @@ mod tests {
         .unwrap();
         assert!(position2.amount0().unwrap().quotient().is_zero());
         assert!(position2.amount1().unwrap().quotient().is_positive());
-        let rebalanced_position = get_rebalanced_position(
-            &mut position1,
-            I24::try_from(46080).unwrap(),
-            I24::try_from(62160).unwrap(),
-        )
-        .unwrap();
+        let rebalanced_position = get_rebalanced_position(&mut position1, 46080, 62160).unwrap();
         assert!(rebalanced_position
             .amount0()
             .unwrap()
@@ -552,14 +553,13 @@ mod tests {
             .unwrap();
         // rebalance to an out of range position
         let new_tick_lower = position.tick_upper;
-        let new_tick_upper =
-            new_tick_lower + I24::try_from(10).unwrap() * FeeAmount::MEDIUM.tick_spacing();
+        let new_tick_upper = new_tick_lower + 10 * FeeAmount::MEDIUM.tick_spacing().as_i32();
         let position_rebalanced_at_current_price =
             get_rebalanced_position(&mut position, new_tick_lower, new_tick_upper).unwrap();
         let price_upper = tick_to_price(
             position.pool.token0.clone(),
             position.pool.token1.clone(),
-            position.tick_upper,
+            position.tick_upper.try_into().unwrap(),
         )
         .unwrap();
         let position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(

@@ -17,7 +17,7 @@ pub trait TickIndex:
     Copy
     + Debug
     + Default
-    + PartialOrd
+    + Ord
     + Add<Output = Self>
     + Div<Output = Self>
     + Mul<Output = Self>
@@ -39,22 +39,6 @@ pub trait TickIndex:
     fn from_i24(value: I24) -> Self;
 
     fn to_i24(self) -> I24;
-
-    fn max(self, other: Self) -> Self {
-        if self > other {
-            self
-        } else {
-            other
-        }
-    }
-
-    fn min(self, other: Self) -> Self {
-        if self < other {
-            self
-        } else {
-            other
-        }
-    }
 
     fn div_floor(self, other: Self) -> Self;
 }

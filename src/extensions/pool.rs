@@ -9,9 +9,8 @@ use alloy::{
     providers::Provider,
     transports::Transport,
 };
-use alloy_primitives::{aliases::I24, Address, ChainId, B256};
+use alloy_primitives::{Address, ChainId, B256};
 use anyhow::Result;
-use core::ops::Div;
 use uniswap_lens::prelude::{
     get_populated_ticks_in_range, ierc20metadata::IERC20Metadata,
     iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,
@@ -98,26 +97,30 @@ where
 }
 
 /// Normalizes the specified tick range.
-fn normalize_ticks(
-    tick_current: I24,
-    tick_spacing: I24,
-    tick_lower: I24,
-    tick_upper: I24,
-) -> (I24, I24, I24) {
+fn normalize_ticks<I: TickIndex>(
+    tick_current: I,
+    tick_spacing: I,
+    tick_lower: I,
+    tick_upper: I,
+) -> (I, I, I) {
     assert!(tick_lower <= tick_upper, "tickLower > tickUpper");
     // The current tick must be within the specified tick range.
     let tick_current_aligned = tick_current.div(tick_spacing) * tick_spacing;
-    let tick_lower = tick_lower.max(MIN_TICK).min(tick_current_aligned);
-    let tick_upper = tick_upper.min(MAX_TICK).max(tick_current_aligned);
+    let tick_lower = tick_lower
+        .max(I::from_i24(MIN_TICK))
+        .min(tick_current_aligned);
+    let tick_upper = tick_upper
+        .min(I::from_i24(MAX_TICK))
+        .max(tick_current_aligned);
     (tick_current_aligned, tick_lower, tick_upper)
 }
 
 /// Reconstructs the liquidity array from the tick array and the current liquidity.
-fn reconstruct_liquidity_array(
-    tick_array: Vec<(I24, i128)>,
-    tick_current_aligned: I24,
+fn reconstruct_liquidity_array<I: TickIndex>(
+    tick_array: Vec<(I, i128)>,
+    tick_current_aligned: I,
     current_liquidity: u128,
-) -> Result<Vec<(I24, u128)>, Error> {
+) -> Result<Vec<(I, u128)>, Error> {
     // Locate the tick in the populated ticks array with the current liquidity.
     let current_index = tick_array
         .iter()
@@ -126,7 +129,7 @@ fn reconstruct_liquidity_array(
         - 1;
     // Accumulate the liquidity from the current tick to the end of the populated ticks array.
     let mut cumulative_liquidity = current_liquidity;
-    let mut liquidity_array = vec![(I24::ZERO, 0); tick_array.len()];
+    let mut liquidity_array = vec![(I::zero(), 0); tick_array.len()];
     for (i, &(tick, liquidity_net)) in tick_array.iter().enumerate().skip(current_index + 1) {
         // added when tick is crossed from left to right
         cumulative_liquidity = add_delta(cumulative_liquidity, liquidity_net)?;
@@ -158,16 +161,17 @@ fn reconstruct_liquidity_array(
 /// ## Returns
 ///
 /// An array of ticks and corresponding cumulative liquidity.
-pub async fn get_liquidity_array_for_pool<M, T, P>(
-    pool: Pool<M>,
-    tick_lower: I24,
-    tick_upper: I24,
+pub async fn get_liquidity_array_for_pool<TP, T, P>(
+    pool: Pool<TP>,
+    tick_lower: TP::Index,
+    tick_upper: TP::Index,
     provider: P,
     block_id: Option<BlockId>,
     init_code_hash_manual_override: Option<B256>,
     factory_address_override: Option<Address>,
-) -> Result<Vec<(I24, u128)>, Error>
+) -> Result<Vec<(TP::Index, u128)>, Error>
 where
+    TP: TickDataProvider,
     T: Transport + Clone,
     P: Provider<T>,
 {
@@ -179,8 +183,8 @@ where
     );
     let ticks = get_populated_ticks_in_range(
         pool.address(init_code_hash_manual_override, factory_address_override),
-        tick_lower,
-        tick_upper,
+        tick_lower.to_i24(),
+        tick_upper.to_i24(),
         provider,
         block_id,
     )
@@ -189,7 +193,7 @@ where
     reconstruct_liquidity_array(
         ticks
             .into_iter()
-            .map(|tick| (tick.tick, tick.liquidityNet))
+            .map(|tick| (TP::Index::from_i24(tick.tick), tick.liquidityNet))
             .collect(),
         tick_current_aligned,
         pool.liquidity,
@@ -199,7 +203,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::PROVIDER;
+    use crate::tests::*;
     use alloy_primitives::address;
 
     async fn pool() -> Pool {
@@ -210,7 +214,7 @@ mod tests {
             address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
             FeeAmount::LOW,
             PROVIDER.clone(),
-            Some(BlockId::from(17000000)),
+            *BLOCK_ID,
         )
         .await
         .unwrap()
@@ -221,15 +225,15 @@ mod tests {
         let pool = pool().await;
         assert_eq!(pool.token0.symbol.unwrap(), "WBTC");
         assert_eq!(pool.token1.symbol.unwrap(), "WETH");
-        assert_eq!(pool.tick_current, I24::from_limbs([257344]));
+        assert_eq!(pool.tick_current, 257344);
         assert_eq!(pool.liquidity, 786352807736110014);
     }
 
     #[tokio::test]
     async fn test_get_liquidity_array_for_pool() {
         let pool = pool().await;
-        const DOUBLE_TICK: I24 = I24::from_limbs([6932]);
-        let tick_current_aligned = pool.tick_current.div(pool.tick_spacing()) * pool.tick_spacing();
+        const DOUBLE_TICK: i32 = 6932;
+        let tick_current_aligned = pool.tick_current / pool.tick_spacing() * pool.tick_spacing();
         let liquidity = pool.liquidity;
         let tick_lower = pool.tick_current - DOUBLE_TICK;
         let tick_upper = pool.tick_current + DOUBLE_TICK;
@@ -238,7 +242,7 @@ mod tests {
             tick_lower,
             tick_upper,
             PROVIDER.clone(),
-            Some(BlockId::from(17000000)),
+            *BLOCK_ID,
             None,
             None,
         )
