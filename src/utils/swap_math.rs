@@ -134,8 +134,31 @@ pub fn compute_swap_step<const BITS: usize, const LIMBS: usize>(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use alloy_primitives::U160;
+
     #[test]
-    const fn test_compute_swap_step() {
-        // TODO: Add more tests
+    fn test_compute_swap_step() {
+        let amount_specified_remaining = I256::from_raw(U256::from_limbs([
+            18446744073709540431,
+            18446744073709551615,
+            18446744073709551615,
+            18446744073709551615,
+        ]));
+        let (sqrt_price_next_x96, amount_in, amount_out, fee_amount) = compute_swap_step(
+            U160::from_limbs([7164297123421688246, 4074563739, 0]),
+            U160::from_limbs([7829751401545787782, 4282102344, 0]),
+            94868,
+            amount_specified_remaining,
+            FeeAmount::MEDIUM as u32,
+        )
+        .unwrap();
+        assert_eq!(
+            sqrt_price_next_x96,
+            U160::from_limbs([7829751401545787782, 4282102344, 0])
+        );
+        assert_eq!(amount_in, U256::from_limbs([4585, 0, 0, 0]));
+        assert_eq!(amount_out, U256::from_limbs([4846, 0, 0, 0]));
+        assert_eq!(fee_amount, U256::from_limbs([14, 0, 0, 0]));
     }
 }

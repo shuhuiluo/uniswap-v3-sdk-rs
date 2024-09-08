@@ -93,7 +93,7 @@ pub struct RemoveLiquidityOptions<Currency0: Currency, Currency1: Currency> {
     pub collect_options: CollectOptions<Currency0, Currency1>,
 }
 
-fn encode_create<P>(pool: &Pool<P>) -> Bytes {
+fn encode_create<TP: TickDataProvider>(pool: &Pool<TP>) -> Bytes {
     INonfungiblePositionManager::createAndInitializePoolIfNecessaryCall {
         token0: pool.token0.address(),
         token1: pool.token1.address(),
@@ -104,15 +104,15 @@ fn encode_create<P>(pool: &Pool<P>) -> Bytes {
     .into()
 }
 
-pub fn create_call_parameters<P>(pool: &Pool<P>) -> MethodParameters {
+pub fn create_call_parameters<TP: TickDataProvider>(pool: &Pool<TP>) -> MethodParameters {
     MethodParameters {
         calldata: encode_create(pool),
         value: U256::ZERO,
     }
 }
 
-pub fn add_call_parameters<P>(
-    position: &mut Position<P>,
+pub fn add_call_parameters<TP: TickDataProvider>(
+    position: &mut Position<TP>,
     options: AddLiquidityOptions,
 ) -> Result<MethodParameters, Error> {
     assert!(position.liquidity > 0, "ZERO_LIQUIDITY");
@@ -157,8 +157,8 @@ pub fn add_call_parameters<P>(
                         token0: position.pool.token0.address(),
                         token1: position.pool.token1.address(),
                         fee: position.pool.fee.into(),
-                        tickLower: position.tick_lower,
-                        tickUpper: position.tick_upper,
+                        tickLower: position.tick_lower.to_i24(),
+                        tickUpper: position.tick_upper.to_i24(),
                         amount0Desired: amount0_desired,
                         amount1Desired: amount1_desired,
                         amount0Min: amount0_min,
@@ -282,10 +282,15 @@ pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
 ///
 /// * `position`: The position to exit
 /// * `options`: Additional information necessary for generating the calldata
-pub fn remove_call_parameters<Currency0: Currency, Currency1: Currency, P>(
-    position: &Position<P>,
+pub fn remove_call_parameters<Currency0, Currency1, TP>(
+    position: &Position<TP>,
     options: RemoveLiquidityOptions<Currency0, Currency1>,
-) -> Result<MethodParameters, Error> {
+) -> Result<MethodParameters, Error>
+where
+    Currency0: Currency,
+    Currency1: Currency,
+    TP: TickDataProvider,
+{
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(6);
 
     let deadline = options.deadline;
@@ -304,8 +309,8 @@ pub fn remove_call_parameters<Currency0: Currency, Currency1: Currency, P>(
             .quotient()
             .to_u128()
             .unwrap(),
-        position.tick_lower,
-        position.tick_upper,
+        position.tick_lower.try_into().unwrap(),
+        position.tick_upper.try_into().unwrap(),
     );
     assert!(partial_position.liquidity > 0, "ZERO_LIQUIDITY");
 
@@ -444,8 +449,8 @@ mod tests {
         let mut position = Position::new(
             POOL_0_1.clone(),
             0,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         add_call_parameters(
             &mut position,
@@ -470,8 +475,8 @@ mod tests {
         let mut position = Position::new(
             POOL_0_1.clone(),
             1,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         add_call_parameters(
             &mut position,
@@ -495,8 +500,8 @@ mod tests {
         let mut position = Position::new(
             POOL_0_1.clone(),
             1,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         let MethodParameters { calldata, value } = add_call_parameters(
             &mut position,
@@ -525,8 +530,8 @@ mod tests {
         let mut position = Position::new(
             POOL_0_1.clone(),
             1,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         let MethodParameters { calldata, value } = add_call_parameters(
             &mut position,
@@ -554,8 +559,8 @@ mod tests {
         let mut position = Position::new(
             POOL_0_1.clone(),
             1,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         let MethodParameters { calldata, value } = add_call_parameters(
             &mut position,
@@ -584,8 +589,8 @@ mod tests {
         let mut position = Position::new(
             POOL_1_WETH.clone(),
             1,
-            -FeeAmount::MEDIUM.tick_spacing(),
-            FeeAmount::MEDIUM.tick_spacing(),
+            -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+            FeeAmount::MEDIUM.tick_spacing().as_i32(),
         );
         let MethodParameters { calldata, value } = add_call_parameters(
             &mut position,
@@ -641,8 +646,8 @@ mod tests {
             &Position::new(
                 POOL_0_1.clone(),
                 0,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -664,8 +669,8 @@ mod tests {
             &Position::new(
                 POOL_0_1.clone(),
                 1,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -687,8 +692,8 @@ mod tests {
             &Position::new(
                 POOL_0_1.clone(),
                 50,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -709,8 +714,8 @@ mod tests {
             &Position::new(
                 POOL_0_1.clone(),
                 100,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -736,8 +741,8 @@ mod tests {
             &Position::new(
                 POOL_0_1.clone(),
                 100,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -763,8 +768,8 @@ mod tests {
             &Position::new(
                 POOL_1_WETH.clone(),
                 100,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,
@@ -790,8 +795,8 @@ mod tests {
             &Position::new(
                 POOL_1_WETH.clone(),
                 100,
-                -FeeAmount::MEDIUM.tick_spacing(),
-                FeeAmount::MEDIUM.tick_spacing(),
+                -FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                FeeAmount::MEDIUM.tick_spacing().as_i32(),
             ),
             RemoveLiquidityOptions {
                 token_id: TOKEN_ID,

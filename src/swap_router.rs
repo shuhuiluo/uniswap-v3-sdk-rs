@@ -27,10 +27,15 @@ pub struct SwapOptions {
 ///
 /// * `trades`: trades to produce call parameters for
 /// * `options`: options for the call parameters
-pub fn swap_call_parameters<TInput: Currency, TOutput: Currency, P: Clone>(
-    trades: &mut [Trade<TInput, TOutput, P>],
+pub fn swap_call_parameters<TInput, TOutput, TP>(
+    trades: &mut [Trade<TInput, TOutput, TP>],
     options: SwapOptions,
-) -> Result<MethodParameters, Error> {
+) -> Result<MethodParameters, Error>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     let SwapOptions {
         slippage_tolerance,
         recipient,

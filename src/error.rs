@@ -5,7 +5,6 @@ use alloy::contract::Error as ContractError;
 use alloy_primitives::{aliases::I24, U160};
 use uniswap_sdk_core::error::Error as CoreError;
 
-#[allow(missing_copy_implementations)]
 #[cfg_attr(
     not(feature = "extensions"),
     derive(Clone, Copy, Debug, Hash, PartialEq, Eq)

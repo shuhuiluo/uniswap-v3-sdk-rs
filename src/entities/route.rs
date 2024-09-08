@@ -1,11 +1,16 @@
-use crate::prelude::{Error, Pool};
+use crate::prelude::{Error, *};
 use alloy_primitives::ChainId;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a list of pools through which a swap can occur
 #[derive(Clone, PartialEq, Debug)]
-pub struct Route<TInput: Currency, TOutput: Currency, P> {
-    pub pools: Vec<Pool<P>>,
+pub struct Route<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
+    pub pools: Vec<Pool<TP>>,
     /// The input token
     pub input: TInput,
     /// The output token
@@ -13,7 +18,12 @@ pub struct Route<TInput: Currency, TOutput: Currency, P> {
     _mid_price: Option<Price<TInput, TOutput>>,
 }
 
-impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
+impl<TInput, TOutput, TP> Route<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     /// Creates an instance of route.
     ///
     /// ## Arguments
@@ -22,7 +32,7 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
     /// * `input`: The input token
     /// * `output`: The output token
     #[inline]
-    pub fn new(pools: Vec<Pool<P>>, input: TInput, output: TOutput) -> Self {
+    pub fn new(pools: Vec<Pool<TP>>, input: TInput, output: TOutput) -> Self {
         assert!(!pools.is_empty(), "POOLS");
 
         let chain_id = pools[0].chain_id();
@@ -109,7 +119,7 @@ impl<TInput: Currency, TOutput: Currency, P> Route<TInput, TOutput, P> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{prelude::*, tests::*};
+    use crate::tests::*;
     use once_cell::sync::Lazy;
 
     mod path {
@@ -172,7 +182,7 @@ mod tests {
     mod mid_price {
         use super::*;
 
-        static POOL_0_1: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+        static POOL_0_1: Lazy<Pool> = Lazy::new(|| {
             Pool::new(
                 TOKEN0.clone(),
                 TOKEN1.clone(),
@@ -182,7 +192,7 @@ mod tests {
             )
             .unwrap()
         });
-        static POOL_1_2: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+        static POOL_1_2: Lazy<Pool> = Lazy::new(|| {
             Pool::new(
                 TOKEN1.clone(),
                 TOKEN2.clone(),
@@ -192,7 +202,7 @@ mod tests {
             )
             .unwrap()
         });
-        static POOL_0_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+        static POOL_0_WETH: Lazy<Pool> = Lazy::new(|| {
             Pool::new(
                 TOKEN0.clone(),
                 WETH.clone(),
@@ -202,7 +212,7 @@ mod tests {
             )
             .unwrap()
         });
-        static POOL_1_WETH: Lazy<Pool<NoTickDataProvider>> = Lazy::new(|| {
+        static POOL_1_WETH: Lazy<Pool> = Lazy::new(|| {
             Pool::new(
                 TOKEN1.clone(),
                 WETH.clone(),

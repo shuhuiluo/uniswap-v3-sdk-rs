@@ -31,11 +31,11 @@ pub struct WithdrawOptions {
 
 /// Represents a unique staking program.
 #[derive(Debug, Clone, PartialEq)]
-pub struct IncentiveKey<P> {
+pub struct IncentiveKey<TP: TickDataProvider> {
     /// The token rewarded for participating in the staking program.
     pub reward_token: Address,
     /// The pool that the staked positions must provide in.
-    pub pool: Pool<P>,
+    pub pool: Pool<TP>,
     /// The time when the incentive program begins.
     pub start_time: U256,
     /// The time that the incentive program ends.
@@ -44,7 +44,9 @@ pub struct IncentiveKey<P> {
     pub refundee: Address,
 }
 
-fn encode_incentive_key<P>(incentive_key: &IncentiveKey<P>) -> IUniswapV3Staker::IncentiveKey {
+fn encode_incentive_key<TP: TickDataProvider>(
+    incentive_key: &IncentiveKey<TP>,
+) -> IUniswapV3Staker::IncentiveKey {
     IUniswapV3Staker::IncentiveKey {
         rewardToken: incentive_key.reward_token,
         pool: incentive_key.pool.address(None, None),
@@ -64,7 +66,10 @@ fn encode_incentive_key<P>(incentive_key: &IncentiveKey<P>) -> IUniswapV3Staker:
 /// ## Returns
 ///
 /// The calldatas for 'unstakeToken' and 'claimReward'.
-fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [Bytes; 2] {
+fn encode_claim<TP: TickDataProvider>(
+    incentive_key: &IncentiveKey<TP>,
+    options: ClaimOptions,
+) -> [Bytes; 2] {
     [
         IUniswapV3Staker::unstakeTokenCall {
             key: encode_incentive_key(incentive_key),
@@ -92,8 +97,8 @@ fn encode_claim<P>(incentive_key: &IncentiveKey<P>, options: ClaimOptions) -> [B
 ///
 /// * `incentive_keys`: An array of IncentiveKeys that `tokenId` is staked in.
 /// * `options`: ClaimOptions to specify tokenId, recipient, and amount wanting to collect.
-pub fn collect_rewards<P>(
-    incentive_keys: &[IncentiveKey<P>],
+pub fn collect_rewards<TP: TickDataProvider>(
+    incentive_keys: &[IncentiveKey<TP>],
     options: ClaimOptions,
 ) -> MethodParameters {
     let mut calldatas = Vec::with_capacity(incentive_keys.len() * 3);
@@ -125,8 +130,8 @@ pub fn collect_rewards<P>(
 ///   (unique staking programs) that `options.tokenId` is staked in.
 /// * `withdraw_options`: Options for producing claim calldata and withdraw calldata. Can't withdraw
 ///   without unstaking all programs for `tokenId`.
-pub fn withdraw_token<P>(
-    incentive_keys: &[IncentiveKey<P>],
+pub fn withdraw_token<TP: TickDataProvider>(
+    incentive_keys: &[IncentiveKey<TP>],
     withdraw_options: FullWithdrawOptions,
 ) -> MethodParameters {
     let mut calldatas = Vec::with_capacity(incentive_keys.len() * 2 + 1);
@@ -151,7 +156,7 @@ pub fn withdraw_token<P>(
     }
 }
 
-pub fn encode_deposit<P>(incentive_keys: &[IncentiveKey<P>]) -> Bytes {
+pub fn encode_deposit<TP: TickDataProvider>(incentive_keys: &[IncentiveKey<TP>]) -> Bytes {
     if incentive_keys.len() == 1 {
         encode_incentive_key(&incentive_keys[0]).abi_encode()
     } else {

@@ -54,7 +54,7 @@ pub async fn get_pool<T, P>(
     fee: FeeAmount,
     provider: P,
     block_id: Option<BlockId>,
-) -> Result<Pool<NoTickDataProvider>, Error>
+) -> Result<Pool, Error>
 where
     T: Transport + Clone,
     P: Provider<T> + Clone,
@@ -202,7 +202,7 @@ mod tests {
     use crate::tests::PROVIDER;
     use alloy_primitives::address;
 
-    async fn pool() -> Pool<NoTickDataProvider> {
+    async fn pool() -> Pool {
         get_pool(
             1,
             FACTORY_ADDRESS,

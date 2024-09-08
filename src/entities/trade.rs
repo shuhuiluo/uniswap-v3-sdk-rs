@@ -9,10 +9,15 @@ use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 ///
 /// * `a`: The first trade to compare
 /// * `b`: The second trade to compare
-pub fn trade_comparator<TInput: Currency, TOutput: Currency, P: Clone>(
-    a: &Trade<TInput, TOutput, P>,
-    b: &Trade<TInput, TOutput, P>,
-) -> Ordering {
+pub fn trade_comparator<TInput, TOutput, TP>(
+    a: &Trade<TInput, TOutput, TP>,
+    b: &Trade<TInput, TOutput, TP>,
+) -> Ordering
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     // must have same input and output token for comparison
     assert!(
         a.input_currency().equals(b.input_currency()),
@@ -67,13 +72,23 @@ pub struct BestTradeOptions {
 
 /// Represents a swap through a route
 #[derive(Clone, PartialEq, Debug)]
-pub struct Swap<TInput: Currency, TOutput: Currency, P> {
-    pub route: Route<TInput, TOutput, P>,
+pub struct Swap<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
+    pub route: Route<TInput, TOutput, TP>,
     pub input_amount: CurrencyAmount<TInput>,
     pub output_amount: CurrencyAmount<TOutput>,
 }
 
-impl<TInput: Currency, TOutput: Currency, P> Swap<TInput, TOutput, P> {
+impl<TInput, TOutput, TP> Swap<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     /// Constructs a swap
     ///
     /// ## Arguments
@@ -83,7 +98,7 @@ impl<TInput: Currency, TOutput: Currency, P> Swap<TInput, TOutput, P> {
     /// * `output_amount`: The amount returned by the swap
     #[inline]
     pub const fn new(
-        route: Route<TInput, TOutput, P>,
+        route: Route<TInput, TOutput, TP>,
         input_amount: CurrencyAmount<TInput>,
         output_amount: CurrencyAmount<TOutput>,
     ) -> Self {
@@ -115,10 +130,15 @@ impl<TInput: Currency, TOutput: Currency, P> Swap<TInput, TOutput, P> {
 /// Does not account for slippage, i.e., changes in price environment that can occur between the
 /// time the trade is submitted and when it is executed.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Trade<TInput: Currency, TOutput: Currency, P> {
+pub struct Trade<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: TickDataProvider,
+{
     /// The swaps of the trade, i.e. which routes and how much is swapped in each that make up the
     /// trade.
-    pub swaps: Vec<Swap<TInput, TOutput, P>>,
+    pub swaps: Vec<Swap<TInput, TOutput, TP>>,
     /// The type of the trade, either exact in or exact out.
     pub trade_type: TradeType,
     /// The cached result of the input amount computation
@@ -131,11 +151,11 @@ pub struct Trade<TInput: Currency, TOutput: Currency, P> {
     _price_impact: Option<Percent>,
 }
 
-impl<TInput, TOutput, P> Trade<TInput, TOutput, P>
+impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
 where
     TInput: Currency,
     TOutput: Currency,
-    P: Clone,
+    TP: TickDataProvider,
 {
     /// Construct a trade by passing in the pre-computed property values
     ///
@@ -144,7 +164,7 @@ where
     /// * `swaps`: The routes through which the trade occurs
     /// * `trade_type`: The type of trade, exact input or exact output
     #[inline]
-    fn new(swaps: Vec<Swap<TInput, TOutput, P>>, trade_type: TradeType) -> Result<Self, Error> {
+    fn new(swaps: Vec<Swap<TInput, TOutput, TP>>, trade_type: TradeType) -> Result<Self, Error> {
         let input_currency = swaps[0].input_currency().wrapped();
         let output_currency = swaps[0].output_currency().wrapped();
         for Swap { route, .. } in &swaps {
@@ -182,7 +202,7 @@ where
     /// Useful when you have simulated the trade elsewhere and do not have any tick data
     #[inline]
     pub fn create_unchecked_trade(
-        route: Route<TInput, TOutput, P>,
+        route: Route<TInput, TOutput, TP>,
         input_amount: CurrencyAmount<TInput>,
         output_amount: CurrencyAmount<TOutput>,
         trade_type: TradeType,
@@ -197,7 +217,7 @@ where
     /// Useful when you have simulated the trade elsewhere and do not have any tick data
     #[inline]
     pub fn create_unchecked_trade_with_multiple_routes(
-        swaps: Vec<Swap<TInput, TOutput, P>>,
+        swaps: Vec<Swap<TInput, TOutput, TP>>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
         Self::new(swaps, trade_type)
@@ -205,7 +225,7 @@ where
 
     /// When the trade consists of just a single route, this returns the route of the trade.
     #[inline]
-    pub fn route(&self) -> &Route<TInput, TOutput, P> {
+    pub fn route(&self) -> &Route<TInput, TOutput, TP> {
         assert_eq!(self.swaps.len(), 1, "MULTIPLE_ROUTES");
         &self.swaps[0].route
     }
@@ -502,15 +522,7 @@ where
                 .quotient(),
         ))
     }
-}
 
-impl<TInput, TOutput, T, P> Trade<TInput, TOutput, P>
-where
-    TInput: Currency,
-    TOutput: Currency,
-    T: TickTrait,
-    P: TickDataProvider<Tick = T>,
-{
     /// Constructs an exact in trade with the given amount in and route
     ///
     /// ## Arguments
@@ -519,7 +531,7 @@ where
     /// * `amount_in`: The amount being passed in
     #[inline]
     pub fn exact_in(
-        route: Route<TInput, TOutput, P>,
+        route: Route<TInput, TOutput, TP>,
         amount_in: CurrencyAmount<Token>,
     ) -> Result<Self, Error> {
         Self::from_route(route, amount_in, TradeType::ExactInput)
@@ -533,7 +545,7 @@ where
     /// * `amount_out`: The amount returned by the trade
     #[inline]
     pub fn exact_out(
-        route: Route<TInput, TOutput, P>,
+        route: Route<TInput, TOutput, TP>,
         amount_out: CurrencyAmount<Token>,
     ) -> Result<Self, Error> {
         Self::from_route(route, amount_out, TradeType::ExactOutput)
@@ -548,7 +560,7 @@ where
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     #[inline]
     pub fn from_route(
-        route: Route<TInput, TOutput, P>,
+        route: Route<TInput, TOutput, TP>,
         amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
@@ -610,10 +622,10 @@ where
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     #[inline]
     pub fn from_routes(
-        routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, P>)>,
+        routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, TP>)>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
-        let mut populated_routes: Vec<Swap<TInput, TOutput, P>> = Vec::with_capacity(routes.len());
+        let mut populated_routes: Vec<Swap<TInput, TOutput, TP>> = Vec::with_capacity(routes.len());
         for (amount, route) in routes {
             let trade = Self::from_route(route, amount, trade_type)?;
             populated_routes.push(trade.swaps[0].clone());
@@ -636,11 +648,11 @@ where
     ///   parameter
     /// * `best_trades`: Used in recursion; the current list of best trades
     pub fn best_trade_exact_in(
-        pools: Vec<Pool<P>>,
+        pools: Vec<Pool<TP>>,
         currency_amount_in: CurrencyAmount<TInput>,
         currency_out: TOutput,
         best_trade_options: BestTradeOptions,
-        current_pools: Vec<Pool<P>>,
+        current_pools: Vec<Pool<TP>>,
         next_amount_in: Option<CurrencyAmount<Token>>,
         best_trades: &mut Vec<Self>,
     ) -> Result<&mut Vec<Self>, Error> {
@@ -720,11 +732,11 @@ where
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
     /// * `best_trades`: Used in recursion; the current list of best trades
     pub fn best_trade_exact_out(
-        pools: Vec<Pool<P>>,
+        pools: Vec<Pool<TP>>,
         currency_in: TInput,
         currency_amount_out: CurrencyAmount<TOutput>,
         best_trade_options: BestTradeOptions,
-        current_pools: Vec<Pool<P>>,
+        current_pools: Vec<Pool<TP>>,
         next_amount_out: Option<CurrencyAmount<Token>>,
         best_trades: &mut Vec<Self>,
     ) -> Result<&mut Vec<Self>, Error> {
@@ -808,6 +820,7 @@ mod tests {
             .sqrt()
             .to_u128()
             .unwrap();
+        let tick_spacing = FeeAmount::MEDIUM.tick_spacing();
         Pool::new_with_tick_data_provider(
             reserve0.meta.currency,
             reserve1.meta.currency,
@@ -817,17 +830,17 @@ mod tests {
             TickListDataProvider::new(
                 vec![
                     Tick::new(
-                        nearest_usable_tick(MIN_TICK, FeeAmount::MEDIUM.tick_spacing()).as_i32(),
+                        nearest_usable_tick(MIN_TICK, tick_spacing).as_i32(),
                         liquidity,
                         liquidity as i128,
                     ),
                     Tick::new(
-                        nearest_usable_tick(MAX_TICK, FeeAmount::MEDIUM.tick_spacing()).as_i32(),
+                        nearest_usable_tick(MAX_TICK, tick_spacing).as_i32(),
                         liquidity,
                         -(liquidity as i128),
                     ),
                 ],
-                FeeAmount::MEDIUM.tick_spacing().as_i32(),
+                tick_spacing.as_i32(),
             ),
         )
         .unwrap()
