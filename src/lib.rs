@@ -24,6 +24,7 @@
 //!     - [`ephemeral_tick_data_provider`](./src/extensions/ephemeral_tick_data_provider.rs) module for fetching ticks using
 //!       an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
 //!       in a single `eth_call`.
+
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![warn(
     missing_copy_implementations,
@@ -36,7 +37,6 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
-#![allow(unused_crate_dependencies)]
 
 extern crate alloc;
 
