@@ -13,6 +13,7 @@ pub struct Tick<I = i32> {
 }
 
 impl<I: TickIndex> Tick<I> {
+    #[inline]
     pub fn new(index: I, liquidity_gross: u128, liquidity_net: i128) -> Self {
         assert!(
             index >= I::from_i24(MIN_TICK) && index <= I::from_i24(MAX_TICK),
