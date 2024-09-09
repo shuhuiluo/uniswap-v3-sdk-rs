@@ -6,8 +6,7 @@
 A Rust SDK for building applications on top of Uniswap V3. Migration from the
 TypeScript [Uniswap/v3-sdk](https://github.com/Uniswap/v3-sdk).
 
-It is feature-complete with unit tests matching the TypeScript SDK. But error handling is not as graceful as one may
-expect. The error handling is still a work in progress.
+It is feature-complete with unit tests matching the TypeScript SDK.
 
 ## Features
 
@@ -45,7 +44,7 @@ expect. The error handling is still a work in progress.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "0.36.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "0.37.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
