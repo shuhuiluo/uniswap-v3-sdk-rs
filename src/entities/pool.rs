@@ -453,7 +453,7 @@ impl<TP: TickDataProvider> Pool<TP> {
                     state.liquidity = add_delta(state.liquidity, liquidity_net)?;
                 }
                 state.tick = if zero_for_one {
-                    step.tick_next - TP::Index::one()
+                    step.tick_next - TP::Index::ONE
                 } else {
                     step.tick_next
                 };
