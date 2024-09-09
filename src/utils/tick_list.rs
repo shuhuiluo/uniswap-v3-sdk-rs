@@ -29,7 +29,7 @@ pub trait TickList {
         lte: bool,
         tick_spacing: Self::Index,
     ) -> (Self::Index, bool) {
-        let compressed = tick.div_floor(tick_spacing);
+        let compressed = tick.compress(tick_spacing);
         if lte {
             let word_pos = compressed >> 8;
             let minimum = (word_pos << 8) * tick_spacing;
@@ -41,7 +41,7 @@ pub trait TickList {
             let next_initialized_tick = minimum.max(index);
             (next_initialized_tick, next_initialized_tick == index)
         } else {
-            let one = Self::Index::one();
+            let one = Self::Index::ONE;
             let word_pos = (compressed + one) >> 8;
             let maximum = (((word_pos + one) << 8) - one) * tick_spacing;
             if self.is_at_or_above_largest(tick) {
@@ -58,9 +58,9 @@ impl<I: TickIndex> TickList for [Tick<I>] {
     type Index = I;
 
     fn validate_list(&self, tick_spacing: I) {
-        assert!(tick_spacing > I::zero(), "TICK_SPACING_NONZERO");
+        assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
         assert!(
-            self.iter().all(|x| x.index % tick_spacing == I::zero()),
+            self.iter().all(|x| x.index % tick_spacing == I::ZERO),
             "TICK_SPACING"
         );
         for i in 1..self.len() {

@@ -1,5 +1,4 @@
-use super::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK};
-use alloy_primitives::aliases::I24;
+use crate::prelude::{TickIndex, MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK};
 use num_integer::Integer;
 
 /// Returns the closest tick that is nearest a given tick and usable for the given tick spacing
@@ -12,15 +11,14 @@ use num_integer::Integer;
 /// ## Returns
 ///
 /// The closest tick to the input tick that is usable for the given tick spacing
-// TODO: use [`TickIndex`]
-pub fn nearest_usable_tick(tick: I24, tick_spacing: I24) -> I24 {
-    let tick = tick.as_i32();
-    let tick_spacing = tick_spacing.as_i32();
+pub fn nearest_usable_tick<I: TickIndex>(tick: I, tick_spacing: I) -> I {
+    let tick = tick.try_into().unwrap();
+    let tick_spacing = tick_spacing.try_into().unwrap();
     assert!(tick_spacing > 0, "TICK_SPACING");
     assert!((MIN_TICK..=MAX_TICK).contains(&tick), "TICK_BOUND");
     let (quotient, remainder) = tick.div_mod_floor(&tick_spacing);
     let rounded = (quotient + (remainder + tick_spacing / 2) / tick_spacing) * tick_spacing;
-    I24::try_from(if rounded < MIN_TICK {
+    I::try_from(if rounded < MIN_TICK {
         rounded + tick_spacing
     } else if rounded > MAX_TICK {
         rounded - tick_spacing

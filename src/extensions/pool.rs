@@ -129,7 +129,7 @@ fn reconstruct_liquidity_array<I: TickIndex>(
         - 1;
     // Accumulate the liquidity from the current tick to the end of the populated ticks array.
     let mut cumulative_liquidity = current_liquidity;
-    let mut liquidity_array = vec![(I::zero(), 0); tick_array.len()];
+    let mut liquidity_array = vec![(I::ZERO, 0); tick_array.len()];
     for (i, &(tick, liquidity_net)) in tick_array.iter().enumerate().skip(current_index + 1) {
         // added when tick is crossed from left to right
         cumulative_liquidity = add_delta(cumulative_liquidity, liquidity_net)?;

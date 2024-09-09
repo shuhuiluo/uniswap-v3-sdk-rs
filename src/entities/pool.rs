@@ -276,6 +276,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit
     ///
     /// returns: The output amount and the pool with updated state
+    #[inline]
     pub fn get_output_amount(
         &self,
         input_amount: &CurrencyAmount<Token>,
@@ -319,6 +320,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///   this value after the swap
     ///
     /// returns: The input amount and the pool with updated state
+    #[inline]
     pub fn get_input_amount(
         &self,
         output_amount: &CurrencyAmount<Token>,
@@ -453,7 +455,7 @@ impl<TP: TickDataProvider> Pool<TP> {
                     state.liquidity = add_delta(state.liquidity, liquidity_net)?;
                 }
                 state.tick = if zero_for_one {
-                    step.tick_next - TP::Index::one()
+                    step.tick_next - TP::Index::ONE
                 } else {
                     step.tick_next
                 };
