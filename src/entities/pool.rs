@@ -286,11 +286,22 @@ impl<TP: TickDataProvider> Pool<TP> {
 
         let zero_for_one = input_amount.currency.equals(&self.token0);
 
-        let (output_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
+        let SwapState {
+            amount_specified_remaining,
+            amount_calculated: output_amount,
+            sqrt_price_x96,
+            liquidity,
+            ..
+        } = self._swap(
             zero_for_one,
             I256::from_big_int(input_amount.quotient()),
             sqrt_price_limit_x96,
         )?;
+
+        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
+            return Err(Error::InsufficientLiquidity);
+        }
+
         let output_token = if zero_for_one {
             self.token1.clone()
         } else {
@@ -302,7 +313,7 @@ impl<TP: TickDataProvider> Pool<TP> {
                 self.token0.clone(),
                 self.token1.clone(),
                 self.fee,
-                sqrt_ratio_x96,
+                sqrt_price_x96,
                 liquidity,
                 self.tick_data_provider.clone(),
             )?,
@@ -330,11 +341,22 @@ impl<TP: TickDataProvider> Pool<TP> {
 
         let zero_for_one = output_amount.currency.equals(&self.token1);
 
-        let (input_amount, sqrt_ratio_x96, liquidity, _) = self._swap(
+        let SwapState {
+            amount_specified_remaining,
+            amount_calculated: input_amount,
+            sqrt_price_x96,
+            liquidity,
+            ..
+        } = self._swap(
             zero_for_one,
             I256::from_big_int(-output_amount.quotient()),
             sqrt_price_limit_x96,
         )?;
+
+        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
+            return Err(Error::InsufficientLiquidity);
+        }
+
         let input_token = if zero_for_one {
             self.token0.clone()
         } else {
@@ -346,7 +368,7 @@ impl<TP: TickDataProvider> Pool<TP> {
                 self.token0.clone(),
                 self.token1.clone(),
                 self.fee,
-                sqrt_ratio_x96,
+                sqrt_price_x96,
                 liquidity,
                 self.tick_data_provider.clone(),
             )?,
@@ -358,7 +380,7 @@ impl<TP: TickDataProvider> Pool<TP> {
         zero_for_one: bool,
         amount_specified: I256,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(I256, U160, u128, TP::Index), Error> {
+    ) -> Result<SwapState<TP::Index>, Error> {
         let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
             if zero_for_one {
                 MIN_SQRT_RATIO + ONE
@@ -466,12 +488,7 @@ impl<TP: TickDataProvider> Pool<TP> {
             }
         }
 
-        Ok((
-            state.amount_calculated,
-            state.sqrt_price_x96,
-            state.liquidity,
-            state.tick,
-        ))
+        Ok(state)
     }
 }
 

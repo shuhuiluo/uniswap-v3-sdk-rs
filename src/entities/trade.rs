@@ -669,16 +669,17 @@ where
         };
         let token_out = currency_out.wrapped();
         for pool in pools.iter() {
-            let current_token_out = if pool.token0.equals(&amount_in.currency) {
-                &pool.token1
-            } else if pool.token1.equals(&amount_in.currency) {
-                &pool.token0
-            } else {
-                // pool irrelevant
+            // pool irrelevant
+            if !pool.involves_token(&amount_in.currency) {
                 continue;
+            }
+            let amount_out = match pool.get_output_amount(&amount_in, None) {
+                Ok((amount_out, _)) => amount_out,
+                Err(Error::InsufficientLiquidity) => continue,
+                Err(e) => return Err(e),
             };
             // we have arrived at the output token, so this is the final trade of one of the paths
-            if !current_token_out.is_native() && current_token_out.equals(token_out) {
+            if !amount_out.currency.is_native() && amount_out.currency.equals(token_out) {
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
                 let trade = Self::from_route(
@@ -701,8 +702,6 @@ where
                 // have not exceeded maxHops
                 let mut next_pools = current_pools.clone();
                 next_pools.push(pool.clone());
-
-                let (amount_out, _) = pool.get_output_amount(&amount_in, None)?;
                 Self::best_trade_exact_in(
                     pools_excluding_this_pool,
                     currency_amount_in.clone(),
@@ -758,19 +757,17 @@ where
         };
         let token_in = currency_in.wrapped();
         for pool in pools.iter() {
-            let current_token_in = if pool.token0.equals(&amount_out.currency) {
-                &pool.token1
-            } else if pool.token1.equals(&amount_out.currency) {
-                &pool.token0
-            } else {
-                // pool irrelevant
-                continue;
-            };
+            // pool irrelevant
             if !pool.involves_token(&amount_out.currency) {
                 continue;
             }
+            let amount_in = match pool.get_input_amount(&amount_out, None) {
+                Ok((amount_in, _)) => amount_in,
+                Err(Error::InsufficientLiquidity) => continue,
+                Err(e) => return Err(e),
+            };
             // we have arrived at the input token, so this is the first trade of one of the paths
-            if current_token_in.equals(token_in) {
+            if amount_in.currency.equals(token_in) {
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
                 let trade = Self::from_route(
@@ -793,8 +790,6 @@ where
                 // have not exceeded maxHops
                 let mut next_pools = vec![pool.clone()];
                 next_pools.extend(current_pools.clone());
-
-                let (amount_in, _) = pool.get_input_amount(&amount_out, None)?;
                 Self::best_trade_exact_out(
                     pools_excluding_this_pool,
                     currency_in.clone(),
@@ -2272,13 +2267,12 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
         fn insufficient_liquidity() {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
                 TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 1200).unwrap(),
+                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 120000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2289,13 +2283,12 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
         fn insufficient_liquidity_in_one_pool_but_not_the_other() {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
                 TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 1050).unwrap(),
+                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 105000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
