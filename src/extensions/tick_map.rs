@@ -17,6 +17,7 @@ pub trait TickMapTrait {
     type Tick;
 
     #[inline]
+    #[must_use]
     fn position(tick: i32) -> (i16, u8) {
         ((tick >> 8) as i16, (tick & 0xff) as u8)
     }

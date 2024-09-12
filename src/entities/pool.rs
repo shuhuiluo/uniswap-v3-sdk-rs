@@ -131,6 +131,7 @@ impl Pool {
     /// assert_eq!(result, address!("6c6Bc977E13Df9b0de53b251522280BB72383700"));
     /// ```
     #[inline]
+    #[must_use]
     pub fn get_address(
         token_a: &Token,
         token_b: &Token,

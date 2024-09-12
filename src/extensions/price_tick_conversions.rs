@@ -247,6 +247,7 @@ where
 /// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
 /// ```
 #[inline]
+#[must_use]
 pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
     assert!(!price.is_negative(), "Invalid price: must be non-negative");
     let price_x192 = price * Q192.to_big_decimal();

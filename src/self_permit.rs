@@ -25,6 +25,7 @@ pub enum PermitOptions {
 
 impl StandardPermitArguments {
     #[inline]
+    #[must_use]
     pub fn new(r: U256, s: U256, v: u64, amount: U256, deadline: U256) -> Self {
         Self {
             signature: Signature::from_rs_and_parity(r, s, v).unwrap(),
@@ -36,6 +37,7 @@ impl StandardPermitArguments {
 
 impl AllowedPermitArguments {
     #[inline]
+    #[must_use]
     pub fn new(r: U256, s: U256, v: u64, nonce: U256, expiry: U256) -> Self {
         Self {
             signature: Signature::from_rs_and_parity(r, s, v).unwrap(),
@@ -46,6 +48,7 @@ impl AllowedPermitArguments {
 }
 
 #[inline]
+#[must_use]
 pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
     match options {
         PermitOptions::Standard(args) => ISelfPermit::selfPermitCall {

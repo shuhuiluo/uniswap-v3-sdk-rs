@@ -23,6 +23,7 @@ pub enum FeeAmount {
 impl FeeAmount {
     /// The default factory tick spacings by fee amount.
     #[inline]
+    #[must_use]
     pub const fn tick_spacing(&self) -> I24 {
         match self {
             Self::LOWEST => I24::ONE,

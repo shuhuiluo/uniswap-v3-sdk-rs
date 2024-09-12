@@ -17,6 +17,7 @@ fn encode_fee_bips(fee: Percent) -> U256 {
 }
 
 #[inline]
+#[must_use]
 pub fn encode_unwrap_weth9(
     amount_minimum: U256,
     recipient: Address,
@@ -41,6 +42,7 @@ pub fn encode_unwrap_weth9(
 }
 
 #[inline]
+#[must_use]
 pub fn encode_sweep_token(
     token: Address,
     amount_minimum: U256,
@@ -68,6 +70,7 @@ pub fn encode_sweep_token(
 }
 
 #[inline]
+#[must_use]
 pub fn encode_refund_eth() -> Bytes {
     IPeripheryPaymentsWithFee::refundETHCall {}
         .abi_encode()

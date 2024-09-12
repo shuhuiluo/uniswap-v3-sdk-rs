@@ -3,6 +3,7 @@ use alloy_primitives::Uint;
 
 /// Computes the amount of fees owed to a position
 #[inline]
+#[must_use]
 pub fn get_tokens_owed<const BITS: usize, const LIMBS: usize>(
     fee_growth_inside_0_last_x128: Uint<BITS, LIMBS>,
     fee_growth_inside_1_last_x128: Uint<BITS, LIMBS>,
