@@ -290,14 +290,7 @@ where
     pub fn execution_price(&self) -> Result<Price<TInput, TOutput>, Error> {
         let input_amount = self.input_amount()?;
         let output_amount = self.output_amount()?;
-        let denominator = input_amount.quotient();
-        let numerator = output_amount.quotient();
-        Ok(Price::new(
-            input_amount.meta.currency,
-            output_amount.meta.currency,
-            denominator,
-            numerator,
-        ))
+        Ok(Price::from_currency_amounts(input_amount, output_amount))
     }
 
     /// The price expressed in terms of output amount/input amount.
@@ -308,14 +301,7 @@ where
         }
         let input_amount = self.input_amount_cached()?;
         let output_amount = self.output_amount_cached()?;
-        let denominator = input_amount.quotient();
-        let numerator = output_amount.quotient();
-        let execution_price = Price::new(
-            input_amount.meta.currency,
-            output_amount.meta.currency,
-            denominator,
-            numerator,
-        );
+        let execution_price = Price::from_currency_amounts(input_amount, output_amount);
         self._execution_price = Some(execution_price.clone());
         Ok(execution_price)
     }
@@ -392,10 +378,8 @@ where
         if self.trade_type == TradeType::ExactOutput {
             return Ok(output_amount);
         }
-        let slippage_adjusted_amount_out = ((Percent::new(1, 1) + slippage_tolerance).invert()
-            * Percent::new(output_amount.quotient(), 1))
-        .quotient();
-        CurrencyAmount::from_raw_amount(output_amount.meta.currency, slippage_adjusted_amount_out)
+        output_amount
+            .multiply(&((Percent::new(1, 1) + slippage_tolerance).invert()))
             .map_err(|e| e.into())
     }
 
@@ -421,10 +405,8 @@ where
         if self.trade_type == TradeType::ExactOutput {
             return Ok(output_amount);
         }
-        let slippage_adjusted_amount_out = ((Percent::new(1, 1) + slippage_tolerance).invert()
-            * Percent::new(output_amount.quotient(), 1))
-        .quotient();
-        CurrencyAmount::from_raw_amount(output_amount.meta.currency, slippage_adjusted_amount_out)
+        output_amount
+            .multiply(&((Percent::new(1, 1) + slippage_tolerance).invert()))
             .map_err(|e| e.into())
     }
 
@@ -449,10 +431,8 @@ where
         if self.trade_type == TradeType::ExactInput {
             return Ok(amount_in);
         }
-        let slippage_adjusted_amount_in = ((Percent::new(1, 1) + slippage_tolerance)
-            * Percent::new(amount_in.quotient(), 1))
-        .quotient();
-        CurrencyAmount::from_raw_amount(amount_in.meta.currency, slippage_adjusted_amount_in)
+        amount_in
+            .multiply(&(Percent::new(1, 1) + slippage_tolerance))
             .map_err(|e| e.into())
     }
 
@@ -477,14 +457,12 @@ where
         if self.trade_type == TradeType::ExactInput {
             return Ok(amount_in);
         }
-        let slippage_adjusted_amount_in = ((Percent::new(1, 1) + slippage_tolerance)
-            * Percent::new(amount_in.quotient(), 1))
-        .quotient();
-        CurrencyAmount::from_raw_amount(amount_in.meta.currency, slippage_adjusted_amount_in)
+        amount_in
+            .multiply(&(Percent::new(1, 1) + slippage_tolerance))
             .map_err(|e| e.into())
     }
 
-    /// Return ution price after accounting for slippage tolerance
+    /// Return the execution price after accounting for slippage tolerance
     ///
     /// ## Arguments
     ///
@@ -494,17 +472,13 @@ where
         &self,
         slippage_tolerance: Percent,
     ) -> Result<Price<TInput, TOutput>, Error> {
-        Ok(Price::new(
-            self.input_currency().clone(),
-            self.output_currency().clone(),
-            self.maximum_amount_in(slippage_tolerance.clone(), None)?
-                .quotient(),
-            self.minimum_amount_out(slippage_tolerance, None)?
-                .quotient(),
+        Ok(Price::from_currency_amounts(
+            self.maximum_amount_in(slippage_tolerance.clone(), None)?,
+            self.minimum_amount_out(slippage_tolerance, None)?,
         ))
     }
 
-    /// Return ution price after accounting for slippage tolerance
+    /// Return the execution price after accounting for slippage tolerance
     ///
     /// ## Arguments
     ///
@@ -514,13 +488,9 @@ where
         &mut self,
         slippage_tolerance: Percent,
     ) -> Result<Price<TInput, TOutput>, Error> {
-        Ok(Price::new(
-            self.input_currency().clone(),
-            self.output_currency().clone(),
-            self.maximum_amount_in_cached(slippage_tolerance.clone(), None)?
-                .quotient(),
-            self.minimum_amount_out_cached(slippage_tolerance, None)?
-                .quotient(),
+        Ok(Price::from_currency_amounts(
+            self.maximum_amount_in_cached(slippage_tolerance.clone(), None)?,
+            self.minimum_amount_out_cached(slippage_tolerance, None)?,
         ))
     }
 
@@ -1374,7 +1344,7 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 65)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 10500, 6900)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
@@ -1391,7 +1361,7 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 65)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 10500, 6900)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
@@ -1474,7 +1444,7 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 163, 100)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 16380, 10000)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
@@ -1491,7 +1461,7 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 163, 100)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 16380, 10000)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
@@ -2035,7 +2005,7 @@ mod tests {
                 );
                 assert_eq!(
                     trade.maximum_amount_in(Percent::new(5, 100), None).unwrap(),
-                    CurrencyAmount::from_raw_amount(TOKEN0.clone(), 16262).unwrap()
+                    CurrencyAmount::from_fractional_amount(TOKEN0.clone(), 1626240, 100).unwrap()
                 );
                 assert_eq!(
                     trade
@@ -2098,13 +2068,13 @@ mod tests {
                     trade
                         .minimum_amount_out(Percent::new(5, 100), None)
                         .unwrap(),
-                    CurrencyAmount::from_raw_amount(TOKEN2.clone(), 6670).unwrap()
+                    CurrencyAmount::from_fractional_amount(TOKEN2.clone(), 700400, 105).unwrap()
                 );
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(200, 100), None)
                         .unwrap(),
-                    CurrencyAmount::from_raw_amount(TOKEN2.clone(), 2334).unwrap()
+                    CurrencyAmount::from_fractional_amount(TOKEN2.clone(), 700400, 300).unwrap()
                 );
             }
         }
