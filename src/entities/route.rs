@@ -49,7 +49,7 @@ where
         );
 
         let mut current_input_token = wrapped_input;
-        for pool in pools.iter() {
+        for pool in &pools {
             current_input_token = if current_input_token.equals(&pool.token0) {
                 &pool.token1
             } else if current_input_token.equals(&pool.token1) {
@@ -93,7 +93,7 @@ where
     #[inline]
     pub fn mid_price(&self) -> Result<Price<TInput, TOutput>, Error> {
         let mut price = self.pools[0].price_of(self.input.wrapped())?;
-        for pool in self.pools[1..].iter() {
+        for pool in &self.pools[1..] {
             price = price.multiply(&pool.price_of(&price.quote_currency)?)?;
         }
         Ok(Price::new(
@@ -136,13 +136,13 @@ mod tests {
         }
 
         #[test]
-        #[should_panic]
+        #[should_panic(expected = "INPUT")]
         fn fails_if_the_input_is_not_in_the_first_pool() {
             Route::new(vec![POOL_0_1.clone()], WETH.clone(), TOKEN1.clone());
         }
 
         #[test]
-        #[should_panic]
+        #[should_panic(expected = "OUTPUT")]
         fn fails_if_output_is_not_in_the_last_pool() {
             Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), WETH.clone());
         }

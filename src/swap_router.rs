@@ -27,6 +27,7 @@ pub struct SwapOptions {
 ///
 /// * `trades`: trades to produce call parameters for
 /// * `options`: options for the call parameters
+#[inline]
 pub fn swap_call_parameters<TInput, TOutput, TP>(
     trades: &mut [Trade<TInput, TOutput, TP>],
     options: SwapOptions,
@@ -79,7 +80,7 @@ where
     let mut total_amount_out = BigInt::zero();
     for trade in trades.iter_mut() {
         total_amount_out += trade
-            .minimum_amount_out(slippage_tolerance.clone(), None)?
+            .minimum_amount_out_cached(slippage_tolerance.clone(), None)?
             .quotient();
     }
     let total_amount_out = U256::from_big_int(total_amount_out);
@@ -93,17 +94,17 @@ where
     if input_is_native {
         for trade in trades.iter_mut() {
             total_value += trade
-                .maximum_amount_in(slippage_tolerance.clone(), None)?
+                .maximum_amount_in_cached(slippage_tolerance.clone(), None)?
                 .quotient();
         }
     }
 
-    for trade in trades.iter_mut() {
+    for trade in trades.iter() {
         for Swap {
             route,
             input_amount,
             output_amount,
-        } in trade.swaps.clone().iter_mut()
+        } in &trade.swaps
         {
             let amount_in = U256::from_big_int(
                 trade

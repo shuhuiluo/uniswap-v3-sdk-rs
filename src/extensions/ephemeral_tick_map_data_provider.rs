@@ -21,6 +21,7 @@ pub struct EphemeralTickMapDataProvider<I = I24> {
 }
 
 impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
+    #[inline]
     pub async fn new<T, P>(
         pool: Address,
         provider: P,
@@ -32,8 +33,8 @@ impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
         T: Transport + Clone,
         P: Provider<T>,
     {
-        let tick_lower = tick_lower.map(I::to_i24).unwrap_or(MIN_TICK);
-        let tick_upper = tick_upper.map(I::to_i24).unwrap_or(MAX_TICK);
+        let tick_lower = tick_lower.map_or(MIN_TICK, I::to_i24);
+        let tick_upper = tick_upper.map_or(MAX_TICK, I::to_i24);
         let ticks =
             get_populated_ticks_in_range(pool, tick_lower, tick_upper, provider, block_id).await?;
         unimplemented!()
@@ -43,10 +44,12 @@ impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
 impl<I: TickIndex> TickDataProvider for EphemeralTickMapDataProvider<I> {
     type Index = I;
 
+    #[inline]
     fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         unimplemented!()
     }
 
+    #[inline]
     fn next_initialized_tick_within_one_word(
         &self,
         tick: I,

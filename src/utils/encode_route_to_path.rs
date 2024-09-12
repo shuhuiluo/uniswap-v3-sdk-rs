@@ -46,7 +46,7 @@ where
         path.extend(route.input.address().abi_encode_packed());
     } else {
         let mut input_token = route.input.wrapped();
-        for pool in route.pools.iter() {
+        for pool in &route.pools {
             let (output_token, leg) = encode_leg(pool, input_token);
             input_token = output_token;
             path.extend(leg);

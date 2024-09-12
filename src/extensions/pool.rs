@@ -17,6 +17,7 @@ use uniswap_lens::prelude::{
 };
 use uniswap_sdk_core::{prelude::Token, token};
 
+#[inline]
 pub fn get_pool_contract<T, P>(
     factory: Address,
     token_a: Address,
@@ -45,6 +46,7 @@ where
 /// * `fee`: Fee tier of the pool
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query.
+#[inline]
 pub async fn get_pool<T, P>(
     chain_id: ChainId,
     factory: Address,
@@ -72,9 +74,10 @@ where
     let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
     let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
     let sqrt_price_x96 = slot_0.sqrtPriceX96;
-    if sqrt_price_x96.is_zero() {
-        panic!("Pool has been created but not yet initialized");
-    }
+    assert!(
+        !sqrt_price_x96.is_zero(),
+        "Pool has been created but not yet initialized"
+    );
     Pool::new(
         token!(
             chain_id,
@@ -97,6 +100,7 @@ where
 }
 
 /// Normalizes the specified tick range.
+#[inline]
 fn normalize_ticks<I: TickIndex>(
     tick_current: I,
     tick_spacing: I,
@@ -116,6 +120,8 @@ fn normalize_ticks<I: TickIndex>(
 }
 
 /// Reconstructs the liquidity array from the tick array and the current liquidity.
+#[inline]
+#[allow(clippy::needless_pass_by_value)]
 fn reconstruct_liquidity_array<I: TickIndex>(
     tick_array: Vec<(I, i128)>,
     tick_current_aligned: I,
@@ -161,6 +167,7 @@ fn reconstruct_liquidity_array<I: TickIndex>(
 /// ## Returns
 ///
 /// An array of ticks and corresponding cumulative liquidity.
+#[inline]
 pub async fn get_liquidity_array_for_pool<TP, T, P>(
     pool: Pool<TP>,
     tick_lower: TP::Index,

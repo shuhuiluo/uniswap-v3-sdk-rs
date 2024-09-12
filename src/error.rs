@@ -68,6 +68,7 @@ pub enum Error {
 }
 
 impl From<CoreError> for Error {
+    #[inline]
     fn from(error: CoreError) -> Self {
         Error::Core(error)
     }
@@ -75,6 +76,7 @@ impl From<CoreError> for Error {
 
 #[cfg(feature = "extensions")]
 impl From<ContractError> for Error {
+    #[inline]
     fn from(error: ContractError) -> Self {
         Error::ContractError(error)
     }

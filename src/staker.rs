@@ -44,6 +44,7 @@ pub struct IncentiveKey<TP: TickDataProvider> {
     pub refundee: Address,
 }
 
+#[inline]
 fn encode_incentive_key<TP: TickDataProvider>(
     incentive_key: &IncentiveKey<TP>,
 ) -> IUniswapV3Staker::IncentiveKey {
@@ -66,6 +67,7 @@ fn encode_incentive_key<TP: TickDataProvider>(
 /// ## Returns
 ///
 /// The calldatas for 'unstakeToken' and 'claimReward'.
+#[inline]
 fn encode_claim<TP: TickDataProvider>(
     incentive_key: &IncentiveKey<TP>,
     options: ClaimOptions,
@@ -97,6 +99,7 @@ fn encode_claim<TP: TickDataProvider>(
 ///
 /// * `incentive_keys`: An array of IncentiveKeys that `tokenId` is staked in.
 /// * `options`: ClaimOptions to specify tokenId, recipient, and amount wanting to collect.
+#[inline]
 pub fn collect_rewards<TP: TickDataProvider>(
     incentive_keys: &[IncentiveKey<TP>],
     options: ClaimOptions,
@@ -130,6 +133,7 @@ pub fn collect_rewards<TP: TickDataProvider>(
 ///   (unique staking programs) that `options.tokenId` is staked in.
 /// * `withdraw_options`: Options for producing claim calldata and withdraw calldata. Can't withdraw
 ///   without unstaking all programs for `tokenId`.
+#[inline]
 pub fn withdraw_token<TP: TickDataProvider>(
     incentive_keys: &[IncentiveKey<TP>],
     withdraw_options: FullWithdrawOptions,
@@ -156,6 +160,7 @@ pub fn withdraw_token<TP: TickDataProvider>(
     }
 }
 
+#[inline]
 pub fn encode_deposit<TP: TickDataProvider>(incentive_keys: &[IncentiveKey<TP>]) -> Bytes {
     if incentive_keys.len() == 1 {
         encode_incentive_key(&incentive_keys[0]).abi_encode()

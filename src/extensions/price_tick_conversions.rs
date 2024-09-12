@@ -6,6 +6,7 @@ use crate::prelude::{Error, *};
 use alloc::format;
 use alloy_primitives::{aliases::I24, U160};
 use anyhow::{bail, Result};
+use num_traits::Signed;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use uniswap_sdk_core::prelude::*;
@@ -44,6 +45,7 @@ pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
 /// )
 /// .unwrap();
 /// ```
+#[inline]
 pub fn parse_price<TBase, TQuote>(
     base_token: TBase,
     quote_token: TQuote,
@@ -100,6 +102,7 @@ where
 ///     min_price
 /// );
 /// ```
+#[inline]
 pub fn sqrt_ratio_x96_to_price(
     sqrt_ratio_x96: U160,
     base_token: Token,
@@ -116,6 +119,7 @@ pub fn sqrt_ratio_x96_to_price(
 
 /// Same as [`price_to_closest_tick`] but returns [`MIN_TICK`] or [`MAX_TICK`] if the price is
 /// outside Uniswap's range.
+#[inline]
 pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<I24, Error> {
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     if price.as_fraction() < *MIN_PRICE {
@@ -174,6 +178,7 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<I24, Er
 ///     nearest_usable_tick(MAX_TICK, fee.tick_spacing())
 /// );
 /// ```
+#[inline]
 pub fn price_to_closest_usable_tick(
     price: &Price<Token, Token>,
     fee: FeeAmount,
@@ -206,12 +211,14 @@ pub fn price_to_closest_usable_tick(
 ///     1.0001f64.pow(100i32).to_f32().unwrap()
 /// );
 /// ```
+#[inline]
 pub fn tick_to_big_price(tick: I24) -> Result<BigDecimal, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
     Ok(BigDecimal::from(sqrt_ratio_x96.to_big_int().pow(2)) / Q192.to_big_decimal())
 }
 
 /// Convert a [`FractionBase`] object to a [`BigDecimal`].
+#[inline]
 pub fn fraction_to_big_decimal<M, F>(price: &F) -> BigDecimal
 where
     M: Clone,
@@ -239,10 +246,10 @@ where
 /// let price: BigDecimal = tick_to_big_price(MAX_TICK).unwrap();
 /// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
 /// ```
+#[inline]
+#[must_use]
 pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
-    if price < &BigDecimal::zero() {
-        panic!("Invalid price: must be non-negative");
-    }
+    assert!(!price.is_negative(), "Invalid price: must be non-negative");
     let price_x192 = price * Q192.to_big_decimal();
     let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
     if sqrt_ratio_x96 < MIN_SQRT_RATIO.to_big_int() {
@@ -268,18 +275,21 @@ pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
 ///
 /// The price of token0 denominated in token1 for the specified tick range and token0 value
 /// proportion.
+#[inline]
 pub fn token0_ratio_to_price(
     token0_ratio: BigDecimal,
     tick_lower: I24,
     tick_upper: I24,
 ) -> Result<BigDecimal, Error> {
     let one = BigDecimal::from(1);
-    if tick_upper <= tick_lower {
-        panic!("Invalid tick range: tickUpper must be greater than tickLower");
-    }
-    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
-    }
+    assert!(
+        tick_upper > tick_lower,
+        "Invalid tick range: tickUpper must be greater than tickLower"
+    );
+    assert!(
+        !(token0_ratio.is_negative() || token0_ratio > one),
+        "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
+    );
     if token0_ratio.is_zero() {
         return tick_to_big_price(tick_upper);
     }
@@ -312,6 +322,7 @@ pub fn token0_ratio_to_price(
 ///
 /// The proportion of the position value that is held in token0, as a [`BigDecimal`] between 0 and
 /// 1, inclusive.
+#[inline]
 pub fn token0_price_to_ratio(
     price: BigDecimal,
     tick_lower: I24,
@@ -330,7 +341,7 @@ pub fn token0_price_to_ratio(
     else if tick >= tick_upper {
         Ok(BigDecimal::zero())
     } else {
-        let liquidity = 2u128 << 96;
+        let liquidity = 2_u128 << 96;
         let amount0 = get_amount_0_delta(
             sqrt_price_x96,
             get_sqrt_ratio_at_tick(tick_upper)?,
@@ -384,6 +395,7 @@ pub fn token0_price_to_ratio(
 /// let ratio = &value0 / (&value0 + amount1);
 /// assert!((ratio - token0_ratio).abs() < "0.001".parse::<BigDecimal>().unwrap());
 /// ```
+#[inline]
 pub fn tick_range_from_width_and_ratio(
     width: I24,
     tick_current: I24,
@@ -391,9 +403,10 @@ pub fn tick_range_from_width_and_ratio(
 ) -> Result<(I24, I24), Error> {
     let one = BigDecimal::from(1);
     let two = BigDecimal::from(2);
-    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
-    }
+    assert!(
+        !(token0_ratio.is_negative() || token0_ratio > one),
+        "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
+    );
     let (tick_lower, tick_upper) = if token0_ratio.is_zero() {
         (tick_current - width, tick_current)
     } else if token0_ratio == one {

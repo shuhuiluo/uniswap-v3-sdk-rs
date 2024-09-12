@@ -46,6 +46,7 @@ use alloy_sol_types::SolValue;
 /// );
 /// ```
 #[inline]
+#[must_use]
 pub fn compute_pool_address(
     factory: Address,
     token_a: Address,

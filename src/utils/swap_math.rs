@@ -24,6 +24,7 @@ use alloy_primitives::{Uint, I256, U256};
 /// * `amount_out`: The amount to be received, of either token0 or token1, based on the direction of
 ///   the swap
 /// * `fee_amount`: The amount of input that will be taken as a fee
+#[inline]
 pub fn compute_swap_step<const BITS: usize, const LIMBS: usize>(
     sqrt_ratio_current_x96: Uint<BITS, LIMBS>,
     sqrt_ratio_target_x96: Uint<BITS, LIMBS>,

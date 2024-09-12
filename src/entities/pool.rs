@@ -25,6 +25,7 @@ impl<TP> fmt::Debug for Pool<TP>
 where
     TP: TickDataProvider<Index: fmt::Debug>,
 {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("token0", &self.token0)
@@ -130,6 +131,7 @@ impl Pool {
     /// assert_eq!(result, address!("6c6Bc977E13Df9b0de53b251522280BB72383700"));
     /// ```
     #[inline]
+    #[must_use]
     pub fn get_address(
         token_a: &Token,
         token_b: &Token,
@@ -497,7 +499,7 @@ mod tests {
     use super::*;
     use crate::tests::*;
 
-    const ONE_ETHER: U160 = U160::from_limbs([10u64.pow(18), 0, 0]);
+    const ONE_ETHER: U160 = U160::from_limbs([10_u64.pow(18), 0, 0]);
 
     mod constructor {
         use super::*;

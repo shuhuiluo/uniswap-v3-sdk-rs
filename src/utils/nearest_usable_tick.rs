@@ -11,6 +11,7 @@ use num_integer::Integer;
 /// ## Returns
 ///
 /// The closest tick to the input tick that is usable for the given tick spacing
+#[inline]
 pub fn nearest_usable_tick<I: TickIndex>(tick: I, tick_spacing: I) -> I {
     let tick = tick.try_into().unwrap();
     let tick_spacing = tick_spacing.try_into().unwrap();

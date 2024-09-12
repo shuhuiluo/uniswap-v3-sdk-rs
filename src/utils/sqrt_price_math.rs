@@ -486,7 +486,7 @@ mod tests {
     }
 
     fn generate_inputs() -> Vec<(U256, u128, U256, bool)> {
-        (0u64..1000)
+        (0_u64..1000)
             .map(|i| {
                 (
                     pseudo_random(i),
@@ -498,6 +498,7 @@ mod tests {
             .collect()
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn match_u256(res: Result<U256, Error>, ref_: Result<U256, UniswapV3MathError>) {
         match res {
             Ok(res) => {

@@ -29,6 +29,7 @@ fn sort_to_big_uint<const BITS: usize, const LIMBS: usize>(
 ///
 /// returns: liquidity for amount0, imprecise
 #[inline]
+#[must_use]
 pub fn max_liquidity_for_amount0_imprecise<const BITS: usize, const LIMBS: usize>(
     sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
     sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
@@ -52,6 +53,7 @@ pub fn max_liquidity_for_amount0_imprecise<const BITS: usize, const LIMBS: usize
 ///
 /// returns: liquidity for amount0, precise
 #[inline]
+#[must_use]
 pub fn max_liquidity_for_amount0_precise<const BITS: usize, const LIMBS: usize>(
     sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
     sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
@@ -75,6 +77,7 @@ pub fn max_liquidity_for_amount0_precise<const BITS: usize, const LIMBS: usize>(
 ///
 /// returns: liquidity for amount1
 #[inline]
+#[must_use]
 pub fn max_liquidity_for_amount1<const BITS: usize, const LIMBS: usize>(
     sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
     sqrt_ratio_b_x96: Uint<BITS, LIMBS>,
@@ -100,6 +103,7 @@ pub fn max_liquidity_for_amount1<const BITS: usize, const LIMBS: usize>(
 ///
 /// returns: maximum liquidity for the given amounts
 #[inline]
+#[must_use]
 pub fn max_liquidity_for_amounts<const BITS: usize, const LIMBS: usize>(
     sqrt_ratio_current_x96: Uint<BITS, LIMBS>,
     mut sqrt_ratio_a_x96: Uint<BITS, LIMBS>,
@@ -154,7 +158,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            2148u64.into()
+            2148_u64.into()
         );
     }
 
@@ -168,7 +172,7 @@ mod tests {
             U256::MAX,
             false,
         );
-        assert_eq!(res, 2148u64.into());
+        assert_eq!(res, 2148_u64.into());
     }
 
     #[test]
@@ -182,7 +186,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            4297u64.into()
+            4297_u64.into()
         );
     }
 
@@ -197,7 +201,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            1048u64.into()
+            1048_u64.into()
         );
     }
 
@@ -212,7 +216,7 @@ mod tests {
                 U256::MAX,
                 false
             ),
-            1048u64.into()
+            1048_u64.into()
         );
     }
 
@@ -246,7 +250,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            2097u64.into()
+            2097_u64.into()
         );
     }
 
@@ -280,7 +284,7 @@ mod tests {
                 U256::from(200),
                 false
             ),
-            2097u64.into()
+            2097_u64.into()
         );
     }
 
@@ -295,7 +299,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            2148u64.into()
+            2148_u64.into()
         );
     }
 
@@ -310,7 +314,7 @@ mod tests {
                 U256::MAX,
                 true
             ),
-            2148u64.into()
+            2148_u64.into()
         );
     }
 
@@ -325,7 +329,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            4297u64.into()
+            4297_u64.into()
         );
     }
 
@@ -340,7 +344,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            1048u64.into()
+            1048_u64.into()
         );
     }
 
@@ -355,7 +359,7 @@ mod tests {
                 U256::MAX,
                 true
             ),
-            1048u64.into()
+            1048_u64.into()
         );
     }
 
@@ -389,7 +393,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            2097u64.into()
+            2097_u64.into()
         );
     }
 
@@ -423,7 +427,7 @@ mod tests {
                 U256::from(200),
                 true
             ),
-            2097u64.into()
+            2097_u64.into()
         );
     }
 }
