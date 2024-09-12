@@ -121,6 +121,7 @@ fn normalize_ticks<I: TickIndex>(
 
 /// Reconstructs the liquidity array from the tick array and the current liquidity.
 #[inline]
+#[allow(clippy::needless_pass_by_value)]
 fn reconstruct_liquidity_array<I: TickIndex>(
     tick_array: Vec<(I, i128)>,
     tick_current_aligned: I,

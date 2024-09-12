@@ -218,7 +218,7 @@ pub fn add_call_parameters<TP: TickDataProvider>(
 }
 
 fn encode_collect<Currency0: Currency, Currency1: Currency>(
-    options: CollectOptions<Currency0, Currency1>,
+    options: &CollectOptions<Currency0, Currency1>,
 ) -> Vec<Bytes> {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(3);
 
@@ -270,7 +270,7 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
 
 #[inline]
 pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
-    options: CollectOptions<Currency0, Currency1>,
+    options: &CollectOptions<Currency0, Currency1>,
 ) -> MethodParameters {
     let calldatas = encode_collect(options);
 
@@ -358,7 +358,7 @@ where
         expected_currency_owed1,
         ..
     } = options.collect_options;
-    calldatas.extend(encode_collect(CollectOptions {
+    calldatas.extend(encode_collect(&CollectOptions {
         token_id,
         // add the underlying value to the expected currency already owed
         expected_currency_owed0: expected_currency_owed0.add(&CurrencyAmount::from_raw_amount(
@@ -622,7 +622,7 @@ mod tests {
 
     #[test]
     fn test_collect_call_parameters() {
-        let MethodParameters { calldata, value } = collect_call_parameters(COLLECT_OPTIONS.clone());
+        let MethodParameters { calldata, value } = collect_call_parameters(&COLLECT_OPTIONS);
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata.to_vec(),
@@ -632,7 +632,7 @@ mod tests {
 
     #[test]
     fn test_collect_call_parameters_eth() {
-        let MethodParameters { calldata, value } = collect_call_parameters(CollectOptions {
+        let MethodParameters { calldata, value } = collect_call_parameters(&CollectOptions {
             token_id: TOKEN_ID,
             expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
             expected_currency_owed1: CurrencyAmount::from_raw_amount(ETHER.clone(), 0).unwrap(),

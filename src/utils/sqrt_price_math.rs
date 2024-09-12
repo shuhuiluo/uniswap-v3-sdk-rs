@@ -498,6 +498,7 @@ mod tests {
             .collect()
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn match_u256(res: Result<U256, Error>, ref_: Result<U256, UniswapV3MathError>) {
         match res {
             Ok(res) => {

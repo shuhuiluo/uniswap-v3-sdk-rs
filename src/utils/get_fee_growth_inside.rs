@@ -7,6 +7,7 @@ pub struct FeeGrowthOutside<const BITS: usize, const LIMBS: usize> {
 }
 
 #[inline]
+#[allow(clippy::needless_pass_by_value)]
 pub fn get_fee_growth_inside<const BITS: usize, const LIMBS: usize, T: PartialOrd>(
     lower: FeeGrowthOutside<BITS, LIMBS>,
     upper: FeeGrowthOutside<BITS, LIMBS>,

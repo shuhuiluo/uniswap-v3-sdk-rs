@@ -367,12 +367,12 @@ pub fn get_rebalanced_position<TP: TickDataProvider>(
 #[inline]
 pub fn get_position_at_price<TP>(
     position: Position<TP>,
-    new_price: BigDecimal,
+    new_price: &BigDecimal,
 ) -> Result<Position<TP>, Error>
 where
     TP: TickDataProvider,
 {
-    let sqrt_price_x96 = price_to_sqrt_ratio_x96(&new_price);
+    let sqrt_price_x96 = price_to_sqrt_ratio_x96(new_price);
     let pool_at_new_price = Pool::new_with_tick_data_provider(
         position.pool.token0,
         position.pool.token1,
@@ -400,7 +400,7 @@ where
 #[inline]
 pub fn get_rebalanced_position_at_price<TP>(
     position: Position<TP>,
-    new_price: BigDecimal,
+    new_price: &BigDecimal,
     new_tick_lower: TP::Index,
     new_tick_upper: TP::Index,
 ) -> Result<Position<TP>, Error>
@@ -529,12 +529,12 @@ mod tests {
             -887220,
             52980,
         );
-        let mut position1 = get_position_at_price(position.clone(), small_price).unwrap();
+        let mut position1 = get_position_at_price(position.clone(), &small_price).unwrap();
         assert!(position1.amount0().unwrap().quotient().is_positive());
         assert!(position1.amount1().unwrap().quotient().is_zero());
         let position2 = get_position_at_price(
             position.clone(),
-            fraction_to_big_decimal(
+            &fraction_to_big_decimal(
                 &tick_to_price(
                     position.pool.token0,
                     position.pool.token1,
@@ -573,7 +573,7 @@ mod tests {
         .unwrap();
         let position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(
             position.clone(),
-            fraction_to_big_decimal(&price_upper),
+            &fraction_to_big_decimal(&price_upper),
             new_tick_lower,
             new_tick_upper,
         )
