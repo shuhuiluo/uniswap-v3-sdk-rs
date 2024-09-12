@@ -25,6 +25,7 @@ impl<TP> fmt::Debug for Pool<TP>
 where
     TP: TickDataProvider<Index: fmt::Debug>,
 {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("token0", &self.token0)

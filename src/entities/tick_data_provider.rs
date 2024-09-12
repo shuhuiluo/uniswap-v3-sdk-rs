@@ -38,10 +38,12 @@ pub struct NoTickDataProvider;
 impl TickDataProvider for NoTickDataProvider {
     type Index = i32;
 
+    #[inline]
     fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
         Err(Error::NoTickDataError)
     }
 
+    #[inline]
     fn next_initialized_tick_within_one_word(
         &self,
         _: i32,

@@ -16,6 +16,7 @@ pub struct TickMap {
 pub trait TickMapTrait {
     type Tick;
 
+    #[inline]
     fn position(tick: i32) -> (i16, u8) {
         ((tick >> 8) as i16, (tick & 0xff) as u8)
     }

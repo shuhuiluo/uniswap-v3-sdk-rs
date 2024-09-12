@@ -23,6 +23,7 @@ pub trait TickList {
 
     fn next_initialized_tick(&self, tick: Self::Index, lte: bool) -> &Tick<Self::Index>;
 
+    #[inline]
     fn next_initialized_tick_within_one_word(
         &self,
         tick: Self::Index,
@@ -57,6 +58,7 @@ pub trait TickList {
 impl<I: TickIndex> TickList for [Tick<I>] {
     type Index = I;
 
+    #[inline]
     fn validate_list(&self, tick_spacing: I) {
         assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
         assert!(
@@ -75,6 +77,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         );
     }
 
+    #[inline]
     fn is_below_smallest(&self, tick: I) -> bool {
         match self.first() {
             Some(first) => tick < first.index,
@@ -82,6 +85,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         }
     }
 
+    #[inline]
     fn is_at_or_above_largest(&self, tick: I) -> bool {
         match self.last() {
             Some(last) => tick >= last.index,
@@ -89,6 +93,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         }
     }
 
+    #[inline]
     fn get_tick(&self, index: I) -> &Tick<I> {
         let i = self.binary_search_by_tick(index);
         let tick = &self[i];
@@ -96,6 +101,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         tick
     }
 
+    #[inline]
     fn binary_search_by_tick(&self, tick: I) -> usize {
         assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
         let mut l = 0;
@@ -114,6 +120,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         }
     }
 
+    #[inline]
     fn next_initialized_tick(&self, tick: I, lte: bool) -> &Tick<I> {
         if lte {
             assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");

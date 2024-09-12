@@ -5,6 +5,7 @@ use crate::prelude::*;
 pub struct TickListDataProvider<I = i32>(Vec<Tick<I>>);
 
 impl<I: TickIndex> TickListDataProvider<I> {
+    #[inline]
     pub fn new(ticks: Vec<Tick<I>>, tick_spacing: I) -> Self {
         ticks.validate_list(tick_spacing);
         Self(ticks)
@@ -14,10 +15,12 @@ impl<I: TickIndex> TickListDataProvider<I> {
 impl<I: TickIndex> TickDataProvider for TickListDataProvider<I> {
     type Index = I;
 
+    #[inline]
     fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         Ok(self.0.get_tick(tick))
     }
 
+    #[inline]
     fn next_initialized_tick_within_one_word(
         &self,
         tick: I,

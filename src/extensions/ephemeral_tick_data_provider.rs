@@ -20,6 +20,7 @@ pub struct EphemeralTickDataProvider<I = I24> {
 }
 
 impl<I: TickIndex> EphemeralTickDataProvider<I> {
+    #[inline]
     pub async fn new<T, P>(
         pool: Address,
         provider: P,
@@ -66,10 +67,12 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
 impl<I: TickIndex> TickDataProvider for EphemeralTickDataProvider<I> {
     type Index = I;
 
+    #[inline]
     fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
         Ok(self.ticks.get_tick(tick))
     }
 
+    #[inline]
     fn next_initialized_tick_within_one_word(
         &self,
         tick: I,
@@ -83,6 +86,7 @@ impl<I: TickIndex> TickDataProvider for EphemeralTickDataProvider<I> {
 }
 
 impl<I: TickIndex> From<EphemeralTickDataProvider<I>> for TickListDataProvider<I> {
+    #[inline]
     fn from(provider: EphemeralTickDataProvider<I>) -> Self {
         assert!(!provider.ticks.is_empty());
         Self::new(provider.ticks, provider.tick_spacing)

@@ -11,10 +11,12 @@ pub struct FeeOptions {
     pub recipient: Address,
 }
 
+#[inline]
 fn encode_fee_bips(fee: Percent) -> U256 {
     U256::from_big_int((fee * Percent::new(10000, 1)).quotient())
 }
 
+#[inline]
 pub fn encode_unwrap_weth9(
     amount_minimum: U256,
     recipient: Address,
@@ -38,6 +40,7 @@ pub fn encode_unwrap_weth9(
     .into()
 }
 
+#[inline]
 pub fn encode_sweep_token(
     token: Address,
     amount_minimum: U256,
@@ -64,6 +67,7 @@ pub fn encode_sweep_token(
     .into()
 }
 
+#[inline]
 pub fn encode_refund_eth() -> Bytes {
     IPeripheryPaymentsWithFee::refundETHCall {}
         .abi_encode()

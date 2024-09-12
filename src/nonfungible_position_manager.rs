@@ -93,6 +93,7 @@ pub struct RemoveLiquidityOptions<Currency0: Currency, Currency1: Currency> {
     pub collect_options: CollectOptions<Currency0, Currency1>,
 }
 
+#[inline]
 fn encode_create<TP: TickDataProvider>(pool: &Pool<TP>) -> Bytes {
     INonfungiblePositionManager::createAndInitializePoolIfNecessaryCall {
         token0: pool.token0.address(),
@@ -104,6 +105,7 @@ fn encode_create<TP: TickDataProvider>(pool: &Pool<TP>) -> Bytes {
     .into()
 }
 
+#[inline]
 pub fn create_call_parameters<TP: TickDataProvider>(pool: &Pool<TP>) -> MethodParameters {
     MethodParameters {
         calldata: encode_create(pool),
@@ -111,6 +113,7 @@ pub fn create_call_parameters<TP: TickDataProvider>(pool: &Pool<TP>) -> MethodPa
     }
 }
 
+#[inline]
 pub fn add_call_parameters<TP: TickDataProvider>(
     position: &mut Position<TP>,
     options: AddLiquidityOptions,
@@ -136,7 +139,7 @@ pub fn add_call_parameters<TP: TickDataProvider>(
     // create pool if needed
     if let AddLiquiditySpecificOptions::Mint(opts) = options.specific_opts {
         if opts.create_pool {
-            calldatas.push(encode_create(&position.pool))
+            calldatas.push(encode_create(&position.pool));
         }
     }
 
@@ -265,6 +268,7 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
     calldatas
 }
 
+#[inline]
 pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
     options: CollectOptions<Currency0, Currency1>,
 ) -> MethodParameters {
@@ -282,6 +286,7 @@ pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
 ///
 /// * `position`: The position to exit
 /// * `options`: Additional information necessary for generating the calldata
+#[inline]
 pub fn remove_call_parameters<Currency0, Currency1, TP>(
     position: &Position<TP>,
     options: RemoveLiquidityOptions<Currency0, Currency1>,
@@ -385,6 +390,7 @@ where
     })
 }
 
+#[inline]
 pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodParameters {
     let calldata = if options.data.is_empty() {
         INonfungiblePositionManager::safeTransferFrom_0Call {

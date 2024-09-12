@@ -9,6 +9,7 @@ use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
 ///
 /// * `a`: The first trade to compare
 /// * `b`: The second trade to compare
+#[inline]
 pub fn trade_comparator<TInput, TOutput, TP>(
     a: &Trade<TInput, TOutput, TP>,
     b: &Trade<TInput, TOutput, TP>,
@@ -647,6 +648,7 @@ where
     /// * `next_amount_in`: Used in recursion; the original value of the currency_amount_in
     ///   parameter
     /// * `best_trades`: Used in recursion; the current list of best trades
+    #[inline]
     pub fn best_trade_exact_in(
         pools: Vec<Pool<TP>>,
         currency_amount_in: CurrencyAmount<TInput>,
@@ -735,6 +737,7 @@ where
     /// * `current_pools`: Used in recursion; the current list of pools
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
     /// * `best_trades`: Used in recursion; the current list of best trades
+    #[inline]
     pub fn best_trade_exact_out(
         pools: Vec<Pool<TP>>,
         currency_in: TInput,

@@ -79,7 +79,7 @@ pub fn get_sqrt_ratio_at_tick(tick: I24) -> Result<U160, Error> {
         ratio = (ratio * uint!(0xfff97272373d413259a46990580e213a_U256)) >> 128;
     }
     if abs_tick & 0x4 != 0 {
-        ratio = (ratio * uint!(0xfff2e50f5f656932ef12357cf3c7fdcc_U256)) >> 128
+        ratio = (ratio * uint!(0xfff2e50f5f656932ef12357cf3c7fdcc_U256)) >> 128;
     };
     if abs_tick & 0x8 != 0 {
         ratio = (ratio * uint!(0xffe5caca7e10e4e61c3624eaa0941cd0_U256)) >> 128;

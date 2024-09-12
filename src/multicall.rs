@@ -2,6 +2,7 @@ use crate::prelude::*;
 use alloy_primitives::Bytes;
 use alloy_sol_types::SolCall;
 
+#[inline]
 pub fn encode_multicall(data: Vec<Bytes>) -> Bytes {
     if data.len() == 1 {
         data[0].clone()

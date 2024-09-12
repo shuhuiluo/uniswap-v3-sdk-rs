@@ -27,6 +27,7 @@ pub struct SwapOptions {
 ///
 /// * `trades`: trades to produce call parameters for
 /// * `options`: options for the call parameters
+#[inline]
 pub fn swap_call_parameters<TInput, TOutput, TP>(
     trades: &mut [Trade<TInput, TOutput, TP>],
     options: SwapOptions,

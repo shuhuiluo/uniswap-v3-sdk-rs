@@ -22,6 +22,7 @@ pub enum FeeAmount {
 
 impl FeeAmount {
     /// The default factory tick spacings by fee amount.
+    #[inline]
     pub const fn tick_spacing(&self) -> I24 {
         match self {
             Self::LOWEST => I24::ONE,
@@ -33,6 +34,7 @@ impl FeeAmount {
 }
 
 impl From<u32> for FeeAmount {
+    #[inline]
     fn from(fee: u32) -> Self {
         match fee {
             100 => Self::LOWEST,
@@ -45,6 +47,7 @@ impl From<u32> for FeeAmount {
 }
 
 impl From<i32> for FeeAmount {
+    #[inline]
     fn from(tick_spacing: i32) -> Self {
         match tick_spacing {
             1 => Self::LOWEST,
@@ -57,17 +60,14 @@ impl From<i32> for FeeAmount {
 }
 
 impl From<FeeAmount> for U24 {
+    #[inline]
     fn from(fee: FeeAmount) -> Self {
-        match fee {
-            FeeAmount::LOWEST => U24::from_limbs([100]),
-            FeeAmount::LOW => U24::from_limbs([500]),
-            FeeAmount::MEDIUM => U24::from_limbs([3000]),
-            FeeAmount::HIGH => U24::from_limbs([10000]),
-        }
+        U24::from_limbs([fee as u64])
     }
 }
 
 impl From<U24> for FeeAmount {
+    #[inline]
     fn from(fee: U24) -> Self {
         (fee.into_limbs()[0] as u32).into()
     }

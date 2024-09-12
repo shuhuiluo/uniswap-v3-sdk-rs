@@ -24,6 +24,7 @@ use uniswap_lens::{
 };
 use uniswap_sdk_core::{prelude::*, token};
 
+#[inline]
 pub const fn get_nonfungible_position_manager_contract<T, P>(
     nonfungible_position_manager: Address,
     provider: P,
@@ -44,6 +45,7 @@ where
 /// * `token_id`: The token id
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
+#[inline]
 pub async fn get_position<T, P>(
     chain_id: ChainId,
     nonfungible_position_manager: Address,
@@ -103,6 +105,7 @@ impl Position {
     /// * `token_id`: The token id
     /// * `provider`: The alloy provider
     /// * `block_id`: Optional block number to query
+    #[inline]
     pub async fn from_token_id<T, P>(
         chain_id: ChainId,
         nonfungible_position_manager: Address,
@@ -159,6 +162,7 @@ impl Position {
 /// * `owner`: The owner address
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
+#[inline]
 pub async fn get_all_positions_by_owner<T, P>(
     nonfungible_position_manager: Address,
     owner: Address,
@@ -191,6 +195,7 @@ where
 /// ## Returns
 ///
 /// A tuple of the collectable token amounts.
+#[inline]
 pub async fn get_collectable_token_amounts<T, P>(
     _chain_id: ChainId,
     nonfungible_position_manager: Address,
@@ -289,6 +294,7 @@ where
 /// * `token_id`: The token id
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
+#[inline]
 pub async fn get_token_svg<T, P>(
     nonfungible_position_manager: Address,
     token_id: U256,
@@ -321,6 +327,7 @@ where
 /// * `position`: Position info before rebalance.
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
+#[inline]
 pub fn get_rebalanced_position<TP: TickDataProvider>(
     position: &mut Position<TP>,
     new_tick_lower: TP::Index,
@@ -357,6 +364,7 @@ pub fn get_rebalanced_position<TP: TickDataProvider>(
 ///
 /// * `position`: Current position
 /// * `new_price`: The new pool price
+#[inline]
 pub fn get_position_at_price<TP>(
     position: Position<TP>,
     new_price: BigDecimal,
@@ -389,6 +397,7 @@ where
 /// * `new_price`: The new pool price
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
+#[inline]
 pub fn get_rebalanced_position_at_price<TP>(
     position: Position<TP>,
     new_price: BigDecimal,

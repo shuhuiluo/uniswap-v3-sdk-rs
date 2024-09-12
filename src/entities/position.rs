@@ -22,6 +22,7 @@ impl<TP> fmt::Debug for Position<TP>
 where
     TP: TickDataProvider<Index: fmt::Debug>,
 {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Position")
             .field("pool", &self.pool)
@@ -246,6 +247,7 @@ impl<TP: TickDataProvider> Position<TP> {
     /// ## Returns
     ///
     /// The amounts, with slippage
+    #[inline]
     pub fn mint_amounts_with_slippage(
         &mut self,
         slippage_tolerance: &Percent,
@@ -321,6 +323,7 @@ impl<TP: TickDataProvider> Position<TP> {
     /// ## Returns
     ///
     /// The amounts, with slippage
+    #[inline]
     pub fn burn_amounts_with_slippage(
         &self,
         slippage_tolerance: &Percent,
@@ -370,6 +373,7 @@ impl<TP: TickDataProvider> Position<TP> {
 
     /// Returns the minimum amounts that must be sent in order to mint the amount of liquidity held
     /// by the position at the current price for the pool
+    #[inline]
     pub fn mint_amounts(&self) -> Result<MintAmounts, Error> {
         Ok(if self.pool.tick_current < self.tick_lower {
             MintAmounts {
