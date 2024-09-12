@@ -619,15 +619,16 @@ where
     ///   parameter
     /// * `best_trades`: Used in recursion; the current list of best trades
     #[inline]
-    pub fn best_trade_exact_in(
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn best_trade_exact_in<'a>(
         pools: Vec<Pool<TP>>,
-        currency_amount_in: CurrencyAmount<TInput>,
-        currency_out: TOutput,
+        currency_amount_in: &'a CurrencyAmount<TInput>,
+        currency_out: &'a TOutput,
         best_trade_options: BestTradeOptions,
         current_pools: Vec<Pool<TP>>,
         next_amount_in: Option<CurrencyAmount<Token>>,
-        best_trades: &mut Vec<Self>,
-    ) -> Result<&mut Vec<Self>, Error> {
+        best_trades: &'a mut Vec<Self>,
+    ) -> Result<&'a mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");
         let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
         let max_hops = best_trade_options.max_hops.unwrap_or(3);
@@ -676,8 +677,8 @@ where
                 next_pools.push(pool.clone());
                 Self::best_trade_exact_in(
                     pools_excluding_this_pool,
-                    currency_amount_in.clone(),
-                    currency_out.clone(),
+                    currency_amount_in,
+                    currency_out,
                     BestTradeOptions {
                         max_num_results: Some(max_num_results),
                         max_hops: Some(max_hops - 1),
@@ -708,15 +709,16 @@ where
     /// * `next_amount_out`: Used in recursion; the exact amount of currency out
     /// * `best_trades`: Used in recursion; the current list of best trades
     #[inline]
-    pub fn best_trade_exact_out(
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn best_trade_exact_out<'a>(
         pools: Vec<Pool<TP>>,
-        currency_in: TInput,
-        currency_amount_out: CurrencyAmount<TOutput>,
+        currency_in: &'a TInput,
+        currency_amount_out: &'a CurrencyAmount<TOutput>,
         best_trade_options: BestTradeOptions,
         current_pools: Vec<Pool<TP>>,
         next_amount_out: Option<CurrencyAmount<Token>>,
-        best_trades: &mut Vec<Self>,
-    ) -> Result<&mut Vec<Self>, Error> {
+        best_trades: &'a mut Vec<Self>,
+    ) -> Result<&'a mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");
         let max_num_results = best_trade_options.max_num_results.unwrap_or(3);
         let max_hops = best_trade_options.max_hops.unwrap_or(3);
@@ -765,8 +767,8 @@ where
                 next_pools.extend(current_pools.clone());
                 Self::best_trade_exact_out(
                     pools_excluding_this_pool,
-                    currency_in.clone(),
-                    currency_amount_out.clone(),
+                    currency_in,
+                    currency_amount_out,
                     BestTradeOptions {
                         max_num_results: Some(max_num_results),
                         max_hops: Some(max_hops - 1),
@@ -1674,8 +1676,8 @@ mod tests {
         fn throws_with_empty_pools() {
             let _ = Trade::<Token, Token, NoTickDataProvider>::best_trade_exact_in(
                 vec![],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -1688,8 +1690,8 @@ mod tests {
         fn throws_with_max_hops_of_0() {
             let _ = Trade::best_trade_exact_in(
                 vec![POOL_0_2.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions {
                     max_hops: Some(0),
                     max_num_results: None,
@@ -1705,8 +1707,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_in(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10000).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -1747,8 +1749,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_in(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions {
                     max_hops: Some(1),
                     max_num_results: None,
@@ -1771,8 +1773,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_in(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 1).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 1).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -1796,8 +1798,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_in(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions {
                     max_hops: None,
                     max_num_results: Some(1),
@@ -1815,8 +1817,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_in(
                 vec![POOL_0_1.clone(), POOL_0_3.clone(), POOL_1_3.clone()],
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
-                TOKEN2.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN0.clone(), 10).unwrap(),
+                &TOKEN2.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -1836,8 +1838,8 @@ mod tests {
                     POOL_0_3.clone(),
                     POOL_1_3.clone(),
                 ],
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
-                TOKEN3.clone(),
+                &CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                &TOKEN3.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -1874,8 +1876,8 @@ mod tests {
                     POOL_0_3.clone(),
                     POOL_1_3.clone(),
                 ],
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                ETHER.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                &ETHER.clone(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2147,8 +2149,8 @@ mod tests {
         fn throws_with_empty_pools() {
             let _ = Trade::<Token, Token, NoTickDataProvider>::best_trade_exact_out(
                 vec![],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap(),
+                &TOKEN0,
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2161,8 +2163,8 @@ mod tests {
         fn throws_with_max_hops_of_0() {
             let _ = Trade::best_trade_exact_out(
                 vec![POOL_0_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap(),
                 BestTradeOptions {
                     max_hops: Some(0),
                     max_num_results: None,
@@ -2178,8 +2180,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10000).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2220,8 +2222,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
                 BestTradeOptions {
                     max_hops: Some(1),
                     max_num_results: None,
@@ -2244,8 +2246,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 120000).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 120000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2260,8 +2262,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 105000).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 105000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2276,8 +2278,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_2.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
                 BestTradeOptions {
                     max_hops: None,
                     max_num_results: Some(1),
@@ -2295,8 +2297,8 @@ mod tests {
             let result = &mut vec![];
             Trade::best_trade_exact_out(
                 vec![POOL_0_1.clone(), POOL_0_3.clone(), POOL_1_3.clone()],
-                TOKEN0.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
+                &TOKEN0.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN2.clone(), 10).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2316,8 +2318,8 @@ mod tests {
                     POOL_0_3.clone(),
                     POOL_1_3.clone(),
                 ],
-                ETHER.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 10000).unwrap(),
+                &ETHER.clone(),
+                &CurrencyAmount::from_raw_amount(TOKEN3.clone(), 10000).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,
@@ -2354,8 +2356,8 @@ mod tests {
                     POOL_0_3.clone(),
                     POOL_1_3.clone(),
                 ],
-                TOKEN3.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                &TOKEN3.clone(),
+                &CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
                 BestTradeOptions::default(),
                 vec![],
                 None,

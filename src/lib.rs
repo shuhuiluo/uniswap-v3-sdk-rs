@@ -32,7 +32,7 @@
     unreachable_pub,
     clippy::missing_const_for_fn,
     clippy::missing_inline_in_public_items,
-    // clippy::needless_pass_by_value,
+    clippy::needless_pass_by_value,
     clippy::redundant_clone,
     clippy::explicit_iter_loop,
     clippy::manual_assert,
