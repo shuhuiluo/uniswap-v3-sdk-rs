@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn returns_correct_value_for_sqrt_ratio_at_max_tick() {
         assert_eq!(
-            get_tick_at_sqrt_ratio(MAX_SQRT_RATIO - U160::from(1u32)).unwrap(),
+            get_tick_at_sqrt_ratio(MAX_SQRT_RATIO - U160::from(1_u32)).unwrap(),
             MAX_TICK - I24::ONE
         );
     }

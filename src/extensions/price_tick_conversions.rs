@@ -341,7 +341,7 @@ pub fn token0_price_to_ratio(
     else if tick >= tick_upper {
         Ok(BigDecimal::zero())
     } else {
-        let liquidity = 2u128 << 96;
+        let liquidity = 2_u128 << 96;
         let amount0 = get_amount_0_delta(
             sqrt_price_x96,
             get_sqrt_ratio_at_tick(tick_upper)?,

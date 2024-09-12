@@ -38,7 +38,7 @@
     clippy::manual_assert,
     clippy::must_use_candidate,
     clippy::semicolon_if_nothing_returned,
-    // clippy::unseparated_literal_suffix,
+    clippy::unseparated_literal_suffix,
     clippy::suspicious_operation_groupings,
     clippy::unused_self,
     clippy::use_debug,

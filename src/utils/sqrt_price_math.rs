@@ -486,7 +486,7 @@ mod tests {
     }
 
     fn generate_inputs() -> Vec<(U256, u128, U256, bool)> {
-        (0u64..1000)
+        (0_u64..1000)
             .map(|i| {
                 (
                     pseudo_random(i),
