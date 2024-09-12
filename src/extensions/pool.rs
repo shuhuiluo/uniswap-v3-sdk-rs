@@ -74,9 +74,10 @@ where
     let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
     let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
     let sqrt_price_x96 = slot_0.sqrtPriceX96;
-    if sqrt_price_x96.is_zero() {
-        panic!("Pool has been created but not yet initialized");
-    }
+    assert!(
+        !sqrt_price_x96.is_zero(),
+        "Pool has been created but not yet initialized"
+    );
     Pool::new(
         token!(
             chain_id,

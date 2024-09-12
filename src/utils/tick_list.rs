@@ -66,9 +66,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
             "TICK_SPACING"
         );
         for i in 1..self.len() {
-            if self[i] < self[i - 1] {
-                panic!("SORTED");
-            }
+            assert!(self[i] >= self[i - 1], "SORTED");
         }
         assert_eq!(
             self.iter().fold(0, |acc, x| acc + x.liquidity_net),

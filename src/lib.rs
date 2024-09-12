@@ -35,7 +35,7 @@
     // clippy::needless_pass_by_value,
     clippy::redundant_clone,
     // clippy::explicit_iter_loop,
-    // clippy::manual_assert,
+    clippy::manual_assert,
     // clippy::must_use_candidate,
     clippy::semicolon_if_nothing_returned,
     // clippy::unseparated_literal_suffix,

@@ -136,13 +136,13 @@ mod tests {
         }
 
         #[test]
-        #[should_panic]
+        #[should_panic(expected = "INPUT")]
         fn fails_if_the_input_is_not_in_the_first_pool() {
             Route::new(vec![POOL_0_1.clone()], WETH.clone(), TOKEN1.clone());
         }
 
         #[test]
-        #[should_panic]
+        #[should_panic(expected = "OUTPUT")]
         fn fails_if_output_is_not_in_the_last_pool() {
             Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), WETH.clone());
         }

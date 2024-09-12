@@ -6,6 +6,7 @@ use crate::prelude::{Error, *};
 use alloc::format;
 use alloy_primitives::{aliases::I24, U160};
 use anyhow::{bail, Result};
+use num_traits::Signed;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use uniswap_sdk_core::prelude::*;
@@ -247,9 +248,7 @@ where
 /// ```
 #[inline]
 pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
-    if price < &BigDecimal::zero() {
-        panic!("Invalid price: must be non-negative");
-    }
+    assert!(!price.is_negative(), "Invalid price: must be non-negative");
     let price_x192 = price * Q192.to_big_decimal();
     let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
     if sqrt_ratio_x96 < MIN_SQRT_RATIO.to_big_int() {
@@ -282,12 +281,14 @@ pub fn token0_ratio_to_price(
     tick_upper: I24,
 ) -> Result<BigDecimal, Error> {
     let one = BigDecimal::from(1);
-    if tick_upper <= tick_lower {
-        panic!("Invalid tick range: tickUpper must be greater than tickLower");
-    }
-    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
-    }
+    assert!(
+        tick_upper > tick_lower,
+        "Invalid tick range: tickUpper must be greater than tickLower"
+    );
+    assert!(
+        !(token0_ratio.is_negative() || token0_ratio > one),
+        "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
+    );
     if token0_ratio.is_zero() {
         return tick_to_big_price(tick_upper);
     }
@@ -401,9 +402,10 @@ pub fn tick_range_from_width_and_ratio(
 ) -> Result<(I24, I24), Error> {
     let one = BigDecimal::from(1);
     let two = BigDecimal::from(2);
-    if token0_ratio < BigDecimal::zero() || token0_ratio > one {
-        panic!("Invalid token0ValueProportion: must be a value between 0 and 1, inclusive");
-    }
+    assert!(
+        !(token0_ratio.is_negative() || token0_ratio > one),
+        "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
+    );
     let (tick_lower, tick_upper) = if token0_ratio.is_zero() {
         (tick_current - width, tick_current)
     } else if token0_ratio == one {
