@@ -574,7 +574,7 @@ where
                     amount.currency.wrapped().equals(route.input.wrapped()),
                     "INPUT"
                 );
-                for pool in route.pools.iter() {
+                for pool in &route.pools {
                     (token_amount, _) = pool.get_output_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
@@ -670,7 +670,7 @@ where
             None => currency_amount_in.wrapped()?,
         };
         let token_out = currency_out.wrapped();
-        for pool in pools.iter() {
+        for pool in &pools {
             // pool irrelevant
             if !pool.involves_token(&amount_in.currency) {
                 continue;
@@ -759,7 +759,7 @@ where
             None => currency_amount_out.wrapped()?,
         };
         let token_in = currency_in.wrapped();
-        for pool in pools.iter() {
+        for pool in &pools {
             // pool irrelevant
             if !pool.involves_token(&amount_out.currency) {
                 continue;
