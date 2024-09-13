@@ -11,9 +11,11 @@ use alloy::{
 };
 use alloy_primitives::{Address, ChainId, B256};
 use anyhow::Result;
-use uniswap_lens::prelude::{
-    get_populated_ticks_in_range, ierc20metadata::IERC20Metadata,
-    iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,
+use uniswap_lens::{
+    bindings::{
+        ierc20metadata::IERC20Metadata, iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,
+    },
+    pool_lens,
 };
 use uniswap_sdk_core::{prelude::Token, token};
 
@@ -188,7 +190,7 @@ where
         tick_lower,
         tick_upper,
     );
-    let ticks = get_populated_ticks_in_range(
+    let (ticks, _) = pool_lens::get_populated_ticks_in_range(
         pool.address(init_code_hash_manual_override, factory_address_override),
         tick_lower.to_i24(),
         tick_upper.to_i24(),
@@ -196,7 +198,7 @@ where
         block_id,
     )
     .await
-    .map_err(|_| Error::LensError)?;
+    .map_err(Error::LensError)?;
     reconstruct_liquidity_array(
         ticks
             .into_iter()

@@ -5,8 +5,7 @@
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
-use anyhow::Result;
-use uniswap_lens::prelude::get_populated_ticks_in_range;
+use uniswap_lens::pool_lens;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone, Debug, PartialEq)]
@@ -28,15 +27,18 @@ impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
         tick_lower: Option<I>,
         tick_upper: Option<I>,
         block_id: Option<BlockId>,
-    ) -> Result<Self>
+    ) -> Result<Self, Error>
     where
         T: Transport + Clone,
         P: Provider<T>,
     {
         let tick_lower = tick_lower.map_or(MIN_TICK, I::to_i24);
         let tick_upper = tick_upper.map_or(MAX_TICK, I::to_i24);
-        let ticks =
-            get_populated_ticks_in_range(pool, tick_lower, tick_upper, provider, block_id).await?;
+        let (ticks, tick_spacing) = pool_lens::get_populated_ticks_in_range(
+            pool, tick_lower, tick_upper, provider, block_id,
+        )
+        .await
+        .map_err(Error::LensError)?;
         unimplemented!()
     }
 }

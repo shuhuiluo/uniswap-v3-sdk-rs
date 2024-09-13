@@ -4,8 +4,7 @@
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
-use anyhow::Result;
-use uniswap_lens::prelude::get_populated_ticks_in_range;
+use uniswap_lens::pool_lens;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone, Debug, PartialEq)]
@@ -32,11 +31,13 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
         T: Transport + Clone,
         P: Provider<T>,
     {
-        let tick_lower = tick_lower.map(I::to_i24).unwrap_or(MIN_TICK);
-        let tick_upper = tick_upper.map(I::to_i24).unwrap_or(MAX_TICK);
-        let ticks = get_populated_ticks_in_range(pool, tick_lower, tick_upper, provider, block_id)
-            .await
-            .map_err(|_| Error::LensError)?;
+        let tick_lower = tick_lower.map_or(MIN_TICK, I::to_i24);
+        let tick_upper = tick_upper.map_or(MAX_TICK, I::to_i24);
+        let (ticks, tick_spacing) = pool_lens::get_populated_ticks_in_range(
+            pool, tick_lower, tick_upper, provider, block_id,
+        )
+        .await
+        .map_err(Error::LensError)?;
         let ticks: Vec<_> = ticks
             .into_iter()
             .map(|tick| {
@@ -47,19 +48,13 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
                 )
             })
             .collect();
-        let tick_indices: Vec<_> = ticks.iter().map(|tick| tick.index).collect();
-        let tick_spacing = tick_indices
-            .windows(2)
-            .map(|window| window[1] - window[0])
-            .min()
-            .unwrap();
         Ok(Self {
             pool,
             tick_lower: I::from_i24(tick_lower),
             tick_upper: I::from_i24(tick_upper),
             block_id,
             ticks,
-            tick_spacing,
+            tick_spacing: I::from_i24(tick_spacing),
         })
     }
 }
