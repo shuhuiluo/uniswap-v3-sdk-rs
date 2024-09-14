@@ -13,14 +13,14 @@ use alloy_primitives::{Address, ChainId, U256};
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
 use uniswap_lens::{
-    position_lens,
-    prelude::{
+    bindings::{
         ephemeralallpositionsbyowner::EphemeralAllPositionsByOwner,
         ephemeralgetposition::EphemeralGetPosition,
         iuniswapv3nonfungiblepositionmanager::IUniswapV3NonfungiblePositionManager::{
             positionsReturn, IUniswapV3NonfungiblePositionManagerInstance,
         },
     },
+    position_lens,
 };
 use uniswap_sdk_core::{prelude::*, token};
 
@@ -131,7 +131,7 @@ impl Position {
             block_id,
         )
         .await
-        .map_err(|_| Error::LensError)?;
+        .map_err(Error::LensError)?;
         let pool = Pool::new(
             token!(chain_id, position.token0, decimals0),
             token!(chain_id, position.token1, decimals1),
@@ -168,7 +168,7 @@ pub async fn get_all_positions_by_owner<T, P>(
     owner: Address,
     provider: P,
     block_id: Option<BlockId>,
-) -> Result<Vec<EphemeralAllPositionsByOwner::PositionState>>
+) -> Result<Vec<EphemeralAllPositionsByOwner::PositionState>, Error>
 where
     T: Transport + Clone,
     P: Provider<T>,
@@ -180,6 +180,7 @@ where
         block_id,
     )
     .await
+    .map_err(Error::LensError)
 }
 
 /// Get the real-time collectable token amounts.

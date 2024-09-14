@@ -1,7 +1,11 @@
 #[cfg(doc)]
 use crate::prelude::*;
+
 #[cfg(feature = "extensions")]
 use alloy::contract::Error as ContractError;
+#[cfg(feature = "extensions")]
+use uniswap_lens::error::Error as LensError;
+
 use alloy_primitives::{aliases::I24, U160};
 use uniswap_sdk_core::error::Error as CoreError;
 
@@ -63,8 +67,8 @@ pub enum Error {
     ContractError(ContractError),
 
     #[cfg(feature = "extensions")]
-    #[cfg_attr(feature = "std", error("Error calling lens contract"))]
-    LensError,
+    #[cfg_attr(feature = "std", error("{0}"))]
+    LensError(LensError),
 }
 
 impl From<CoreError> for Error {
@@ -79,5 +83,13 @@ impl From<ContractError> for Error {
     #[inline]
     fn from(error: ContractError) -> Self {
         Error::ContractError(error)
+    }
+}
+
+#[cfg(feature = "extensions")]
+impl From<LensError> for Error {
+    #[inline]
+    fn from(error: LensError) -> Self {
+        Error::LensError(error)
     }
 }
