@@ -493,7 +493,14 @@ where
             self.minimum_amount_out_cached(slippage_tolerance, None)?,
         ))
     }
+}
 
+impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
+where
+    TInput: Currency,
+    TOutput: Currency,
+    TP: Clone + TickDataProvider,
+{
     /// Constructs an exact in trade with the given amount in and route
     ///
     /// ## Arguments
@@ -786,10 +793,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        tests::*,
-        utils::tick_math::{MAX_TICK, MIN_TICK},
-    };
+    use crate::tests::*;
     use once_cell::sync::Lazy;
 
     fn v2_style_pool(

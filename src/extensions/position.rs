@@ -329,11 +329,14 @@ where
 /// * `new_tick_lower`: The new lower tick.
 /// * `new_tick_upper`: The new upper tick.
 #[inline]
-pub fn get_rebalanced_position<TP: TickDataProvider>(
+pub fn get_rebalanced_position<TP>(
     position: &mut Position<TP>,
     new_tick_lower: TP::Index,
     new_tick_upper: TP::Index,
-) -> Result<Position<TP>, Error> {
+) -> Result<Position<TP>, Error>
+where
+    TP: Clone + TickDataProvider,
+{
     let price = position.pool.token0_price();
     // Calculate the position equity denominated in token1 before rebalance.
     let equity_in_token1_before = price
@@ -406,7 +409,7 @@ pub fn get_rebalanced_position_at_price<TP>(
     new_tick_upper: TP::Index,
 ) -> Result<Position<TP>, Error>
 where
-    TP: TickDataProvider,
+    TP: Clone + TickDataProvider,
 {
     get_rebalanced_position(
         &mut get_position_at_price(position, new_price)?,

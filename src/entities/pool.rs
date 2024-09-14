@@ -269,114 +269,6 @@ impl<TP: TickDataProvider> Pool<TP> {
         })
     }
 
-    /// Given an input amount of a token, return the computed output amount, and a pool with state
-    /// updated after the trade
-    ///
-    /// ## Arguments
-    ///
-    /// * `input_amount`: The input amount for which to quote the output amount
-    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit
-    ///
-    /// returns: The output amount and the pool with updated state
-    #[inline]
-    pub fn get_output_amount(
-        &self,
-        input_amount: &CurrencyAmount<Token>,
-        sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
-        assert!(self.involves_token(&input_amount.currency), "TOKEN");
-
-        let zero_for_one = input_amount.currency.equals(&self.token0);
-
-        let SwapState {
-            amount_specified_remaining,
-            amount_calculated: output_amount,
-            sqrt_price_x96,
-            liquidity,
-            ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(input_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
-
-        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
-            return Err(Error::InsufficientLiquidity);
-        }
-
-        let output_token = if zero_for_one {
-            self.token1.clone()
-        } else {
-            self.token0.clone()
-        };
-        Ok((
-            CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
-            Pool::new_with_tick_data_provider(
-                self.token0.clone(),
-                self.token1.clone(),
-                self.fee,
-                sqrt_price_x96,
-                liquidity,
-                self.tick_data_provider.clone(),
-            )?,
-        ))
-    }
-
-    /// Given a desired output amount of a token, return the computed input amount and a pool with
-    /// state updated after the trade
-    ///
-    /// ## Arguments
-    ///
-    /// * `output_amount`: the output amount for which to quote the input amount
-    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit. If zero for one, the price cannot be
-    ///   less than this value after the swap. If one for zero, the price cannot be greater than
-    ///   this value after the swap
-    ///
-    /// returns: The input amount and the pool with updated state
-    #[inline]
-    pub fn get_input_amount(
-        &self,
-        output_amount: &CurrencyAmount<Token>,
-        sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
-        assert!(self.involves_token(&output_amount.currency), "TOKEN");
-
-        let zero_for_one = output_amount.currency.equals(&self.token1);
-
-        let SwapState {
-            amount_specified_remaining,
-            amount_calculated: input_amount,
-            sqrt_price_x96,
-            liquidity,
-            ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(-output_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
-
-        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
-            return Err(Error::InsufficientLiquidity);
-        }
-
-        let input_token = if zero_for_one {
-            self.token0.clone()
-        } else {
-            self.token1.clone()
-        };
-        Ok((
-            CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,
-            Pool::new_with_tick_data_provider(
-                self.token0.clone(),
-                self.token1.clone(),
-                self.fee,
-                sqrt_price_x96,
-                liquidity,
-                self.tick_data_provider.clone(),
-            )?,
-        ))
-    }
-
     fn _swap(
         &self,
         zero_for_one: bool,
@@ -491,6 +383,116 @@ impl<TP: TickDataProvider> Pool<TP> {
         }
 
         Ok(state)
+    }
+}
+
+impl<TP: Clone + TickDataProvider> Pool<TP> {
+    /// Given an input amount of a token, return the computed output amount, and a pool with state
+    /// updated after the trade
+    ///
+    /// ## Arguments
+    ///
+    /// * `input_amount`: The input amount for which to quote the output amount
+    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit
+    ///
+    /// returns: The output amount and the pool with updated state
+    #[inline]
+    pub fn get_output_amount(
+        &self,
+        input_amount: &CurrencyAmount<Token>,
+        sqrt_price_limit_x96: Option<U160>,
+    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
+        assert!(self.involves_token(&input_amount.currency), "TOKEN");
+
+        let zero_for_one = input_amount.currency.equals(&self.token0);
+
+        let SwapState {
+            amount_specified_remaining,
+            amount_calculated: output_amount,
+            sqrt_price_x96,
+            liquidity,
+            ..
+        } = self._swap(
+            zero_for_one,
+            I256::from_big_int(input_amount.quotient()),
+            sqrt_price_limit_x96,
+        )?;
+
+        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
+            return Err(Error::InsufficientLiquidity);
+        }
+
+        let output_token = if zero_for_one {
+            self.token1.clone()
+        } else {
+            self.token0.clone()
+        };
+        Ok((
+            CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
+            Pool::new_with_tick_data_provider(
+                self.token0.clone(),
+                self.token1.clone(),
+                self.fee,
+                sqrt_price_x96,
+                liquidity,
+                self.tick_data_provider.clone(),
+            )?,
+        ))
+    }
+
+    /// Given a desired output amount of a token, return the computed input amount and a pool with
+    /// state updated after the trade
+    ///
+    /// ## Arguments
+    ///
+    /// * `output_amount`: the output amount for which to quote the input amount
+    /// * `sqrt_price_limit_x96`: The Q64.96 sqrt price limit. If zero for one, the price cannot be
+    ///   less than this value after the swap. If one for zero, the price cannot be greater than
+    ///   this value after the swap
+    ///
+    /// returns: The input amount and the pool with updated state
+    #[inline]
+    pub fn get_input_amount(
+        &self,
+        output_amount: &CurrencyAmount<Token>,
+        sqrt_price_limit_x96: Option<U160>,
+    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
+        assert!(self.involves_token(&output_amount.currency), "TOKEN");
+
+        let zero_for_one = output_amount.currency.equals(&self.token1);
+
+        let SwapState {
+            amount_specified_remaining,
+            amount_calculated: input_amount,
+            sqrt_price_x96,
+            liquidity,
+            ..
+        } = self._swap(
+            zero_for_one,
+            I256::from_big_int(-output_amount.quotient()),
+            sqrt_price_limit_x96,
+        )?;
+
+        if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
+            return Err(Error::InsufficientLiquidity);
+        }
+
+        let input_token = if zero_for_one {
+            self.token0.clone()
+        } else {
+            self.token1.clone()
+        };
+        Ok((
+            CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,
+            Pool::new_with_tick_data_provider(
+                self.token0.clone(),
+                self.token1.clone(),
+                self.fee,
+                sqrt_price_x96,
+                liquidity,
+                self.tick_data_provider.clone(),
+            )?,
+        ))
     }
 }
 

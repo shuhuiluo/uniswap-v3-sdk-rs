@@ -26,6 +26,10 @@ It is feature-complete with unit tests matching the TypeScript SDK.
     - [`ephemeral_tick_data_provider`](./src/extensions/ephemeral_tick_data_provider.rs) module for fetching ticks using
       an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
       in a single `eth_call`
+    - [`ephemeral_tick_map_data_provider`](./src/extensions/ephemeral_tick_map_data_provider.rs) fetches ticks in a
+      single `eth_call` and creates a `TickMap`
+    - [`tick_map`](./src/extensions/tick_map.rs) provides a way to access tick data directly from a hashmap, supposedly
+      more efficient than `TickList`
 
 <details>
   <summary>Expand to see the benchmarks</summary>
@@ -44,7 +48,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "0.37.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "0.40.0", features = ["extensions", "std"] }
 ```
 
 ### Usage

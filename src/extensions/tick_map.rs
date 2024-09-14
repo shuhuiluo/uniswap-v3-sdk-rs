@@ -7,8 +7,8 @@ use alloy::uint;
 use alloy_primitives::{aliases::I24, U256};
 use rustc_hash::FxHashMap;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TickMap<I: TickIndex = I24> {
+#[derive(Clone, Debug)]
+pub struct TickMap<I = I24> {
     pub bitmap: FxHashMap<I, U256>,
     pub inner: FxHashMap<I, Tick<I>>,
     pub tick_spacing: I,
