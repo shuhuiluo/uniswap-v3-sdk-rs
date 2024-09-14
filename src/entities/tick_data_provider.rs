@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use core::ops::Deref;
 
 /// Provides information about ticks
 pub trait TickDataProvider {
@@ -28,6 +29,31 @@ pub trait TickDataProvider {
         lte: bool,
         tick_spacing: Self::Index,
     ) -> Result<(Self::Index, bool), Error>;
+}
+
+/// Implements the [`TickDataProvider`] trait for any type that dereferences to a
+/// [`TickDataProvider`]
+impl<TP> TickDataProvider for TP
+where
+    TP: Deref<Target: TickDataProvider>,
+{
+    type Index = <<TP as Deref>::Target as TickDataProvider>::Index;
+
+    #[inline]
+    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+        self.deref().get_tick(tick)
+    }
+
+    #[inline]
+    fn next_initialized_tick_within_one_word(
+        &self,
+        tick: Self::Index,
+        lte: bool,
+        tick_spacing: Self::Index,
+    ) -> Result<(Self::Index, bool), Error> {
+        self.deref()
+            .next_initialized_tick_within_one_word(tick, lte, tick_spacing)
+    }
 }
 
 /// This tick data provider does not know how to fetch any tick data. It throws whenever it is

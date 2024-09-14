@@ -4,10 +4,11 @@
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
+use core::ops::Deref;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
-#[derive(Clone, Debug, PartialEq)]
-pub struct EphemeralTickMapDataProvider<I: TickIndex = I24> {
+#[derive(Clone, Debug)]
+pub struct EphemeralTickMapDataProvider<I = I24> {
     pub pool: Address,
     pub tick_lower: I,
     pub tick_upper: I,
@@ -43,23 +44,12 @@ impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
     }
 }
 
-impl<I: TickIndex> TickDataProvider for EphemeralTickMapDataProvider<I> {
-    type Index = I;
+impl<I> Deref for EphemeralTickMapDataProvider<I> {
+    type Target = TickMap<I>;
 
     #[inline]
-    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
-        self.tick_map.get_tick(tick)
-    }
-
-    #[inline]
-    fn next_initialized_tick_within_one_word(
-        &self,
-        tick: I,
-        lte: bool,
-        tick_spacing: I,
-    ) -> Result<(I, bool), Error> {
-        self.tick_map
-            .next_initialized_tick_within_one_word(tick, lte, tick_spacing)
+    fn deref(&self) -> &Self::Target {
+        &self.tick_map
     }
 }
 

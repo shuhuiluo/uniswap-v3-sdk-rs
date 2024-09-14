@@ -55,88 +55,122 @@ pub trait TickList {
     }
 }
 
+macro_rules! impl_tick_list {
+    ($tick_list:ty) => {
+        type Index = I;
+
+        #[inline]
+        fn validate_list(&self, tick_spacing: I) {
+            assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
+            assert!(
+                self.iter().all(|x| x.index % tick_spacing == I::ZERO),
+                "TICK_SPACING"
+            );
+            for i in 1..self.len() {
+                assert!(self[i] >= self[i - 1], "SORTED");
+            }
+            assert_eq!(
+                self.iter().fold(0_u128, |acc, x| acc
+                    .checked_add_signed(x.liquidity_net)
+                    .expect("ZERO_NET")),
+                0,
+                "ZERO_NET"
+            );
+        }
+
+        #[inline]
+        fn is_below_smallest(&self, tick: I) -> bool {
+            match self.first() {
+                Some(first) => tick < first.index,
+                None => panic!("LENGTH"),
+            }
+        }
+
+        #[inline]
+        fn is_at_or_above_largest(&self, tick: I) -> bool {
+            match self.last() {
+                Some(last) => tick >= last.index,
+                None => panic!("LENGTH"),
+            }
+        }
+
+        #[inline]
+        fn get_tick(&self, index: I) -> &Tick<I> {
+            let i = self.binary_search_by_tick(index);
+            let tick = &self[i];
+            assert_eq!(tick.index, index, "NOT_CONTAINED");
+            tick
+        }
+
+        #[inline]
+        fn binary_search_by_tick(&self, tick: I) -> usize {
+            assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
+            let mut l = 0;
+            let mut r = self.len() - 1;
+
+            loop {
+                let i = (l + r) / 2;
+                if self[i].index <= tick && (i == self.len() - 1 || self[i + 1].index > tick) {
+                    return i;
+                }
+                if self[i].index < tick {
+                    l = i + 1;
+                } else {
+                    r = i - 1;
+                }
+            }
+        }
+
+        #[inline]
+        fn next_initialized_tick(&self, tick: I, lte: bool) -> &Tick<I> {
+            if lte {
+                assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
+                if self.is_at_or_above_largest(tick) {
+                    return self.last().unwrap();
+                }
+                let index = self.binary_search_by_tick(tick);
+                &self[index]
+            } else {
+                assert!(!self.is_at_or_above_largest(tick), "AT_OR_ABOVE_LARGEST");
+                if self.is_below_smallest(tick) {
+                    return &self[0];
+                }
+                let index = self.binary_search_by_tick(tick);
+                &self[index + 1]
+            }
+        }
+    };
+}
+
 impl<I: TickIndex> TickList for [Tick<I>] {
+    impl_tick_list!([Tick<I>]);
+}
+
+impl<I: TickIndex, const N: usize> TickList for [Tick<I>; N] {
+    impl_tick_list!([Tick<I>; N]);
+}
+
+impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     type Index = I;
 
     #[inline]
-    fn validate_list(&self, tick_spacing: I) {
-        assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
-        assert!(
-            self.iter().all(|x| x.index % tick_spacing == I::ZERO),
-            "TICK_SPACING"
-        );
-        for i in 1..self.len() {
-            assert!(self[i] >= self[i - 1], "SORTED");
-        }
-        assert_eq!(
-            self.iter().fold(0_u128, |acc, x| acc
-                .checked_add_signed(x.liquidity_net)
-                .expect("ZERO_NET")),
-            0,
-            "ZERO_NET"
-        );
+    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
+        Ok(TickList::get_tick(self, tick))
     }
 
     #[inline]
-    fn is_below_smallest(&self, tick: I) -> bool {
-        match self.first() {
-            Some(first) => tick < first.index,
-            None => panic!("LENGTH"),
-        }
-    }
-
-    #[inline]
-    fn is_at_or_above_largest(&self, tick: I) -> bool {
-        match self.last() {
-            Some(last) => tick >= last.index,
-            None => panic!("LENGTH"),
-        }
-    }
-
-    #[inline]
-    fn get_tick(&self, index: I) -> &Tick<I> {
-        let i = self.binary_search_by_tick(index);
-        let tick = &self[i];
-        assert_eq!(tick.index, index, "NOT_CONTAINED");
-        tick
-    }
-
-    #[inline]
-    fn binary_search_by_tick(&self, tick: I) -> usize {
-        assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
-        let mut l = 0;
-        let mut r = self.len() - 1;
-
-        loop {
-            let i = (l + r) / 2;
-            if self[i].index <= tick && (i == self.len() - 1 || self[i + 1].index > tick) {
-                return i;
-            }
-            if self[i].index < tick {
-                l = i + 1;
-            } else {
-                r = i - 1;
-            }
-        }
-    }
-
-    #[inline]
-    fn next_initialized_tick(&self, tick: I, lte: bool) -> &Tick<I> {
-        if lte {
-            assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
-            if self.is_at_or_above_largest(tick) {
-                return self.last().unwrap();
-            }
-            let index = self.binary_search_by_tick(tick);
-            &self[index]
-        } else {
-            assert!(!self.is_at_or_above_largest(tick), "AT_OR_ABOVE_LARGEST");
-            if self.is_below_smallest(tick) {
-                return &self[0];
-            }
-            let index = self.binary_search_by_tick(tick);
-            &self[index + 1]
-        }
+    fn next_initialized_tick_within_one_word(
+        &self,
+        tick: I,
+        lte: bool,
+        tick_spacing: I,
+    ) -> Result<(I, bool), Error> {
+        Ok(TickList::next_initialized_tick_within_one_word(
+            self,
+            tick,
+            lte,
+            tick_spacing,
+        ))
     }
 }
 

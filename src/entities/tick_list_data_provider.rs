@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use core::ops::Deref;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -12,24 +13,12 @@ impl<I: TickIndex> TickListDataProvider<I> {
     }
 }
 
-impl<I: TickIndex> TickDataProvider for TickListDataProvider<I> {
-    type Index = I;
+impl<I> Deref for TickListDataProvider<I> {
+    type Target = Vec<Tick<I>>;
 
     #[inline]
-    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
-        Ok(self.0.get_tick(tick))
-    }
-
-    #[inline]
-    fn next_initialized_tick_within_one_word(
-        &self,
-        tick: I,
-        lte: bool,
-        tick_spacing: I,
-    ) -> Result<(I, bool), Error> {
-        Ok(self
-            .0
-            .next_initialized_tick_within_one_word(tick, lte, tick_spacing))
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

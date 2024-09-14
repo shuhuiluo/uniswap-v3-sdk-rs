@@ -4,6 +4,7 @@
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
+use core::ops::Deref;
 use uniswap_lens::pool_lens;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
@@ -58,24 +59,12 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
     }
 }
 
-impl<I: TickIndex> TickDataProvider for EphemeralTickDataProvider<I> {
-    type Index = I;
+impl<I> Deref for EphemeralTickDataProvider<I> {
+    type Target = Vec<Tick<I>>;
 
     #[inline]
-    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
-        Ok(self.ticks.get_tick(tick))
-    }
-
-    #[inline]
-    fn next_initialized_tick_within_one_word(
-        &self,
-        tick: I,
-        lte: bool,
-        tick_spacing: I,
-    ) -> Result<(I, bool), Error> {
-        Ok(self
-            .ticks
-            .next_initialized_tick_within_one_word(tick, lte, tick_spacing))
+    fn deref(&self) -> &Self::Target {
+        &self.ticks
     }
 }
 
