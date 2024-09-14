@@ -2,7 +2,8 @@ use crate::prelude::*;
 use alloy_primitives::{aliases::I24, Signed};
 use core::{
     fmt::Debug,
-    ops::{Add, Div, Mul, Rem, Shl, Shr, Sub},
+    hash::Hash,
+    ops::{Add, BitAnd, Div, Mul, Rem, Shl, Shr, Sub},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,7 +35,9 @@ pub trait TickIndex:
     Copy
     + Debug
     + Default
+    + Hash
     + Ord
+    + BitAnd<Output = Self>
     + Add<Output = Self>
     + Div<Output = Self>
     + Mul<Output = Self>
@@ -65,6 +68,14 @@ pub trait TickIndex:
         } else {
             self / tick_spacing
         }
+    }
+
+    #[inline]
+    fn position(self) -> (Self, u8) {
+        (
+            self >> 8,
+            (self & Self::try_from(0xff).unwrap()).try_into().unwrap() as u8,
+        )
     }
 }
 

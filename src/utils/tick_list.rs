@@ -69,7 +69,9 @@ impl<I: TickIndex> TickList for [Tick<I>] {
             assert!(self[i] >= self[i - 1], "SORTED");
         }
         assert_eq!(
-            self.iter().fold(0, |acc, x| acc + x.liquidity_net),
+            self.iter().fold(0_u128, |acc, x| acc
+                .checked_add_signed(x.liquidity_net)
+                .expect("ZERO_NET")),
             0,
             "ZERO_NET"
         );

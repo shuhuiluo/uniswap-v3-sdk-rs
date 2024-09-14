@@ -12,10 +12,9 @@ pub struct EphemeralTickDataProvider<I = I24> {
     pub pool: Address,
     pub tick_lower: I,
     pub tick_upper: I,
+    pub tick_spacing: I,
     pub block_id: Option<BlockId>,
     pub ticks: Vec<Tick<I>>,
-    /// the minimum distance between two ticks in the list
-    pub tick_spacing: I,
 }
 
 impl<I: TickIndex> EphemeralTickDataProvider<I> {
@@ -52,9 +51,9 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
             pool,
             tick_lower: I::from_i24(tick_lower),
             tick_upper: I::from_i24(tick_upper),
+            tick_spacing: I::from_i24(tick_spacing),
             block_id,
             ticks,
-            tick_spacing: I::from_i24(tick_spacing),
         })
     }
 }
@@ -111,16 +110,16 @@ mod tests {
         let tick = provider.get_tick(-92110)?;
         assert_eq!(tick.liquidity_gross, 398290794261);
         assert_eq!(tick.liquidity_net, 398290794261);
-        let (tick, success) = provider.next_initialized_tick_within_one_word(
-            MIN_TICK.as_i32() + TICK_SPACING,
+        let (tick, initialized) = provider.next_initialized_tick_within_one_word(
+            MIN_TICK_I32 + TICK_SPACING,
             true,
             TICK_SPACING,
         )?;
-        assert!(success);
+        assert!(initialized);
         assert_eq!(tick, -887270);
-        let (tick, success) =
+        let (tick, initialized) =
             provider.next_initialized_tick_within_one_word(0, false, TICK_SPACING)?;
-        assert!(success);
+        assert!(initialized);
         assert_eq!(tick, 100);
         let provider: TickListDataProvider = provider.into();
         let tick = provider.get_tick(-92110)?;

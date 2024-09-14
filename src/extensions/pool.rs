@@ -10,7 +10,6 @@ use alloy::{
     transports::Transport,
 };
 use alloy_primitives::{Address, ChainId, B256};
-use anyhow::Result;
 use uniswap_lens::{
     bindings::{
         ierc20metadata::IERC20Metadata, iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,

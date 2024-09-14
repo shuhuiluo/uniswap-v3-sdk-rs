@@ -1,32 +1,88 @@
 //! ## Tick Map
-//! [`TickMapTrait`] is a trait that provides a way to access tick data directly from a hashmap,
-//! supposedly more efficient than [`TickList`].
+//! [`TickMap`] provides a way to access tick data directly from a hashmap, supposedly more
+//! efficient than [`TickList`].
 
 use crate::prelude::*;
-use alloy_primitives::U256;
-use anyhow::Result;
+use alloy::uint;
+use alloy_primitives::{aliases::I24, U256};
 use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TickMap {
-    pub bitmap: FxHashMap<i16, U256>,
-    pub ticks: FxHashMap<i32, Tick>,
+pub struct TickMap<I: TickIndex = I24> {
+    pub bitmap: FxHashMap<I, U256>,
+    pub inner: FxHashMap<I, Tick<I>>,
+    pub tick_spacing: I,
 }
 
-pub trait TickMapTrait {
-    type Tick;
-
+impl<I: TickIndex> TickMap<I> {
     #[inline]
     #[must_use]
-    fn position(tick: i32) -> (i16, u8) {
-        ((tick >> 8) as i16, (tick & 0xff) as u8)
+    pub fn new(ticks: Vec<Tick<I>>, tick_spacing: I) -> Self {
+        ticks.validate_list(tick_spacing);
+        let mut bitmap = FxHashMap::<I, U256>::default();
+        for tick in &ticks {
+            let compressed = tick.index.compress(tick_spacing);
+            let (word_pos, bit_pos) = compressed.position();
+            let word = bitmap.get(&word_pos).unwrap_or(&U256::ZERO);
+            bitmap.insert(word_pos, word | uint!(1_U256) << bit_pos);
+        }
+        Self {
+            bitmap,
+            inner: FxHashMap::from_iter(ticks.into_iter().map(|tick| (tick.index, tick))),
+            tick_spacing,
+        }
     }
-
-    fn get_bitmap(&self, tick: i32) -> Result<U256>;
-
-    fn get_tick(&self, index: i32) -> &Self::Tick;
 }
 
-// impl TickMapTrait for TickMap {}
+impl<I: TickIndex> TickDataProvider for TickMap<I> {
+    type Index = I;
 
-pub trait TickMapDataProvider: TickMapTrait + TickDataProvider {}
+    #[inline]
+    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+        self.inner
+            .get(&tick)
+            .ok_or(Error::InvalidTick(tick.to_i24()))
+    }
+
+    #[inline]
+    fn next_initialized_tick_within_one_word(
+        &self,
+        tick: Self::Index,
+        lte: bool,
+        tick_spacing: Self::Index,
+    ) -> Result<(Self::Index, bool), Error> {
+        let compressed = tick.compress(tick_spacing);
+        if lte {
+            let (word_pos, bit_pos) = compressed.position();
+            // all the 1s at or to the right of the current `bit_pos`
+            // (2 << bitPos) may overflow but fine since 2 << 255 = 0
+            let mask = (TWO << bit_pos) - uint!(1_U256);
+            let word = self.bitmap.get(&word_pos).unwrap_or(&U256::ZERO);
+            let masked = word & mask;
+            let initialized = masked != U256::ZERO;
+            let bit_pos = if initialized {
+                let msb = masked.most_significant_bit() as u8;
+                (bit_pos - msb) as i32
+            } else {
+                bit_pos as i32
+            };
+            let next = (compressed - Self::Index::try_from(bit_pos).unwrap()) * tick_spacing;
+            Ok((next, initialized))
+        } else {
+            let (word_pos, bit_pos) = compressed.position();
+            // all the 1s at or to the left of the `bit_pos`
+            let mask = U256::ZERO - (uint!(1_U256) << bit_pos);
+            let word = self.bitmap.get(&word_pos).unwrap_or(&U256::ZERO);
+            let masked = word & mask;
+            let initialized = masked != U256::ZERO;
+            let bit_pos = if initialized {
+                let lsb = masked.least_significant_bit() as u8;
+                (lsb - bit_pos) as i32
+            } else {
+                (255 - bit_pos) as i32
+            };
+            let next = (compressed + Self::Index::try_from(bit_pos).unwrap()) * tick_spacing;
+            Ok((next, initialized))
+        }
+    }
+}
