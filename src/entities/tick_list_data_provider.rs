@@ -39,7 +39,7 @@ mod tests {
     use once_cell::sync::Lazy;
 
     static PROVIDER: Lazy<TickListDataProvider> =
-        Lazy::new(|| TickListDataProvider::new(vec![Tick::new(-1, 1, -1), Tick::new(1, 1, 1)], 1));
+        Lazy::new(|| TickListDataProvider::new(vec![Tick::new(-1, 1, 1), Tick::new(1, 1, -1)], 1));
 
     #[test]
     fn can_take_an_empty_list_of_ticks() {
@@ -67,14 +67,14 @@ mod tests {
     #[test]
     fn gets_the_smallest_tick_from_the_list() {
         let tick = PROVIDER.get_tick(-1).unwrap();
-        assert_eq!(tick.liquidity_net, -1);
+        assert_eq!(tick.liquidity_net, 1);
         assert_eq!(tick.liquidity_gross, 1);
     }
 
     #[test]
     fn gets_the_largest_tick_from_the_list() {
         let tick = PROVIDER.get_tick(1).unwrap();
-        assert_eq!(tick.liquidity_net, 1);
+        assert_eq!(tick.liquidity_net, -1);
         assert_eq!(tick.liquidity_gross, 1);
     }
 }

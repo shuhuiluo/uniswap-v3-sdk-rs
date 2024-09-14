@@ -71,7 +71,7 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         assert_eq!(
             self.iter().fold(0_u128, |acc, x| acc
                 .checked_add_signed(x.liquidity_net)
-                .unwrap()),
+                .expect("ZERO_NET")),
             0,
             "ZERO_NET"
         );
