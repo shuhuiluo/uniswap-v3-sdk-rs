@@ -18,6 +18,7 @@ impl<I: TickIndex> TickMap<I> {
     #[inline]
     #[must_use]
     pub fn new(ticks: Vec<Tick<I>>, tick_spacing: I) -> Self {
+        ticks.validate_list(tick_spacing);
         let mut bitmap = FxHashMap::<I, U256>::default();
         for tick in &ticks {
             let compressed = tick.index.compress(tick_spacing);
