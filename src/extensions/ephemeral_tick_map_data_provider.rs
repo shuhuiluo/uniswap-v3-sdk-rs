@@ -1,22 +1,19 @@
 //! ## Ephemeral Tick Map Data Provider
 //! A data provider that fetches ticks using an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol) in a single `eth_call`.
 
-#![allow(unused_variables)]
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
-use uniswap_lens::pool_lens;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
 #[derive(Clone, Debug, PartialEq)]
-pub struct EphemeralTickMapDataProvider<I = I24> {
+pub struct EphemeralTickMapDataProvider<I: TickIndex = I24> {
     pub pool: Address,
     pub tick_lower: I,
     pub tick_upper: I,
-    pub block_id: Option<BlockId>,
-    pub tick_map: TickMap,
-    /// the minimum distance between two ticks in the list
     pub tick_spacing: I,
+    pub block_id: Option<BlockId>,
+    pub tick_map: TickMap<I>,
 }
 
 impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
@@ -32,14 +29,17 @@ impl<I: TickIndex> EphemeralTickMapDataProvider<I> {
         T: Transport + Clone,
         P: Provider<T>,
     {
-        let tick_lower = tick_lower.map_or(MIN_TICK, I::to_i24);
-        let tick_upper = tick_upper.map_or(MAX_TICK, I::to_i24);
-        let (ticks, tick_spacing) = pool_lens::get_populated_ticks_in_range(
-            pool, tick_lower, tick_upper, provider, block_id,
-        )
-        .await
-        .map_err(Error::LensError)?;
-        unimplemented!()
+        let provider =
+            EphemeralTickDataProvider::new(pool, provider, tick_lower, tick_upper, block_id)
+                .await?;
+        Ok(Self {
+            pool,
+            tick_lower: provider.tick_lower,
+            tick_upper: provider.tick_upper,
+            tick_spacing: provider.tick_spacing,
+            block_id,
+            tick_map: TickMap::new(provider.ticks, provider.tick_spacing),
+        })
     }
 }
 
@@ -48,7 +48,7 @@ impl<I: TickIndex> TickDataProvider for EphemeralTickMapDataProvider<I> {
 
     #[inline]
     fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
-        unimplemented!()
+        self.tick_map.get_tick(tick)
     }
 
     #[inline]
@@ -58,6 +58,43 @@ impl<I: TickIndex> TickDataProvider for EphemeralTickMapDataProvider<I> {
         lte: bool,
         tick_spacing: I,
     ) -> Result<(I, bool), Error> {
-        unimplemented!()
+        self.tick_map
+            .next_initialized_tick_within_one_word(tick, lte, tick_spacing)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::*;
+    use alloy_primitives::address;
+
+    const TICK_SPACING: i32 = 10;
+
+    #[tokio::test]
+    async fn test_ephemeral_tick_map_data_provider() -> Result<(), Error> {
+        let provider = EphemeralTickMapDataProvider::new(
+            address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
+            PROVIDER.clone(),
+            None,
+            None,
+            *BLOCK_ID,
+        )
+        .await?;
+        let tick = provider.get_tick(-92110)?;
+        assert_eq!(tick.liquidity_gross, 398290794261);
+        assert_eq!(tick.liquidity_net, 398290794261);
+        let (tick, initialized) = provider.next_initialized_tick_within_one_word(
+            MIN_TICK_I32 + TICK_SPACING,
+            true,
+            TICK_SPACING,
+        )?;
+        assert_eq!(tick, -887270);
+        assert!(initialized);
+        let (tick, initialized) =
+            provider.next_initialized_tick_within_one_word(0, false, TICK_SPACING)?;
+        assert!(initialized);
+        assert_eq!(tick, 100);
+        Ok(())
     }
 }
