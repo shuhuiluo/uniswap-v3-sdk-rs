@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 /// Provides information about ticks
-pub trait TickDataProvider: Clone {
+pub trait TickDataProvider {
     type Index: TickIndex;
 
     /// Return information corresponding to a specific tick
