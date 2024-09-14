@@ -1,6 +1,6 @@
 //! ## Tick Map
-//! [`TickMapTrait`] is a trait that provides a way to access tick data directly from a hashmap,
-//! supposedly more efficient than [`TickList`].
+//! [`TickMap`] provides a way to access tick data directly from a hashmap, supposedly more
+//! efficient than [`TickList`].
 
 use crate::prelude::*;
 use alloy::uint;
