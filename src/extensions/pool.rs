@@ -36,68 +36,114 @@ where
     )
 }
 
-/// Get a [`Pool`] struct from pool key
-///
-/// ## Arguments
-///
-/// * `chain_id`: The chain id
-/// * `factory`: The factory address
-/// * `token_a`: One of the tokens in the pool
-/// * `token_b`: The other token in the pool
-/// * `fee`: Fee tier of the pool
-/// * `provider`: The alloy provider
-/// * `block_id`: Optional block number to query.
-#[inline]
-pub async fn get_pool<T, P>(
-    chain_id: ChainId,
-    factory: Address,
-    token_a: Address,
-    token_b: Address,
-    fee: FeeAmount,
-    provider: P,
-    block_id: Option<BlockId>,
-) -> Result<Pool, Error>
-where
-    T: Transport + Clone,
-    P: Provider<T> + Clone,
-{
-    let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
-    let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.clone());
-    let token_a_contract = IERC20Metadata::new(token_a, provider.clone());
-    let token_b_contract = IERC20Metadata::new(token_b, provider.clone());
-    // TODO: use multicall
-    let slot_0 = pool_contract.slot0().block(block_id).call().await?;
-    let liquidity = pool_contract.liquidity().block(block_id).call().await?._0;
-    let token_a_decimals = token_a_contract.decimals().block(block_id).call().await?._0;
-    let token_a_name = token_a_contract.name().block(block_id).call().await?._0;
-    let token_a_symbol = token_a_contract.symbol().block(block_id).call().await?._0;
-    let token_b_decimals = token_b_contract.decimals().block(block_id).call().await?._0;
-    let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
-    let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
-    let sqrt_price_x96 = slot_0.sqrtPriceX96;
-    assert!(
-        !sqrt_price_x96.is_zero(),
-        "Pool has been created but not yet initialized"
-    );
-    Pool::new(
-        token!(
+impl Pool {
+    /// Get a [`Pool`] struct from pool key
+    ///
+    /// ## Arguments
+    ///
+    /// * `chain_id`: The chain id
+    /// * `factory`: The factory address
+    /// * `token_a`: One of the tokens in the pool
+    /// * `token_b`: The other token in the pool
+    /// * `fee`: Fee tier of the pool
+    /// * `provider`: The alloy provider
+    /// * `block_id`: Optional block number to query.
+    #[inline]
+    pub async fn from_pool_key<T, P>(
+        chain_id: ChainId,
+        factory: Address,
+        token_a: Address,
+        token_b: Address,
+        fee: FeeAmount,
+        provider: P,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, Error>
+    where
+        T: Transport + Clone,
+        P: Provider<T> + Clone,
+    {
+        let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+        let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.clone());
+        let token_a_contract = IERC20Metadata::new(token_a, provider.clone());
+        let token_b_contract = IERC20Metadata::new(token_b, provider.clone());
+        // TODO: use multicall
+        let slot_0 = pool_contract.slot0().block(block_id).call().await?;
+        let liquidity = pool_contract.liquidity().block(block_id).call().await?._0;
+        let token_a_decimals = token_a_contract.decimals().block(block_id).call().await?._0;
+        let token_a_name = token_a_contract.name().block(block_id).call().await?._0;
+        let token_a_symbol = token_a_contract.symbol().block(block_id).call().await?._0;
+        let token_b_decimals = token_b_contract.decimals().block(block_id).call().await?._0;
+        let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
+        let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
+        let sqrt_price_x96 = slot_0.sqrtPriceX96;
+        assert!(
+            !sqrt_price_x96.is_zero(),
+            "Pool has been created but not yet initialized"
+        );
+        Self::new(
+            token!(
+                chain_id,
+                token_a,
+                token_a_decimals,
+                token_a_symbol,
+                token_a_name
+            ),
+            token!(
+                chain_id,
+                token_b,
+                token_b_decimals,
+                token_b_symbol,
+                token_b_name
+            ),
+            fee,
+            sqrt_price_x96,
+            liquidity,
+        )
+    }
+}
+
+impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
+    #[inline]
+    pub async fn from_pool_key_with_tick_data_provider<T, P>(
+        chain_id: ChainId,
+        factory: Address,
+        token_a: Address,
+        token_b: Address,
+        fee: FeeAmount,
+        provider: P,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, Error>
+    where
+        T: Transport + Clone,
+        P: Provider<T> + Clone,
+    {
+        let pool = Pool::from_pool_key(
             chain_id,
+            factory,
             token_a,
-            token_a_decimals,
-            token_a_symbol,
-            token_a_name
-        ),
-        token!(
-            chain_id,
             token_b,
-            token_b_decimals,
-            token_b_symbol,
-            token_b_name
-        ),
-        fee,
-        sqrt_price_x96,
-        liquidity,
-    )
+            fee,
+            provider.clone(),
+            block_id,
+        )
+        .await?;
+        let tick_data_provider = EphemeralTickMapDataProvider::new(
+            pool.address(None, None),
+            provider.clone(),
+            None,
+            None,
+            block_id,
+        )
+        .await?;
+        Self::new_with_tick_data_provider(
+            pool.token0,
+            pool.token1,
+            pool.fee,
+            pool.sqrt_ratio_x96,
+            pool.liquidity,
+            tick_data_provider,
+        )
+    }
 }
 
 /// Normalizes the specified tick range.
@@ -215,7 +261,7 @@ mod tests {
     use alloy_primitives::address;
 
     async fn pool() -> Pool {
-        get_pool(
+        Pool::from_pool_key(
             1,
             FACTORY_ADDRESS,
             address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),

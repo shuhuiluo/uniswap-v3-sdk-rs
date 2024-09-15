@@ -76,7 +76,7 @@ where
         liquidity,
         ..
     } = position;
-    let pool = get_pool(
+    let pool = Pool::from_pool_key(
         chain_id,
         factory,
         token0,
@@ -144,6 +144,66 @@ impl Position {
             position.liquidity,
             position.tickLower.as_i32(),
             position.tickUpper.as_i32(),
+        ))
+    }
+}
+
+impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
+    /// Get a [`Position`] struct from the token id with tick data provider in a single call
+    ///
+    /// ## Arguments
+    ///
+    /// * `chain_id`: The chain id
+    /// * `nonfungible_position_manager`: The nonfungible position manager address
+    /// * `token_id`: The token id
+    /// * `provider`: The alloy provider
+    /// * `block_id`: Optional block number to query
+    ///
+    /// ## Returns
+    ///
+    /// [`Position<EphemeralTickMapDataProvider<I>>`]
+    #[inline]
+    pub async fn from_token_id_with_tick_data_provider<T, P>(
+        chain_id: ChainId,
+        nonfungible_position_manager: Address,
+        token_id: U256,
+        provider: P,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, Error>
+    where
+        T: Transport + Clone,
+        P: Provider<T> + Clone,
+    {
+        let position = Position::from_token_id(
+            chain_id,
+            nonfungible_position_manager,
+            token_id,
+            provider.clone(),
+            block_id,
+        )
+        .await?;
+        let pool = position.pool;
+        let tick_data_provider = EphemeralTickMapDataProvider::new(
+            pool.address(None, None),
+            provider,
+            None,
+            None,
+            block_id,
+        )
+        .await?;
+        let pool = Pool::new_with_tick_data_provider(
+            pool.token0,
+            pool.token1,
+            pool.fee,
+            pool.sqrt_ratio_x96,
+            pool.liquidity,
+            tick_data_provider,
+        )?;
+        Ok(Position::new(
+            pool,
+            position.liquidity,
+            position.tick_lower.try_into().unwrap(),
+            position.tick_upper.try_into().unwrap(),
         ))
     }
 }
@@ -436,6 +496,25 @@ mod tests {
         assert_eq!(position.liquidity, 34399999543676);
         assert_eq!(position.tick_lower, 253320);
         assert_eq!(position.tick_upper, 264600);
+    }
+
+    #[tokio::test]
+    async fn test_from_token_id_with_tick_data_provider() {
+        let position = Position::from_token_id_with_tick_data_provider(
+            1,
+            NPM,
+            uint!(4_U256),
+            PROVIDER.clone(),
+            BLOCK_ID,
+        )
+        .await
+        .unwrap();
+        assert_eq!(position.liquidity, 34399999543676);
+        assert_eq!(position.tick_lower, 253320);
+        assert_eq!(position.tick_upper, 264600);
+        let tick = position.pool.tick_data_provider.get_tick(-92100).unwrap();
+        assert_eq!(tick.liquidity_gross, 456406095307);
+        assert_eq!(tick.liquidity_net, 456406095307);
     }
 
     #[tokio::test]
