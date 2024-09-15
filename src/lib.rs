@@ -24,6 +24,10 @@
 //!     - [`ephemeral_tick_data_provider`](./src/extensions/ephemeral_tick_data_provider.rs) module for fetching ticks using
 //!       an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
 //!       in a single `eth_call`.
+//!     - [`ephemeral_tick_map_data_provider`](./src/extensions/ephemeral_tick_map_data_provider.rs)
+//!       fetches ticks in a single `eth_call` and creates a `TickMap`
+//!     - [`tick_map`](./src/extensions/tick_map.rs) provides a way to access tick data directly
+//!       from a hashmap, supposedly more efficient than `TickList`
 
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![warn(
