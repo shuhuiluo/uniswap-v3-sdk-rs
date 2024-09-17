@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "1.0.0-rc"
+version = "1.0.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -23,7 +23,7 @@ bigdecimal = "0.4.5"
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"
-once_cell = "1.20"
+once_cell = "1.19"
 regex = { version = "1.10", optional = true }
 rustc-hash = "2.0"
 serde_json = { version = "1.0", optional = true }
