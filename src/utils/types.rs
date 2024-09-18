@@ -4,8 +4,13 @@ use num_bigint::{BigInt, BigUint, Sign};
 
 pub trait ToBig {
     fn to_big_uint(&self) -> BigUint;
+
     fn to_big_int(&self) -> BigInt;
-    fn to_big_decimal(&self) -> BigDecimal;
+
+    #[inline]
+    fn to_big_decimal(&self) -> BigDecimal {
+        BigDecimal::from(self.to_big_int())
+    }
 }
 
 impl<const BITS: usize, const LIMBS: usize> ToBig for Uint<BITS, LIMBS> {
@@ -18,11 +23,6 @@ impl<const BITS: usize, const LIMBS: usize> ToBig for Uint<BITS, LIMBS> {
     fn to_big_int(&self) -> BigInt {
         BigInt::from_biguint(Sign::Plus, self.to_big_uint())
     }
-
-    #[inline]
-    fn to_big_decimal(&self) -> BigDecimal {
-        BigDecimal::from(self.to_big_int())
-    }
 }
 
 impl<const BITS: usize, const LIMBS: usize> ToBig for Signed<BITS, LIMBS> {
@@ -34,11 +34,6 @@ impl<const BITS: usize, const LIMBS: usize> ToBig for Signed<BITS, LIMBS> {
     #[inline]
     fn to_big_int(&self) -> BigInt {
         BigInt::from_signed_bytes_le(&self.into_raw().as_le_bytes())
-    }
-
-    #[inline]
-    fn to_big_decimal(&self) -> BigDecimal {
-        BigDecimal::from(self.to_big_int())
     }
 }
 
