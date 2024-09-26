@@ -31,9 +31,8 @@ jobs:
             ${{ runner.os }}-cargo-registry-
       - name: Install Rust toolchain via rustup
         run: |
-          rustup override set nightly
-          rustup component add clippy --toolchain nightly
-          rustup component add rustfmt --toolchain nightly
+          rustup component add clippy
+          rustup component add rustfmt
       - name: Check linting
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Check formatting

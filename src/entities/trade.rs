@@ -542,7 +542,7 @@ where
         amount: CurrencyAmount<impl Currency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
-        let mut token_amount: CurrencyAmount<Token> = amount.wrapped()?;
+        let mut token_amount: CurrencyAmount<&Token> = amount.wrapped()?;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
         match trade_type {
@@ -554,15 +554,15 @@ where
                 for pool in &route.pools {
                     (token_amount, _) = pool.get_output_amount(&token_amount, None)?;
                 }
-                input_amount = CurrencyAmount::from_fractional_amount(
-                    route.input.clone(),
-                    amount.numerator,
-                    amount.denominator,
-                )?;
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
                     token_amount.numerator,
                     token_amount.denominator,
+                )?;
+                input_amount = CurrencyAmount::from_fractional_amount(
+                    route.input.clone(),
+                    amount.numerator,
+                    amount.denominator,
                 )?;
             }
             TradeType::ExactOutput => {
@@ -633,7 +633,7 @@ where
         currency_out: &'a TOutput,
         best_trade_options: BestTradeOptions,
         current_pools: Vec<Pool<TP>>,
-        next_amount_in: Option<CurrencyAmount<Token>>,
+        next_amount_in: Option<CurrencyAmount<&'a Token>>,
         best_trades: &'a mut Vec<Self>,
     ) -> Result<&'a mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");
@@ -723,7 +723,7 @@ where
         currency_amount_out: &'a CurrencyAmount<TOutput>,
         best_trade_options: BestTradeOptions,
         current_pools: Vec<Pool<TP>>,
-        next_amount_out: Option<CurrencyAmount<Token>>,
+        next_amount_out: Option<CurrencyAmount<&'a Token>>,
         best_trades: &'a mut Vec<Self>,
     ) -> Result<&'a mut Vec<Self>, Error> {
         assert!(!pools.is_empty(), "POOLS");

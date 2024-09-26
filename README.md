@@ -1,6 +1,7 @@
 # Uniswap V3 SDK Rust
 
-[![Unit Tests](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml)
+[![Rust CI](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml)
+[![docs.rs](https://img.shields.io/docsrs/uniswap-v3-sdk)](https://docs.rs/uniswap-v3-sdk/latest/uniswap_v3_sdk/)
 [![crates.io](https://img.shields.io/crates/v/uniswap-v3-sdk.svg)](https://crates.io/crates/uniswap-v3-sdk)
 
 A Rust SDK for building applications on top of Uniswap V3. Migration from the
@@ -48,7 +49,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "1.0.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "1.1.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
