@@ -184,7 +184,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: bool
     #[inline]
-    pub fn involves_token(&self, token: &Token) -> bool {
+    pub fn involves_token(&self, token: &impl Currency) -> bool {
         self.token0.equals(token) || self.token1.equals(token)
     }
 
@@ -399,9 +399,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
     #[inline]
     pub fn get_output_amount(
         &self,
-        input_amount: &CurrencyAmount<Token>,
+        input_amount: &CurrencyAmount<impl Currency>,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
+    ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
         assert!(self.involves_token(&input_amount.currency), "TOKEN");
 
         let zero_for_one = input_amount.currency.equals(&self.token0);
@@ -423,9 +423,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         }
 
         let output_token = if zero_for_one {
-            self.token1.clone()
+            &self.token1
         } else {
-            self.token0.clone()
+            &self.token0
         };
         Ok((
             CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
@@ -454,9 +454,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
     #[inline]
     pub fn get_input_amount(
         &self,
-        output_amount: &CurrencyAmount<Token>,
+        output_amount: &CurrencyAmount<impl Currency>,
         sqrt_price_limit_x96: Option<U160>,
-    ) -> Result<(CurrencyAmount<Token>, Self), Error> {
+    ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
         assert!(self.involves_token(&output_amount.currency), "TOKEN");
 
         let zero_for_one = output_amount.currency.equals(&self.token1);
@@ -478,9 +478,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         }
 
         let input_token = if zero_for_one {
-            self.token0.clone()
+            &self.token0
         } else {
-            self.token1.clone()
+            &self.token1
         };
         Ok((
             CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,

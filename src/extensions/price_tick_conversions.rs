@@ -79,7 +79,7 @@ where
 /// ## Arguments
 ///
 /// * `sqrt_ratio_x96`: The sqrt ratio of the base token in terms of the quote token as a Q64.96
-///   [`U256`].
+///   [`U160`].
 /// * `base_token`: The base token.
 /// * `quote_token`: The quote token.
 ///
@@ -235,7 +235,7 @@ where
 ///
 /// ## Returns
 ///
-/// The sqrt ratio of token1/token0, as a [`U256`].
+/// The sqrt ratio of token1/token0, as a [`U160`].
 ///
 /// ## Examples
 ///
