@@ -60,7 +60,7 @@ where
         }
         assert!(current_input_token.equals(wrapped_output), "PATH");
 
-        Route {
+        Self {
             pools,
             input,
             output,

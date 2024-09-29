@@ -95,8 +95,8 @@ impl TickIndex for i32 {
 }
 
 impl<const BITS: usize, const LIMBS: usize> TickIndex for Signed<BITS, LIMBS> {
-    const ZERO: Self = Signed::ZERO;
-    const ONE: Self = Signed::ONE;
+    const ZERO: Self = Self::ZERO;
+    const ONE: Self = Self::ONE;
 
     #[inline]
     fn from_i24(value: I24) -> Self {

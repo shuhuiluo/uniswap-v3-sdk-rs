@@ -139,7 +139,7 @@ impl Position {
             slot0.sqrtPriceX96,
             active_liquidity,
         )?;
-        Ok(Position::new(
+        Ok(Self::new(
             pool,
             position.liquidity,
             position.tickLower.as_i32(),
@@ -199,7 +199,7 @@ impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
             pool.liquidity,
             tick_data_provider,
         )?;
-        Ok(Position::new(
+        Ok(Self::new(
             pool,
             position.liquidity,
             position.tick_lower.try_into().unwrap(),
