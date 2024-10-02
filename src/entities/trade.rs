@@ -103,7 +103,7 @@ where
         input_amount: CurrencyAmount<TInput>,
         output_amount: CurrencyAmount<TOutput>,
     ) -> Self {
-        Swap {
+        Self {
             route,
             input_amount,
             output_amount,
@@ -189,7 +189,7 @@ where
             }
         }
         assert_eq!(num_pools, pool_address_set.len(), "POOLS_DUPLICATED");
-        Ok(Trade {
+        Ok(Self {
             swaps,
             trade_type,
             _input_amount: None,

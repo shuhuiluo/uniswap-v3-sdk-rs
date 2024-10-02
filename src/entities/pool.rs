@@ -429,7 +429,7 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         };
         Ok((
             CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
-            Pool::new_with_tick_data_provider(
+            Self::new_with_tick_data_provider(
                 self.token0.clone(),
                 self.token1.clone(),
                 self.fee,
@@ -484,7 +484,7 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         };
         Ok((
             CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,
-            Pool::new_with_tick_data_provider(
+            Self::new_with_tick_data_provider(
                 self.token0.clone(),
                 self.token1.clone(),
                 self.fee,

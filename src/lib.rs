@@ -46,6 +46,7 @@
     clippy::unseparated_literal_suffix,
     clippy::unused_self,
     clippy::use_debug,
+    clippy::use_self,
     rustdoc::all
 )]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]

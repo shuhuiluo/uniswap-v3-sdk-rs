@@ -74,7 +74,7 @@ pub enum Error {
 impl From<CoreError> for Error {
     #[inline]
     fn from(error: CoreError) -> Self {
-        Error::Core(error)
+        Self::Core(error)
     }
 }
 
@@ -82,7 +82,7 @@ impl From<CoreError> for Error {
 impl From<ContractError> for Error {
     #[inline]
     fn from(error: ContractError) -> Self {
-        Error::ContractError(error)
+        Self::ContractError(error)
     }
 }
 
@@ -90,6 +90,6 @@ impl From<ContractError> for Error {
 impl From<LensError> for Error {
     #[inline]
     fn from(error: LensError) -> Self {
-        Error::LensError(error)
+        Self::LensError(error)
     }
 }

@@ -63,7 +63,7 @@ impl From<i32> for FeeAmount {
 impl From<FeeAmount> for U24 {
     #[inline]
     fn from(fee: FeeAmount) -> Self {
-        U24::from_limbs([fee as u64])
+        Self::from_limbs([fee as u64])
     }
 }
 
