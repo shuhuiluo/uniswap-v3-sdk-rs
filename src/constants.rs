@@ -1,3 +1,5 @@
+#![allow(non_camel_case_types)]
+
 use alloy_primitives::{
     address,
     aliases::{I24, U24},
@@ -5,8 +7,6 @@ use alloy_primitives::{
 };
 
 pub const FACTORY_ADDRESS: Address = address!("1F98431c8aD98523631AE4a59f267346ea31F984");
-
-pub const ADDRESS_ZERO: Address = Address::ZERO;
 
 pub const POOL_INIT_CODE_HASH: B256 =
     b256!("e34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54");

@@ -145,6 +145,7 @@ impl Pool {
             token_b.address(),
             fee,
             init_code_hash_manual_override,
+            Some(token_a.chain_id()),
         )
     }
 }
