@@ -6,8 +6,8 @@ use uniswap_sdk_core::prelude::*;
 #[derive(Clone, PartialEq, Debug)]
 pub struct Route<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     pub pools: Vec<Pool<TP>>,
@@ -20,8 +20,8 @@ where
 
 impl<TInput, TOutput, TP> Route<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     /// Creates an instance of route.

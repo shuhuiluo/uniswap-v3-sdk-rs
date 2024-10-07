@@ -15,8 +15,8 @@ pub fn trade_comparator<TInput, TOutput, TP>(
     b: &Trade<TInput, TOutput, TP>,
 ) -> Ordering
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     // must have same input and output token for comparison
@@ -75,8 +75,8 @@ pub struct BestTradeOptions {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Swap<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     pub route: Route<TInput, TOutput, TP>,
@@ -86,8 +86,8 @@ where
 
 impl<TInput, TOutput, TP> Swap<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     /// Constructs a swap
@@ -133,8 +133,8 @@ where
 #[derive(Clone, PartialEq, Debug)]
 pub struct Trade<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     /// The swaps of the trade, i.e. which routes and how much is swapped in each that make up the
@@ -154,8 +154,8 @@ where
 
 impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     /// Construct a trade by passing in the pre-computed property values
@@ -497,8 +497,8 @@ where
 
 impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: Clone + TickDataProvider,
 {
     /// Constructs an exact in trade with the given amount in and route
@@ -539,7 +539,7 @@ where
     #[inline]
     pub fn from_route(
         route: Route<TInput, TOutput, TP>,
-        amount: CurrencyAmount<impl Currency>,
+        amount: CurrencyAmount<impl BaseCurrency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
         let mut token_amount: CurrencyAmount<&Token> = amount.wrapped()?;
@@ -600,7 +600,10 @@ where
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     #[inline]
     pub fn from_routes(
-        routes: Vec<(CurrencyAmount<impl Currency>, Route<TInput, TOutput, TP>)>,
+        routes: Vec<(
+            CurrencyAmount<impl BaseCurrency>,
+            Route<TInput, TOutput, TP>,
+        )>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
         let mut populated_routes: Vec<Swap<TInput, TOutput, TP>> = Vec::with_capacity(routes.len());

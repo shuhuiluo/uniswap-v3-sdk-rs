@@ -24,13 +24,13 @@ pub struct QuoteOptions {
 #[inline]
 pub fn quote_call_parameters<TInput, TOutput, TP>(
     route: &Route<TInput, TOutput, TP>,
-    amount: &CurrencyAmount<impl Currency>,
+    amount: &CurrencyAmount<impl BaseCurrency>,
     trade_type: TradeType,
     options: Option<QuoteOptions>,
 ) -> MethodParameters
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     let options = options.unwrap_or_default();

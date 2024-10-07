@@ -53,7 +53,7 @@ pub struct SafeTransferOptions {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CollectOptions<Currency0: Currency, Currency1: Currency> {
+pub struct CollectOptions<Currency0: BaseCurrency, Currency1: BaseCurrency> {
     /// Indicates the ID of the position to collect for.
     pub token_id: U256,
     /// Expected value of tokensOwed0, including as-of-yet-unaccounted-for fees/liquidity value to
@@ -75,7 +75,7 @@ pub struct NFTPermitOptions {
 
 /// Options for producing the calldata to exit a position.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RemoveLiquidityOptions<Currency0: Currency, Currency1: Currency> {
+pub struct RemoveLiquidityOptions<Currency0: BaseCurrency, Currency1: BaseCurrency> {
     /// The ID of the token to exit
     pub token_id: U256,
     /// The percentage of position liquidity to exit.
@@ -217,7 +217,7 @@ pub fn add_call_parameters<TP: TickDataProvider>(
     })
 }
 
-fn encode_collect<Currency0: Currency, Currency1: Currency>(
+fn encode_collect<Currency0: BaseCurrency, Currency1: BaseCurrency>(
     options: &CollectOptions<Currency0, Currency1>,
 ) -> Vec<Bytes> {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(3);
@@ -269,7 +269,7 @@ fn encode_collect<Currency0: Currency, Currency1: Currency>(
 }
 
 #[inline]
-pub fn collect_call_parameters<Currency0: Currency, Currency1: Currency>(
+pub fn collect_call_parameters<Currency0: BaseCurrency, Currency1: BaseCurrency>(
     options: &CollectOptions<Currency0, Currency1>,
 ) -> MethodParameters {
     let calldatas = encode_collect(options);
@@ -292,8 +292,8 @@ pub fn remove_call_parameters<Currency0, Currency1, TP>(
     options: RemoveLiquidityOptions<Currency0, Currency1>,
 ) -> Result<MethodParameters, Error>
 where
-    Currency0: Currency,
-    Currency1: Currency,
+    Currency0: BaseCurrency,
+    Currency1: BaseCurrency,
     TP: TickDataProvider,
 {
     let mut calldatas: Vec<Bytes> = Vec::with_capacity(6);

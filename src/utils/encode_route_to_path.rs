@@ -31,8 +31,8 @@ pub fn encode_route_to_path<TInput, TOutput, TP>(
     exact_output: bool,
 ) -> Bytes
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     let mut path: Vec<u8> = Vec::with_capacity(23 * route.pools.len() + 20);

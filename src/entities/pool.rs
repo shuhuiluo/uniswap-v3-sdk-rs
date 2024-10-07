@@ -166,7 +166,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: bool
     #[inline]
-    pub fn involves_token(&self, token: &impl Currency) -> bool {
+    pub fn involves_token(&self, token: &impl BaseCurrency) -> bool {
         self.token0.equals(token) || self.token1.equals(token)
     }
 
@@ -284,7 +284,7 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
     #[inline]
     pub fn get_output_amount(
         &self,
-        input_amount: &CurrencyAmount<impl Currency>,
+        input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
         assert!(self.involves_token(&input_amount.currency), "TOKEN");
@@ -339,7 +339,7 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
     #[inline]
     pub fn get_input_amount(
         &self,
-        output_amount: &CurrencyAmount<impl Currency>,
+        output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
         assert!(self.involves_token(&output_amount.currency), "TOKEN");
