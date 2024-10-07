@@ -1,6 +1,9 @@
 use crate::constants::{FeeAmount, POOL_INIT_CODE_HASH};
-use alloy_primitives::{keccak256, Address, B256};
+use alloy_primitives::{b256, keccak256, Address, B256};
 use alloy_sol_types::SolValue;
+use uniswap_sdk_core::prelude::{
+    compute_zksync_create2_address::compute_zksync_create2_address, ChainId,
+};
 
 /// Computes a pool address
 ///
@@ -32,6 +35,7 @@ use alloy_sol_types::SolValue;
 ///     DAI_ADDRESS,
 ///     FeeAmount::LOW,
 ///     None,
+///     None,
 /// );
 /// assert_eq!(result, address!("90B1b09A9715CaDbFD9331b3A7652B24BfBEfD32"));
 /// assert_eq!(
@@ -42,6 +46,7 @@ use alloy_sol_types::SolValue;
 ///         USDC_ADDRESS,
 ///         FeeAmount::LOW,
 ///         None,
+///         None
 ///     )
 /// );
 /// ```
@@ -53,6 +58,7 @@ pub fn compute_pool_address(
     token_b: Address,
     fee: FeeAmount,
     init_code_hash_manual_override: Option<B256>,
+    chain_id: Option<alloy_primitives::ChainId>,
 ) -> Address {
     assert_ne!(token_a, token_b, "ADDRESSES");
     let (token_0, token_1) = if token_a < token_b {
@@ -60,9 +66,23 @@ pub fn compute_pool_address(
     } else {
         (token_b, token_a)
     };
-    let pool_key = (token_0, token_1, fee as i32);
-    factory.create2(
-        keccak256(pool_key.abi_encode()),
-        init_code_hash_manual_override.unwrap_or(POOL_INIT_CODE_HASH),
-    )
+    let salt = keccak256((token_0, token_1, fee as i32).abi_encode());
+    const ZKSYNC_CHAIN_ID: u64 = ChainId::ZKSYNC as u64;
+
+    // ZKSync uses a different create2 address computation
+    // Most likely all ZKEVM chains will use the different computation from standard create2
+    match chain_id {
+        Some(ZKSYNC_CHAIN_ID) => compute_zksync_create2_address(
+            factory,
+            init_code_hash_manual_override.unwrap_or(b256!(
+                "010013f177ea1fcbc4520f9a3ca7cd2d1d77959e05aa66484027cb38e712aeed"
+            )),
+            salt,
+            None,
+        ),
+        _ => factory.create2(
+            salt,
+            init_code_hash_manual_override.unwrap_or(POOL_INIT_CODE_HASH),
+        ),
+    }
 }

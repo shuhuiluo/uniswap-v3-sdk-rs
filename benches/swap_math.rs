@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use alloy_primitives::{keccak256, I256, U160, U256};
+use alloy_primitives::{aliases::U24, keccak256, I256, U160, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
 use uniswap_v3_math::swap_math;
@@ -15,7 +15,7 @@ fn pseudo_random_128(seed: u64) -> u128 {
     u128::from_be_bytes(s.to_be_bytes::<32>()[..16].try_into().unwrap())
 }
 
-fn generate_inputs() -> Vec<(U160, U160, u128, I256, u32)> {
+fn generate_inputs() -> Vec<(U160, U160, u128, I256, U24)> {
     (0u64..100)
         .map(|i| {
             (
@@ -23,7 +23,7 @@ fn generate_inputs() -> Vec<(U160, U160, u128, I256, u32)> {
                 U160::saturating_from(pseudo_random(i.pow(2))),
                 pseudo_random_128(i.pow(3)),
                 I256::from_raw(pseudo_random(i.pow(4))),
-                i as u32,
+                U24::from(i),
             )
         })
         .collect()
@@ -81,7 +81,7 @@ fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
                     *sqrt_ratio_target_x96,
                     *liquidity,
                     *amount_remaining,
-                    *fee_pips,
+                    fee_pips.into_limbs()[0] as u32,
                 );
             }
         })

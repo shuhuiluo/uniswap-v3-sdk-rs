@@ -31,7 +31,7 @@ where
     P: Provider<T>,
 {
     IUniswapV3PoolInstance::new(
-        compute_pool_address(factory, token_a, token_b, fee, None),
+        compute_pool_address(factory, token_a, token_b, fee, None, None),
         provider,
     )
 }

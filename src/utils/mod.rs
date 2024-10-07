@@ -27,7 +27,7 @@ pub use max_liquidity_for_amounts::*;
 pub use nearest_usable_tick::nearest_usable_tick;
 pub use price_tick_conversions::*;
 pub use sqrt_price_math::*;
-pub use swap_math::compute_swap_step;
+pub use swap_math::*;
 pub use tick_list::TickList;
 pub use tick_math::*;
 pub use types::*;
