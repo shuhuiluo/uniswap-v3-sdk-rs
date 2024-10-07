@@ -20,6 +20,7 @@ alloy-sol-types = "0.8"
 anyhow = { version = "1.0", optional = true }
 base64 = { version = "0.22", optional = true }
 bigdecimal = "0.4.5"
+derive_more = { version = "1.0.0", features = ["deref", "from"] }
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"

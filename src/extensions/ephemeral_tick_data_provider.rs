@@ -4,17 +4,18 @@
 use crate::prelude::*;
 use alloy::{eips::BlockId, providers::Provider, transports::Transport};
 use alloy_primitives::{aliases::I24, Address};
-use core::ops::Deref;
+use derive_more::Deref;
 use uniswap_lens::pool_lens;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Deref)]
 pub struct EphemeralTickDataProvider<I = I24> {
     pub pool: Address,
     pub tick_lower: I,
     pub tick_upper: I,
     pub tick_spacing: I,
     pub block_id: Option<BlockId>,
+    #[deref]
     pub ticks: Vec<Tick<I>>,
 }
 
@@ -56,15 +57,6 @@ impl<I: TickIndex> EphemeralTickDataProvider<I> {
             block_id,
             ticks,
         })
-    }
-}
-
-impl<I> Deref for EphemeralTickDataProvider<I> {
-    type Target = Vec<Tick<I>>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.ticks
     }
 }
 

@@ -1,8 +1,8 @@
 use crate::prelude::*;
-use core::ops::Deref;
+use derive_more::Deref;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Deref)]
 pub struct TickListDataProvider<I = i32>(Vec<Tick<I>>);
 
 impl<I: TickIndex> TickListDataProvider<I> {
@@ -10,15 +10,6 @@ impl<I: TickIndex> TickListDataProvider<I> {
     pub fn new(ticks: Vec<Tick<I>>, tick_spacing: I) -> Self {
         ticks.validate_list(tick_spacing);
         Self(ticks)
-    }
-}
-
-impl<I> Deref for TickListDataProvider<I> {
-    type Target = Vec<Tick<I>>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 

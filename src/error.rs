@@ -7,18 +7,16 @@ use alloy::contract::Error as ContractError;
 use uniswap_lens::error::Error as LensError;
 
 use alloy_primitives::{aliases::I24, U160};
+use derive_more::From;
 use uniswap_sdk_core::error::Error as CoreError;
 
-#[cfg_attr(
-    not(feature = "extensions"),
-    derive(Clone, Copy, Debug, Hash, PartialEq, Eq)
-)]
-#[cfg_attr(feature = "extensions", derive(Debug))]
+#[derive(Debug, From)]
+#[cfg_attr(not(feature = "extensions"), derive(Clone, Copy, Hash, PartialEq, Eq))]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum Error {
     /// Thrown when an error occurs in the core library.
     #[cfg_attr(feature = "std", error("{0}"))]
-    Core(CoreError),
+    Core(#[cfg_attr(not(feature = "std"), from)] CoreError),
 
     /// Thrown when the token passed to [`Pool::price_of`] is not one of the pool's tokens.
     #[cfg_attr(feature = "std", error("Invalid token"))]
@@ -64,32 +62,9 @@ pub enum Error {
 
     #[cfg(feature = "extensions")]
     #[cfg_attr(feature = "std", error("{0}"))]
-    ContractError(ContractError),
+    ContractError(#[cfg_attr(not(feature = "std"), from)] ContractError),
 
     #[cfg(feature = "extensions")]
     #[cfg_attr(feature = "std", error("{0}"))]
-    LensError(LensError),
-}
-
-impl From<CoreError> for Error {
-    #[inline]
-    fn from(error: CoreError) -> Self {
-        Self::Core(error)
-    }
-}
-
-#[cfg(feature = "extensions")]
-impl From<ContractError> for Error {
-    #[inline]
-    fn from(error: ContractError) -> Self {
-        Self::ContractError(error)
-    }
-}
-
-#[cfg(feature = "extensions")]
-impl From<LensError> for Error {
-    #[inline]
-    fn from(error: LensError) -> Self {
-        Self::LensError(error)
-    }
+    LensError(#[cfg_attr(not(feature = "std"), from)] LensError),
 }
