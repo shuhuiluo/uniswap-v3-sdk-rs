@@ -33,8 +33,8 @@ pub fn swap_call_parameters<TInput, TOutput, TP>(
     options: SwapOptions,
 ) -> Result<MethodParameters, Error>
 where
-    TInput: Currency,
-    TOutput: Currency,
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
     TP: TickDataProvider,
 {
     let SwapOptions {

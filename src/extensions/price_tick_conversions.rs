@@ -52,8 +52,8 @@ pub fn parse_price<TBase, TQuote>(
     price: &str,
 ) -> Result<Price<TBase, TQuote>>
 where
-    TBase: Currency,
-    TQuote: Currency,
+    TBase: BaseCurrency,
+    TQuote: BaseCurrency,
 {
     // Check whether `price` is a valid string of decimal number.
     // This regex matches any number of digits optionally followed by '.' which is then followed by
