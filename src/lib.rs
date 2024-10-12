@@ -76,9 +76,8 @@ mod tests;
 
 pub mod prelude {
     pub use crate::{
-        abi::*, constants::*, entities::*, error::*, multicall::encode_multicall,
-        nonfungible_position_manager::*, payments::*, quoter::*, self_permit::*, staker::*,
-        swap_router::*, utils::*,
+        abi::*, constants::*, entities::*, error::*, multicall::*, nonfungible_position_manager::*,
+        payments::*, quoter::*, self_permit::*, staker::*, swap_router::*, utils::*,
     };
     pub use alloc::{
         string::{String, ToString},
