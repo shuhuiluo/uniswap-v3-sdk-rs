@@ -445,7 +445,9 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// ## Examples
 ///
 /// ```
-/// use alloy_primitives::{address, b256, uint, B256};
+/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_signer::SignerSync;
+/// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
 /// use uniswap_v3_sdk::prelude::*;
 ///
@@ -461,8 +463,16 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// );
 /// let position_manager = address!("1F98431c8aD98523631AE4a59f267346ea31F984");
 /// let data: NFTPermitData = get_permit_data(permit, position_manager, 1);
+///
 /// // Derive the EIP-712 signing hash.
 /// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
+///
+/// let signer = PrivateKeySigner::random();
+/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// assert_eq!(
+///     signature.recover_address_from_prehash(&hash).unwrap(),
+///     signer.address()
+/// );
 /// ```
 #[inline]
 #[must_use]

@@ -38,6 +38,8 @@ extensions = ["uniswap-lens/std", "alloy", "anyhow", "base64", "regex", "serde_j
 std = ["thiserror", "uniswap-sdk-core/std"]
 
 [dev-dependencies]
+alloy-signer = "0.4"
+alloy-signer-local = "0.4"
 criterion = "0.5.1"
 dotenv = "0.15.0"
 tokio = { version = "1.40", features = ["full"] }
