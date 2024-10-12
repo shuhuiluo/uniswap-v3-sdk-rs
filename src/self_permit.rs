@@ -1,10 +1,10 @@
 use super::abi::ISelfPermit;
 use alloy_primitives::{Bytes, Signature, U256};
-use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall};
+use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ERC20PermitData<P> {
+pub struct ERC20PermitData<P: SolStruct> {
     pub domain: Eip712Domain,
     pub values: P,
 }
@@ -75,7 +75,7 @@ pub struct ERC20PermitData<P> {
 /// ```
 #[inline]
 #[must_use]
-pub fn get_erc20_permit_data<P>(
+pub fn get_erc20_permit_data<P: SolStruct>(
     permit: P,
     name: &'static str,
     version: &'static str,
