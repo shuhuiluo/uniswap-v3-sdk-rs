@@ -1,6 +1,6 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, Signature, U256};
-use alloy_sol_types::SolCall;
+use alloy_sol_types::{eip712_domain, sol, Eip712Domain, SolCall};
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,6 +64,22 @@ pub struct CollectOptions<Currency0: BaseCurrency, Currency1: BaseCurrency> {
     pub expected_currency_owed1: CurrencyAmount<Currency1>,
     /// The account that should receive the tokens.
     pub recipient: Address,
+}
+
+sol! {
+    #[derive(Debug, PartialEq, Eq)]
+    struct Permit {
+        address spender;
+        uint256 tokenId;
+        uint256 nonce;
+        uint256 deadline;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NFTPermitData {
+    pub domain: Eip712Domain,
+    pub values: Permit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -411,6 +427,59 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
     MethodParameters {
         calldata: calldata.into(),
         value: U256::ZERO,
+    }
+}
+
+/// Prepares the parameters for EIP712 signing
+///
+/// ## Arguments
+///
+/// * `permit`: The permit values to sign
+/// * `position_manager`: The address of the position manager contract
+/// * `chain_id`: The chain ID
+///
+/// ## Returns
+///
+/// The EIP712 domain and values to sign
+///
+/// ## Examples
+///
+/// ```
+/// use alloy_primitives::{address, b256, uint, B256};
+/// use alloy_sol_types::SolStruct;
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let permit = Permit {
+///     spender: address!("0000000000000000000000000000000000000002"),
+///     tokenId: uint!(1_U256),
+///     nonce: uint!(1_U256),
+///     deadline: uint!(123_U256),
+/// };
+/// assert_eq!(
+///     permit.eip712_type_hash(),
+///     b256!("49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad")
+/// );
+/// let position_manager = address!("1F98431c8aD98523631AE4a59f267346ea31F984");
+/// let data: NFTPermitData = get_permit_data(permit, position_manager, 1);
+/// // Derive the EIP-712 signing hash.
+/// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
+/// ```
+#[inline]
+#[must_use]
+pub const fn get_permit_data(
+    permit: Permit,
+    position_manager: Address,
+    chain_id: u64,
+) -> NFTPermitData {
+    let domain = eip712_domain! {
+        name: "Uniswap V3 Positions NFT-V1",
+        version: "1",
+        chain_id: chain_id,
+        verifying_contract: position_manager,
+    };
+    NFTPermitData {
+        domain,
+        values: permit,
     }
 }
 
