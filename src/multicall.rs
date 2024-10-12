@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use alloy_primitives::Bytes;
-use alloy_sol_types::SolCall;
+use alloy_sol_types::{Error, SolCall};
 
 #[inline]
 #[must_use]
@@ -13,11 +13,8 @@ pub fn encode_multicall(data: Vec<Bytes>) -> Bytes {
 }
 
 #[inline]
-#[must_use]
-pub fn decode_multicall(encoded: &Bytes) -> Vec<Bytes> {
-    IMulticall::multicallCall::abi_decode(encoded.as_ref(), true)
-        .unwrap()
-        .data
+pub fn decode_multicall(encoded: &Bytes) -> Result<Vec<Bytes>, Error> {
+    IMulticall::multicallCall::abi_decode(encoded.as_ref(), true).map(|decoded| decoded.data)
 }
 
 #[cfg(test)]
@@ -62,7 +59,7 @@ mod tests {
                 hex!("ac9650d800000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000020aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000020bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
             );
 
-            let decoded_calldata = decode_multicall(&multicall);
+            let decoded_calldata = decode_multicall(&multicall).unwrap();
             assert_eq!(decoded_calldata, calldatas);
         }
     }
