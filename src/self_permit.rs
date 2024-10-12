@@ -1,7 +1,98 @@
 use super::abi::ISelfPermit;
 use alloy_primitives::{Bytes, Signature, U256};
-use alloy_sol_types::SolCall;
+use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall};
 use uniswap_sdk_core::prelude::*;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ERC20PermitData<P> {
+    pub domain: Eip712Domain,
+    pub values: P,
+}
+
+/// Get the EIP-2612 domain and values to sign for an ERC20 permit.
+///
+/// ## Arguments
+///
+/// * `permit`: The ERC20 permit
+/// * `name`: The name of the contract
+/// * `version`: The version of the contract
+/// * `token`: The address of the token
+/// * `chain_id`: The chain ID
+///
+/// ## Returns
+///
+/// The EIP-2612 domain and values to sign
+///
+/// ## Examples
+///
+/// ```
+/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_signer::SignerSync;
+/// use alloy_signer_local::PrivateKeySigner;
+/// use alloy_sol_types::SolStruct;
+/// use uniswap_v3_sdk::prelude::*;
+///
+/// let signer = PrivateKeySigner::random();
+/// let permit = IERC20Permit::Permit {
+///     owner: signer.address(),
+///     spender: address!("0000000000000000000000000000000000000002"),
+///     value: uint!(1_U256),
+///     nonce: uint!(1_U256),
+///     deadline: uint!(123_U256),
+/// };
+/// assert_eq!(
+///     permit.eip712_type_hash(),
+///     b256!("6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9")
+/// );
+/// assert_eq!(
+///     IDaiPermit::Permit {
+///         holder: signer.address(),
+///         spender: address!("0000000000000000000000000000000000000002"),
+///         nonce: uint!(1_U256),
+///         expiry: uint!(123_U256),
+///         allowed: true,
+///     }
+///     .eip712_type_hash(),
+///     b256!("ea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb")
+/// );
+///
+/// let data = get_erc20_permit_data(
+///     permit,
+///     "ONE",
+///     "1",
+///     address!("0000000000000000000000000000000000000001"),
+///     1,
+/// );
+///
+/// // Derive the EIP-712 signing hash.
+/// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
+///
+/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// assert_eq!(
+///     signature.recover_address_from_prehash(&hash).unwrap(),
+///     signer.address()
+/// );
+/// ```
+#[inline]
+#[must_use]
+pub fn get_erc20_permit_data<P>(
+    permit: P,
+    name: &'static str,
+    version: &'static str,
+    token: Address,
+    chain_id: u64,
+) -> ERC20PermitData<P> {
+    let domain = eip712_domain! {
+        name: name,
+        version: version,
+        chain_id: chain_id,
+        verifying_contract: token,
+    };
+    ERC20PermitData {
+        domain,
+        values: permit,
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StandardPermitArguments {
