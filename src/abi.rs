@@ -79,6 +79,20 @@ sol! {
 
         function burn(uint256 tokenId) external payable;
 
+        function safeTransferFrom(address from, address to, uint256 tokenId) external;
+
+        function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
+    }
+
+    interface IERC721Permit {
+        #[derive(Debug, PartialEq, Eq)]
+        struct Permit {
+            address spender;
+            uint256 tokenId;
+            uint256 nonce;
+            uint256 deadline;
+        }
+
         function permit(
             address spender,
             uint256 tokenId,
@@ -87,15 +101,33 @@ sol! {
             bytes32 r,
             bytes32 s
         ) external payable;
-
-        function safeTransferFrom(address from, address to, uint256 tokenId) external;
-
-        function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
     }
 
     interface ISelfPermit {
         function selfPermit(address token, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external payable;
         function selfPermitAllowed(address token, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external payable;
+    }
+
+    interface IERC20Permit {
+        #[derive(Debug, PartialEq, Eq)]
+        struct Permit {
+            address owner;
+            address spender;
+            uint256 value;
+            uint256 nonce;
+            uint256 deadline;
+        }
+    }
+
+    interface IDaiPermit {
+        #[derive(Debug, PartialEq, Eq)]
+        struct Permit {
+            address holder;
+            address spender;
+            uint256 nonce;
+            uint256 expiry;
+            bool allowed;
+        }
     }
 
     interface IPeripheryPaymentsWithFee {

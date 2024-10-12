@@ -1,6 +1,6 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, Signature, U256};
-use alloy_sol_types::{eip712_domain, sol, Eip712Domain, SolCall};
+use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall};
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,20 +66,10 @@ pub struct CollectOptions<Currency0: BaseCurrency, Currency1: BaseCurrency> {
     pub recipient: Address,
 }
 
-sol! {
-    #[derive(Debug, PartialEq, Eq)]
-    struct Permit {
-        address spender;
-        uint256 tokenId;
-        uint256 nonce;
-        uint256 deadline;
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NFTPermitData {
     pub domain: Eip712Domain,
-    pub values: Permit,
+    pub values: IERC721Permit::Permit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -341,7 +331,7 @@ where
 
     if let Some(permit) = options.permit {
         calldatas.push(
-            INonfungiblePositionManager::permitCall {
+            IERC721Permit::permitCall {
                 spender: permit.spender,
                 tokenId: token_id,
                 deadline: permit.deadline,
@@ -451,7 +441,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// use alloy_sol_types::SolStruct;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let permit = Permit {
+/// let permit = IERC721Permit::Permit {
 ///     spender: address!("0000000000000000000000000000000000000002"),
 ///     tokenId: uint!(1_U256),
 ///     nonce: uint!(1_U256),
@@ -477,7 +467,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 #[inline]
 #[must_use]
 pub const fn get_permit_data(
-    permit: Permit,
+    permit: IERC721Permit::Permit,
     position_manager: Address,
     chain_id: u64,
 ) -> NFTPermitData {
