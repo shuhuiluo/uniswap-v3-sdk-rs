@@ -63,6 +63,7 @@ mod tests {
             *BLOCK_ID,
         )
         .await?;
+        // [-887270, -92110, 100, 110, 22990, ...]
         let tick = provider.get_tick(-92110)?;
         assert_eq!(tick.liquidity_gross, 398290794261);
         assert_eq!(tick.liquidity_net, 398290794261);
@@ -74,9 +75,17 @@ mod tests {
         assert_eq!(tick, -887270);
         assert!(initialized);
         let (tick, initialized) =
+            provider.next_initialized_tick_within_one_word(-92120, true, TICK_SPACING)?;
+        assert_eq!(tick, -92160);
+        assert!(!initialized);
+        let (tick, initialized) =
             provider.next_initialized_tick_within_one_word(0, false, TICK_SPACING)?;
-        assert!(initialized);
         assert_eq!(tick, 100);
+        assert!(initialized);
+        let (tick, initialized) =
+            provider.next_initialized_tick_within_one_word(110, false, TICK_SPACING)?;
+        assert_eq!(tick, 2550);
+        assert!(!initialized);
         Ok(())
     }
 }

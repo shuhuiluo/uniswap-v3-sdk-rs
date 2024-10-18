@@ -69,6 +69,8 @@ impl<I: TickIndex> TickDataProvider for TickMap<I> {
             let next = (compressed - Self::Index::try_from(bit_pos).unwrap()) * tick_spacing;
             Ok((next, initialized))
         } else {
+            // start from the word of the next tick, since the current tick state doesn't matter
+            let compressed = compressed + Self::Index::ONE;
             let (word_pos, bit_pos) = compressed.position();
             // all the 1s at or to the left of the `bit_pos`
             let mask = U256::ZERO - (uint!(1_U256) << bit_pos);
