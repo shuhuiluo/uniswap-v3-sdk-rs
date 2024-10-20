@@ -1,10 +1,9 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{U160, U256};
-use core::fmt;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Position<TP = NoTickDataProvider>
 where
     TP: TickDataProvider,
@@ -18,19 +17,10 @@ where
     _mint_amounts: Option<MintAmounts>,
 }
 
-impl<TP> fmt::Debug for Position<TP>
-where
-    TP: TickDataProvider<Index: fmt::Debug>,
-{
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Position")
-            .field("pool", &self.pool)
-            .field("tick_lower", &self.tick_lower)
-            .field("tick_upper", &self.tick_upper)
-            .field("liquidity", &self.liquidity)
-            .finish()
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MintAmounts {
+    pub amount0: U256,
+    pub amount1: U256,
 }
 
 impl<TP> PartialEq for Position<TP>
@@ -44,12 +34,6 @@ where
             && self.tick_upper == other.tick_upper
             && self.liquidity == other.liquidity
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MintAmounts {
-    pub amount0: U256,
-    pub amount1: U256,
 }
 
 impl<TP: TickDataProvider> Position<TP> {

@@ -1,13 +1,12 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{ChainId, B256, I256, U160};
-use core::fmt;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
 
 static _Q192: Lazy<BigUint> = Lazy::new(|| Q192.to_big_uint());
 
 /// Represents a V3 pool
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Pool<TP = NoTickDataProvider>
 where
     TP: TickDataProvider,
@@ -19,23 +18,6 @@ where
     pub liquidity: u128,
     pub tick_current: TP::Index,
     pub tick_data_provider: TP,
-}
-
-impl<TP> fmt::Debug for Pool<TP>
-where
-    TP: TickDataProvider<Index: fmt::Debug>,
-{
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Pool")
-            .field("token0", &self.token0)
-            .field("token1", &self.token1)
-            .field("fee", &self.fee)
-            .field("sqrt_ratio_x96", &self.sqrt_ratio_x96)
-            .field("liquidity", &self.liquidity)
-            .field("tick_current", &self.tick_current)
-            .finish()
-    }
 }
 
 impl<TP> PartialEq for Pool<TP>
