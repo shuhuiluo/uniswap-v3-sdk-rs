@@ -67,4 +67,18 @@ pub enum Error {
     #[cfg(feature = "extensions")]
     #[cfg_attr(feature = "std", error("{0}"))]
     LensError(#[cfg_attr(not(feature = "std"), from)] LensError),
+
+    #[cfg_attr(feature = "std", error("{0}"))]
+    TickListError(#[cfg_attr(not(feature = "std"), from)] TickListError),
+}
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+pub enum TickListError {
+    #[cfg_attr(feature = "std", error("Below smallest tick"))]
+    BelowSmallest,
+    #[cfg_attr(feature = "std", error("At or above largest tick"))]
+    AtOrAboveLargest,
+    #[cfg_attr(feature = "std", error("Not contained in tick list"))]
+    NotContained,
 }

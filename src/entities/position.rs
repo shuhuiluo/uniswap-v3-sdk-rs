@@ -125,7 +125,6 @@ impl<TP: TickDataProvider> Position<TP> {
                 )?
                 .to_big_int(),
             )
-            .map_err(Error::Core)
         } else if self.pool.tick_current < self.tick_upper {
             CurrencyAmount::from_raw_amount(
                 self.pool.token0.clone(),
@@ -137,11 +136,10 @@ impl<TP: TickDataProvider> Position<TP> {
                 )?
                 .to_big_int(),
             )
-            .map_err(Error::Core)
         } else {
             CurrencyAmount::from_raw_amount(self.pool.token0.clone(), BigInt::zero())
-                .map_err(Error::Core)
         }
+        .map_err(Error::Core)
     }
 
     /// Returns the amount of token0 that this position's liquidity could be burned for at the
@@ -162,7 +160,6 @@ impl<TP: TickDataProvider> Position<TP> {
     pub fn amount1(&self) -> Result<CurrencyAmount<Token>, Error> {
         if self.pool.tick_current < self.tick_lower {
             CurrencyAmount::from_raw_amount(self.pool.token1.clone(), BigInt::zero())
-                .map_err(Error::Core)
         } else if self.pool.tick_current < self.tick_upper {
             CurrencyAmount::from_raw_amount(
                 self.pool.token1.clone(),
@@ -174,7 +171,6 @@ impl<TP: TickDataProvider> Position<TP> {
                 )?
                 .to_big_int(),
             )
-            .map_err(Error::Core)
         } else {
             CurrencyAmount::from_raw_amount(
                 self.pool.token1.clone(),
@@ -186,8 +182,8 @@ impl<TP: TickDataProvider> Position<TP> {
                 )?
                 .to_big_int(),
             )
-            .map_err(Error::Core)
         }
+        .map_err(Error::Core)
     }
 
     /// Returns the amount of token1 that this position's liquidity could be burned for at the
@@ -216,9 +212,8 @@ impl<TP: TickDataProvider> Position<TP> {
     fn ratios_after_slippage(&self, slippage_tolerance: &Percent) -> (U160, U160) {
         let one = Percent::new(1, 1);
         let token0_price = self.pool.token0_price().as_fraction();
-        let price_lower =
-            token0_price.clone() * ((one.clone() - slippage_tolerance.clone()).as_fraction());
-        let price_upper = token0_price * ((one + slippage_tolerance.clone()).as_fraction());
+        let price_lower = (one.clone() - slippage_tolerance).as_fraction() * &token0_price;
+        let price_upper = token0_price * ((one + slippage_tolerance).as_fraction());
 
         let mut sqrt_ratio_x96_lower =
             encode_sqrt_ratio_x96(price_lower.numerator, price_lower.denominator);
