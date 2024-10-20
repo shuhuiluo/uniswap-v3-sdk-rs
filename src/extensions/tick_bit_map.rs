@@ -70,6 +70,6 @@ impl<I: TickIndex> TickBitMapProvider for TickBitMap<I> {
 
     #[inline]
     fn get_word(&self, index: Self::Index) -> U256 {
-        self.get(&index).copied().unwrap_or(U256::ZERO)
+        *self.get(&index).unwrap_or(&U256::ZERO)
     }
 }
