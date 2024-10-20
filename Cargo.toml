@@ -14,7 +14,7 @@ exclude = [".github", ".gitignore", "rustfmt.toml"]
 all-features = true
 
 [dependencies]
-alloy = { version = "0.4", optional = true, features = ["contract"] }
+alloy = { version = "0.5", optional = true, features = ["contract"] }
 alloy-primitives = "0.8"
 alloy-sol-types = "0.8"
 anyhow = { version = "1.0", optional = true }
@@ -29,7 +29,7 @@ regex = { version = "1.11", optional = true }
 rustc-hash = "2.0"
 serde_json = { version = "1.0", optional = true }
 thiserror = { version = "1.0", optional = true }
-uniswap-lens = { version = "0.4", optional = true }
+uniswap-lens = { version = "0.5", optional = true }
 uniswap-sdk-core = "3.0.0"
 
 [features]
@@ -38,8 +38,8 @@ extensions = ["uniswap-lens/std", "alloy", "anyhow", "base64", "regex", "serde_j
 std = ["thiserror", "uniswap-sdk-core/std"]
 
 [dev-dependencies]
-alloy-signer = "0.4"
-alloy-signer-local = "0.4"
+alloy-signer = "0.5"
+alloy-signer-local = "0.5"
 criterion = "0.5.1"
 dotenv = "0.15.0"
 tokio = { version = "1.40", features = ["full"] }
