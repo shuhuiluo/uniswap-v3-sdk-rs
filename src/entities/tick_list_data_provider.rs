@@ -39,9 +39,12 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "NOT_CONTAINED")]
+    #[cfg(not(feature = "extensions"))]
     fn throws_if_tick_not_in_list() {
-        PROVIDER.get_tick(0).unwrap();
+        assert_eq!(
+            PROVIDER.get_tick(0).unwrap_err(),
+            TickListError::NotContained.into()
+        );
     }
 
     #[test]

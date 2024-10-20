@@ -10,152 +10,114 @@ pub trait TickList {
 
     fn is_at_or_above_largest(&self, tick: Self::Index) -> bool;
 
-    fn get_tick(&self, index: Self::Index) -> &Tick<Self::Index>;
-
     /// Finds the largest tick in the list of ticks that is less than or equal to tick
     ///
     /// ## Arguments
     ///
     /// * `tick`: tick to find the largest tick that is less than or equal to tick
     ///
-    /// returns: usize
-    fn binary_search_by_tick(&self, tick: Self::Index) -> usize;
+    /// ## Returns
+    ///
+    /// * `Ok(usize)`: The index of the largest tick that is less than or equal to tick
+    /// * `Err(Error)`: If the tick is below the smallest tick
+    fn binary_search_by_tick(&self, tick: Self::Index) -> Result<usize, Error>;
 
-    fn next_initialized_tick(&self, tick: Self::Index, lte: bool) -> &Tick<Self::Index>;
-
-    #[inline]
-    fn next_initialized_tick_within_one_word(
+    fn next_initialized_tick(
         &self,
         tick: Self::Index,
         lte: bool,
-        tick_spacing: Self::Index,
-    ) -> (Self::Index, bool) {
-        let compressed = tick.compress(tick_spacing);
-        if lte {
-            let word_pos = compressed >> 8;
-            let minimum = (word_pos << 8) * tick_spacing;
-
-            if self.is_below_smallest(tick) {
-                return (minimum, false);
-            }
-            let index = self.next_initialized_tick(tick, lte).index;
-            let next_initialized_tick = minimum.max(index);
-            (next_initialized_tick, next_initialized_tick == index)
-        } else {
-            let one = Self::Index::ONE;
-            let word_pos = (compressed + one) >> 8;
-            let maximum = (((word_pos + one) << 8) - one) * tick_spacing;
-            if self.is_at_or_above_largest(tick) {
-                return (maximum, false);
-            }
-            let index = self.next_initialized_tick(tick, lte).index;
-            let next_initialized_tick = maximum.min(index);
-            (next_initialized_tick, next_initialized_tick == index)
-        }
-    }
-}
-
-macro_rules! impl_tick_list {
-    ($tick_list:ty) => {
-        type Index = I;
-
-        #[inline]
-        fn validate_list(&self, tick_spacing: I) {
-            assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
-            assert!(
-                self.iter().all(|x| x.index % tick_spacing == I::ZERO),
-                "TICK_SPACING"
-            );
-            for i in 1..self.len() {
-                assert!(self[i] >= self[i - 1], "SORTED");
-            }
-            assert_eq!(
-                self.iter().fold(0_u128, |acc, x| acc
-                    .checked_add_signed(x.liquidity_net)
-                    .expect("ZERO_NET")),
-                0,
-                "ZERO_NET"
-            );
-        }
-
-        #[inline]
-        fn is_below_smallest(&self, tick: I) -> bool {
-            match self.first() {
-                Some(first) => tick < first.index,
-                None => panic!("LENGTH"),
-            }
-        }
-
-        #[inline]
-        fn is_at_or_above_largest(&self, tick: I) -> bool {
-            match self.last() {
-                Some(last) => tick >= last.index,
-                None => panic!("LENGTH"),
-            }
-        }
-
-        #[inline]
-        fn get_tick(&self, index: I) -> &Tick<I> {
-            let i = self.binary_search_by_tick(index);
-            let tick = &self[i];
-            assert_eq!(tick.index, index, "NOT_CONTAINED");
-            tick
-        }
-
-        #[inline]
-        fn binary_search_by_tick(&self, tick: I) -> usize {
-            assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
-            let mut l = 0;
-            let mut r = self.len() - 1;
-
-            loop {
-                let i = (l + r) / 2;
-                if self[i].index <= tick && (i == self.len() - 1 || self[i + 1].index > tick) {
-                    return i;
-                }
-                if self[i].index < tick {
-                    l = i + 1;
-                } else {
-                    r = i - 1;
-                }
-            }
-        }
-
-        #[inline]
-        fn next_initialized_tick(&self, tick: I, lte: bool) -> &Tick<I> {
-            if lte {
-                assert!(!self.is_below_smallest(tick), "BELOW_SMALLEST");
-                if self.is_at_or_above_largest(tick) {
-                    return self.last().unwrap();
-                }
-                let index = self.binary_search_by_tick(tick);
-                &self[index]
-            } else {
-                assert!(!self.is_at_or_above_largest(tick), "AT_OR_ABOVE_LARGEST");
-                if self.is_below_smallest(tick) {
-                    return &self[0];
-                }
-                let index = self.binary_search_by_tick(tick);
-                &self[index + 1]
-            }
-        }
-    };
+    ) -> Result<&Tick<Self::Index>, Error>;
 }
 
 impl<I: TickIndex> TickList for [Tick<I>] {
-    impl_tick_list!([Tick<I>]);
-}
+    type Index = I;
 
-impl<I: TickIndex, const N: usize> TickList for [Tick<I>; N] {
-    impl_tick_list!([Tick<I>; N]);
+    #[inline]
+    fn validate_list(&self, tick_spacing: I) {
+        assert!(tick_spacing > I::ZERO, "TICK_SPACING_NONZERO");
+        assert!(!self.is_empty(), "LENGTH");
+        assert!(
+            self.iter().all(|x| x.index % tick_spacing == I::ZERO),
+            "TICK_SPACING"
+        );
+        for i in 1..self.len() {
+            assert!(self[i] >= self[i - 1], "SORTED");
+        }
+        assert_eq!(
+            self.iter().fold(0_u128, |acc, x| acc
+                .checked_add_signed(x.liquidity_net)
+                .expect("ZERO_NET")),
+            0,
+            "ZERO_NET"
+        );
+    }
+
+    #[inline]
+    fn is_below_smallest(&self, tick: I) -> bool {
+        tick < self.first().unwrap().index
+    }
+
+    #[inline]
+    fn is_at_or_above_largest(&self, tick: I) -> bool {
+        tick >= self.last().unwrap().index
+    }
+
+    #[inline]
+    fn binary_search_by_tick(&self, tick: I) -> Result<usize, Error> {
+        if self.is_below_smallest(tick) {
+            return Err(TickListError::BelowSmallest.into());
+        }
+        let mut l = 0;
+        let mut r = self.len() - 1;
+
+        loop {
+            let i = (l + r) / 2;
+            if self[i].index <= tick && (i == self.len() - 1 || self[i + 1].index > tick) {
+                return Ok(i);
+            }
+            if self[i].index < tick {
+                l = i + 1;
+            } else {
+                r = i - 1;
+            }
+        }
+    }
+
+    #[inline]
+    fn next_initialized_tick(&self, tick: I, lte: bool) -> Result<&Tick<I>, Error> {
+        if lte {
+            if self.is_below_smallest(tick) {
+                return Err(TickListError::BelowSmallest.into());
+            };
+            if self.is_at_or_above_largest(tick) {
+                return Ok(self.last().unwrap());
+            }
+            let index = self.binary_search_by_tick(tick)?;
+            Ok(&self[index])
+        } else {
+            if self.is_at_or_above_largest(tick) {
+                return Err(TickListError::AtOrAboveLargest.into());
+            }
+            if self.is_below_smallest(tick) {
+                return Ok(&self[0]);
+            }
+            let index = self.binary_search_by_tick(tick)?;
+            Ok(&self[index + 1])
+        }
+    }
 }
 
 impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     type Index = I;
 
     #[inline]
-    fn get_tick(&self, tick: I) -> Result<&Tick<I>, Error> {
-        Ok(TickList::get_tick(self, tick))
+    fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
+        let i = self.binary_search_by_tick(index)?;
+        let tick = &self[i];
+        if tick.index != index {
+            return Err(TickListError::NotContained.into());
+        }
+        Ok(tick)
     }
 
     #[inline]
@@ -165,12 +127,27 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
         lte: bool,
         tick_spacing: I,
     ) -> Result<(I, bool), Error> {
-        Ok(TickList::next_initialized_tick_within_one_word(
-            self,
-            tick,
-            lte,
-            tick_spacing,
-        ))
+        let compressed = tick.compress(tick_spacing);
+        if lte {
+            let word_pos = compressed >> 8;
+            let minimum = (word_pos << 8) * tick_spacing;
+            if self.is_below_smallest(tick) {
+                return Ok((minimum, false));
+            }
+            let index = self.next_initialized_tick(tick, lte)?.index;
+            let next_initialized_tick = minimum.max(index);
+            Ok((next_initialized_tick, next_initialized_tick == index))
+        } else {
+            let one = Self::Index::ONE;
+            let word_pos = (compressed + one) >> 8;
+            let maximum = (((word_pos + one) << 8) - one) * tick_spacing;
+            if self.is_at_or_above_largest(tick) {
+                return Ok((maximum, false));
+            }
+            let index = self.next_initialized_tick(tick, lte)?.index;
+            let next_initialized_tick = maximum.min(index);
+            Ok((next_initialized_tick, next_initialized_tick == index))
+        }
     }
 }
 
@@ -199,30 +176,34 @@ mod tests {
     };
     const TICKS: [Tick; 3] = [LOW_TICK, MID_TICK, HIGH_TICK];
 
-    #[test]
-    fn test_impl_for_vec() {
-        assert_eq!(TICKS.binary_search_by_tick(-1), 0);
-        assert_eq!(TICKS.binary_search_by_tick(0), 1);
-        assert_eq!(TICKS.binary_search_by_tick(1), 1);
-        assert_eq!(TICKS.binary_search_by_tick(MAX_TICK), 2);
+    mod validate {
+        use super::*;
+
+        #[test]
+        #[should_panic(expected = "ZERO_NET")]
+        fn test_errors_for_incomplete_lists() {
+            [LOW_TICK].validate_list(1);
+        }
+
+        #[test]
+        #[should_panic(expected = "SORTED")]
+        fn test_errors_for_unsorted_lists() {
+            [HIGH_TICK, LOW_TICK, MID_TICK].validate_list(1);
+        }
+
+        #[test]
+        #[should_panic(expected = "TICK_SPACING")]
+        fn test_errors_if_ticks_are_not_on_multiples_of_tick_spacing() {
+            [HIGH_TICK, LOW_TICK, MID_TICK].validate_list(1337);
+        }
     }
 
     #[test]
-    #[should_panic(expected = "ZERO_NET")]
-    fn test_validate_list_zero_net() {
-        [LOW_TICK].validate_list(1);
-    }
-
-    #[test]
-    #[should_panic(expected = "SORTED")]
-    fn test_validate_list_unsorted() {
-        [HIGH_TICK, LOW_TICK, MID_TICK].validate_list(1);
-    }
-
-    #[test]
-    #[should_panic(expected = "TICK_SPACING")]
-    fn test_validate_list_tick_spacing() {
-        [HIGH_TICK, LOW_TICK, MID_TICK].validate_list(1337);
+    fn test_binary_search_by_tick() {
+        assert_eq!(TICKS.binary_search_by_tick(-1).unwrap(), 0);
+        assert_eq!(TICKS.binary_search_by_tick(0).unwrap(), 1);
+        assert_eq!(TICKS.binary_search_by_tick(1).unwrap(), 1);
+        assert_eq!(TICKS.binary_search_by_tick(MAX_TICK).unwrap(), 2);
     }
 
     #[test]
@@ -237,155 +218,167 @@ mod tests {
         assert!(TICKS.is_at_or_above_largest(MAX_TICK - 1));
     }
 
-    #[test]
-    #[should_panic(expected = "BELOW_SMALLEST")]
-    fn test_next_initialized_tick_low_lte_true() {
-        TICKS.next_initialized_tick(MIN_TICK, true);
+    mod next_initialized_tick {
+        use super::*;
+
+        #[test]
+        #[cfg(not(feature = "extensions"))]
+        fn test_low_lte_true() {
+            assert_eq!(
+                TICKS.next_initialized_tick(MIN_TICK, true).unwrap_err(),
+                TickListError::BelowSmallest.into()
+            );
+        }
+
+        #[test]
+        fn test_low_lte_true_2() {
+            assert_eq!(
+                TICKS.next_initialized_tick(MIN_TICK + 1, true).unwrap(),
+                &LOW_TICK
+            );
+            assert_eq!(
+                TICKS.next_initialized_tick(MIN_TICK + 2, true).unwrap(),
+                &LOW_TICK
+            );
+        }
+
+        #[test]
+        fn test_low_lte_false() {
+            assert_eq!(
+                TICKS.next_initialized_tick(MIN_TICK, false).unwrap(),
+                &LOW_TICK
+            );
+            assert_eq!(
+                TICKS.next_initialized_tick(MIN_TICK + 1, false).unwrap(),
+                &MID_TICK
+            );
+        }
+
+        #[test]
+        fn test_mid_lte_true() {
+            assert_eq!(TICKS.next_initialized_tick(0, true).unwrap(), &MID_TICK);
+            assert_eq!(TICKS.next_initialized_tick(1, true).unwrap(), &MID_TICK);
+        }
+
+        #[test]
+        fn test_mid_lte_false() {
+            assert_eq!(TICKS.next_initialized_tick(-1, false).unwrap(), &MID_TICK);
+            assert_eq!(TICKS.next_initialized_tick(1, false).unwrap(), &HIGH_TICK);
+        }
+
+        #[test]
+        fn test_high_lte_true() {
+            assert_eq!(
+                TICKS.next_initialized_tick(MAX_TICK - 1, true).unwrap(),
+                &HIGH_TICK
+            );
+            assert_eq!(
+                TICKS.next_initialized_tick(MAX_TICK, true).unwrap(),
+                &HIGH_TICK
+            );
+        }
+
+        #[test]
+        #[cfg(not(feature = "extensions"))]
+        fn test_high_lte_false() {
+            assert_eq!(
+                TICKS
+                    .next_initialized_tick(MAX_TICK - 1, false)
+                    .unwrap_err(),
+                TickListError::AtOrAboveLargest.into()
+            );
+        }
+
+        #[test]
+        fn test_high_lte_false_2() {
+            assert_eq!(
+                TICKS.next_initialized_tick(MAX_TICK - 2, false).unwrap(),
+                &HIGH_TICK
+            );
+            assert_eq!(
+                TICKS.next_initialized_tick(MAX_TICK - 3, false).unwrap(),
+                &HIGH_TICK
+            );
+        }
     }
 
-    #[test]
-    fn test_next_initialized_tick_low_lte_true_2() {
-        assert_eq!(TICKS.next_initialized_tick(MIN_TICK + 1, true), &LOW_TICK);
-        assert_eq!(TICKS.next_initialized_tick(MIN_TICK + 2, true), &LOW_TICK);
-    }
+    mod next_initialized_tick_within_one_word {
+        use super::*;
 
-    #[test]
-    fn test_next_initialized_tick_low_lte_false() {
-        assert_eq!(TICKS.next_initialized_tick(MIN_TICK, false), &LOW_TICK);
-        assert_eq!(TICKS.next_initialized_tick(MIN_TICK + 1, false), &MID_TICK);
-    }
+        #[test]
+        fn test_words_around_0_lte_true() {
+            macro_rules! test_for_true {
+                ($tick:expr, $next:expr, $initialized:expr) => {
+                    assert_eq!(
+                        TICKS
+                            .next_initialized_tick_within_one_word($tick, true, 1)
+                            .unwrap(),
+                        ($next, $initialized)
+                    );
+                };
+            }
 
-    #[test]
-    fn test_next_initialized_tick_mid_lte_true() {
-        assert_eq!(TICKS.next_initialized_tick(0, true), &MID_TICK);
-        assert_eq!(TICKS.next_initialized_tick(1, true), &MID_TICK);
-    }
+            test_for_true!(-257, -512, false);
+            test_for_true!(-256, -256, false);
+            test_for_true!(-1, -256, false);
+            test_for_true!(0, 0, true);
+            test_for_true!(1, 0, true);
+            test_for_true!(255, 0, true);
+            test_for_true!(256, 256, false);
+            test_for_true!(257, 256, false);
+        }
 
-    #[test]
-    fn test_next_initialized_tick_mid_lte_false() {
-        assert_eq!(TICKS.next_initialized_tick(-1, false), &MID_TICK);
-        assert_eq!(TICKS.next_initialized_tick(1, false), &HIGH_TICK);
-    }
+        #[test]
+        fn test_words_around_0_lte_false() {
+            macro_rules! test_for_false {
+                ($tick:expr, $next:expr, $initialized:expr) => {
+                    assert_eq!(
+                        TICKS
+                            .next_initialized_tick_within_one_word($tick, false, 1)
+                            .unwrap(),
+                        ($next, $initialized)
+                    );
+                };
+            }
 
-    #[test]
-    fn test_next_initialized_tick_high_lte_true() {
-        assert_eq!(TICKS.next_initialized_tick(MAX_TICK - 1, true), &HIGH_TICK);
-        assert_eq!(TICKS.next_initialized_tick(MAX_TICK, true), &HIGH_TICK);
-    }
+            test_for_false!(-258, -257, false);
+            test_for_false!(-257, -1, false);
+            test_for_false!(-256, -1, false);
+            test_for_false!(-2, -1, false);
+            test_for_false!(-1, 0, true);
+            test_for_false!(0, 255, false);
+            test_for_false!(1, 255, false);
+            test_for_false!(254, 255, false);
+            test_for_false!(255, 511, false);
+            test_for_false!(256, 511, false);
+        }
 
-    #[test]
-    #[should_panic(expected = "AT_OR_ABOVE_LARGEST")]
-    fn test_next_initialized_tick_high_lte_false() {
-        TICKS.next_initialized_tick(MAX_TICK - 1, false);
-    }
-
-    #[test]
-    fn test_next_initialized_tick_high_lte_false_2() {
-        assert_eq!(TICKS.next_initialized_tick(MAX_TICK - 2, false), &HIGH_TICK);
-        assert_eq!(TICKS.next_initialized_tick(MAX_TICK - 3, false), &HIGH_TICK);
-    }
-
-    #[test]
-    fn test_next_initialized_tick_within_one_word_lte_true() {
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-257, true, 1),
-            (-512, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-256, true, 1),
-            (-256, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-1, true, 1),
-            (-256, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(0, true, 1),
-            (0, true)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(1, true, 1),
-            (0, true)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(255, true, 1),
-            (0, true)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(256, true, 1),
-            (256, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(257, true, 1),
-            (256, false)
-        );
-    }
-
-    #[test]
-    fn test_next_initialized_tick_within_one_word_lte_false() {
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-258, false, 1),
-            (-257, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-257, false, 1),
-            (-1, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-256, false, 1),
-            (-1, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-2, false, 1),
-            (-1, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(-1, false, 1),
-            (0, true)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(0, false, 1),
-            (255, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(1, false, 1),
-            (255, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(254, false, 1),
-            (255, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(255, false, 1),
-            (511, false)
-        );
-        assert_eq!(
-            TICKS.next_initialized_tick_within_one_word(256, false, 1),
-            (511, false)
-        );
-    }
-
-    #[test]
-    fn test_next_initialized_tick_within_one_word_tick_spacing_gt_1() {
-        let ticks = [
-            Tick {
-                index: 0,
-                liquidity_net: 0,
-                liquidity_gross: 0,
-            },
-            Tick {
-                index: 511,
-                liquidity_net: 0,
-                liquidity_gross: 0,
-            },
-        ];
-        assert_eq!(
-            ticks.next_initialized_tick_within_one_word(0, false, 1),
-            (255, false)
-        );
-        assert_eq!(
-            ticks.next_initialized_tick_within_one_word(0, false, 2),
-            (510, false)
-        );
+        #[test]
+        fn test_performs_correctly_with_tick_spacing_gt_1() {
+            let ticks = [
+                Tick {
+                    index: 0,
+                    liquidity_net: 0,
+                    liquidity_gross: 0,
+                },
+                Tick {
+                    index: 511,
+                    liquidity_net: 0,
+                    liquidity_gross: 0,
+                },
+            ];
+            assert_eq!(
+                ticks
+                    .next_initialized_tick_within_one_word(0, false, 1)
+                    .unwrap(),
+                (255, false)
+            );
+            assert_eq!(
+                ticks
+                    .next_initialized_tick_within_one_word(0, false, 2)
+                    .unwrap(),
+                (510, false)
+            );
+        }
     }
 }
