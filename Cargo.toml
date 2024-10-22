@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "2.2.0"
+version = "2.3.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
