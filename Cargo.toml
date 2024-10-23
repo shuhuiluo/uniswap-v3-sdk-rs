@@ -43,7 +43,7 @@ alloy-signer-local = "0.5"
 criterion = "0.5.1"
 dotenv = "0.15.0"
 tokio = { version = "1.40", features = ["full"] }
-uniswap_v3_math = "0.5.1"
+uniswap_v3_math = "0.5.2"
 
 [[bench]]
 name = "bit_math"
