@@ -4,7 +4,8 @@ use alloy_sol_types::{Error, SolCall};
 
 #[inline]
 #[must_use]
-pub fn encode_multicall(data: Vec<Bytes>) -> Bytes {
+pub fn encode_multicall<B: Into<Bytes>>(data: Vec<B>) -> Bytes {
+    let data: Vec<Bytes> = data.into_iter().map(Into::into).collect();
     if data.len() == 1 {
         data[0].clone()
     } else {
@@ -13,9 +14,40 @@ pub fn encode_multicall(data: Vec<Bytes>) -> Bytes {
 }
 
 #[inline]
-pub fn decode_multicall(encoded: &Bytes) -> Result<Vec<Bytes>, Error> {
-    IMulticall::multicallCall::abi_decode(encoded.as_ref(), true).map(|decoded| decoded.data)
+pub fn decode_multicall<B, E>(encoded: E) -> Result<Vec<B>, Error>
+where
+    E: AsRef<[u8]>,
+    B: From<Bytes>,
+{
+    IMulticall::multicallCall::abi_decode(encoded.as_ref(), true)
+        .map(|decoded| decoded.data.into_iter().map(Into::into).collect())
 }
+
+pub trait Multicall: Sized {
+    fn encode_multicall(self) -> Bytes;
+
+    fn decode_multicall<E: AsRef<[u8]>>(encoded: E) -> Result<Self, Error>;
+}
+
+macro_rules! impl_multicall {
+    ($($t:ty),*) => {
+        $(
+            impl Multicall for $t {
+                #[inline]
+                fn encode_multicall(self) -> Bytes {
+                    encode_multicall(self)
+                }
+
+                #[inline]
+                fn decode_multicall<E: AsRef<[u8]>>(encoded: E) -> Result<Self, Error> {
+                    decode_multicall(encoded)
+                }
+            }
+        )*
+    };
+}
+
+impl_multicall!(Vec<Bytes>, Vec<Vec<u8>>);
 
 #[cfg(test)]
 mod tests {
@@ -27,15 +59,15 @@ mod tests {
 
         #[test]
         fn test_string_array_len_1() {
-            let calldata = encode_multicall(vec![vec![0x01].into()]);
+            let calldata = vec![vec![0x01]].encode_multicall();
             assert_eq!(calldata, vec![0x01]);
         }
 
         #[test]
         fn test_string_array_len_2() {
             let calldata = encode_multicall(vec![
-                hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").into(),
-                hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into(),
+                hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
             ]);
             assert_eq!(
                 calldata.to_vec(),
@@ -49,18 +81,18 @@ mod tests {
 
         #[test]
         fn test_string_array_len_2() {
-            let calldatas = vec![
-                hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").into(),
-                hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into(),
+            let calldata_list = vec![
+                hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                hex!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
             ];
-            let multicall = encode_multicall(calldatas.clone());
+            let encoded = encode_multicall(calldata_list.clone());
             assert_eq!(
-                multicall.to_vec(),
+                encoded.to_vec(),
                 hex!("ac9650d800000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000020aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000020bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
             );
 
-            let decoded_calldata = decode_multicall(&multicall).unwrap();
-            assert_eq!(decoded_calldata, calldatas);
+            let decoded_calldata: Vec<Vec<u8>> = Multicall::decode_multicall(encoded).unwrap();
+            assert_eq!(decoded_calldata, calldata_list);
         }
     }
 }

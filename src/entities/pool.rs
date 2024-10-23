@@ -269,7 +269,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
-        assert!(self.involves_token(&input_amount.currency), "TOKEN");
+        if !self.involves_token(&input_amount.currency) {
+            return Err(Error::InvalidToken);
+        }
 
         let zero_for_one = input_amount.currency.equals(&self.token0);
 
@@ -324,7 +326,9 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
     ) -> Result<(CurrencyAmount<&Token>, Self), Error> {
-        assert!(self.involves_token(&output_amount.currency), "TOKEN");
+        if !self.involves_token(&output_amount.currency) {
+            return Err(Error::InvalidToken);
+        }
 
         let zero_for_one = output_amount.currency.equals(&self.token1);
 
