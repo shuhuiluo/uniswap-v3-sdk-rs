@@ -182,12 +182,11 @@ where
             .iter()
             .map(|swap| swap.route.pools.len())
             .sum::<usize>();
-        let mut pool_address_set = FxHashSet::<Address>::default();
-        for Swap { route, .. } in &swaps {
-            for pool in &route.pools {
-                pool_address_set.insert(pool.address(None, None));
-            }
-        }
+        let pool_addresses = swaps
+            .iter()
+            .flat_map(|swap| swap.route.pools.iter())
+            .map(|pool| pool.address(None, None));
+        let pool_address_set = FxHashSet::from_iter(pool_addresses);
         assert_eq!(num_pools, pool_address_set.len(), "POOLS_DUPLICATED");
         Ok(Self {
             swaps,
