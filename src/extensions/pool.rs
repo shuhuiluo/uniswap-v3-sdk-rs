@@ -166,11 +166,20 @@ fn normalize_ticks<I: TickIndex>(
     (tick_current_aligned, tick_lower, tick_upper)
 }
 
-/// Reconstructs the liquidity array from the tick array and the current liquidity.
+/// Reconstructs the liquidity array from the tick array and the current liquidity
+///
+/// ## Arguments
+///
+/// * `tick_array`: The tick array of tick and net liquidity sorted by tick
+/// * `tick_current_aligned`: The current tick aligned to the tick spacing
+/// * `current_liquidity`: The current liquidity
+///
+/// ## Returns
+///
+/// An array of ticks and corresponding cumulative liquidity
 #[inline]
-#[allow(clippy::needless_pass_by_value)]
-fn reconstruct_liquidity_array<I: TickIndex>(
-    tick_array: Vec<(I, i128)>,
+pub fn reconstruct_liquidity_array<I: TickIndex>(
+    tick_array: &[(I, i128)],
     tick_current_aligned: I,
     current_liquidity: u128,
 ) -> Result<Vec<(I, u128)>, Error> {
@@ -244,10 +253,10 @@ where
     .await
     .map_err(Error::LensError)?;
     reconstruct_liquidity_array(
-        ticks
+        &ticks
             .into_iter()
             .map(|tick| (TP::Index::from_i24(tick.tick), tick.liquidityNet))
-            .collect(),
+            .collect::<Vec<(TP::Index, i128)>>(),
         tick_current_aligned,
         pool.liquidity,
     )
