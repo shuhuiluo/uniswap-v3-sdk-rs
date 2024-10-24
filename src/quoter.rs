@@ -7,9 +7,9 @@ use uniswap_sdk_core::prelude::*;
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct QuoteOptions {
     /// The price limit for the trade.
-    sqrt_price_limit_x96: U160,
+    pub sqrt_price_limit_x96: U160,
     /// The quoter interface to use
-    use_quoter_v2: bool,
+    pub use_quoter_v2: bool,
 }
 
 /// Produces the on-chain method name of the appropriate function within QuoterV2,

@@ -49,7 +49,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "2.3.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "2.4.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
