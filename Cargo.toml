@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "2.4.0"
+version = "2.4.1"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -34,8 +34,8 @@ uniswap-sdk-core = "3.0.0"
 
 [features]
 default = []
-extensions = ["uniswap-lens/std", "alloy", "anyhow", "base64", "regex", "serde_json"]
-std = ["thiserror", "uniswap-sdk-core/std"]
+extensions = ["alloy", "anyhow", "base64", "regex", "serde_json", "uniswap-lens"]
+std = ["alloy?/std", "thiserror", "uniswap-sdk-core/std", "uniswap-lens?/std"]
 
 [dev-dependencies]
 alloy-signer = "0.5"
