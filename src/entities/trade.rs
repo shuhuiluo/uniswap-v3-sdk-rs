@@ -665,8 +665,7 @@ where
             None => currency_amount_in.wrapped()?,
         };
         let token_out = currency_out.wrapped();
-        for i in 0..pools.len() {
-            let pool = &pools[i];
+        for (i, pool) in pools.iter().enumerate() {
             // pool irrelevant
             if !pool.involves_token(&amount_in.currency) {
                 continue;
@@ -691,9 +690,10 @@ where
                 )?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
             } else if max_hops > 1 && pools.len() > 1 {
-                let pools_excluding_this_pool = pools[..i]
+                let pools_excluding_this_pool = pools
                     .iter()
-                    .chain(pools[i + 1..].iter())
+                    .take(i)
+                    .chain(pools.iter().skip(i + 1))
                     .cloned()
                     .collect();
                 // otherwise, consider all the other paths that lead from this token as long as we
@@ -758,8 +758,7 @@ where
             None => currency_amount_out.wrapped()?,
         };
         let token_in = currency_in.wrapped();
-        for i in 0..pools.len() {
-            let pool = &pools[i];
+        for (i, pool) in pools.iter().enumerate() {
             // pool irrelevant
             if !pool.involves_token(&amount_out.currency) {
                 continue;
@@ -784,9 +783,10 @@ where
                 )?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
             } else if max_hops > 1 && pools.len() > 1 {
-                let pools_excluding_this_pool = pools[..i]
+                let pools_excluding_this_pool = pools
                     .iter()
-                    .chain(pools[i + 1..].iter())
+                    .take(i)
+                    .chain(pools.iter().skip(i + 1))
                     .cloned()
                     .collect();
                 // otherwise, consider all the other paths that arrive at this token as long as we
