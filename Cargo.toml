@@ -35,7 +35,7 @@ uniswap-sdk-core = "3.0.0"
 [features]
 default = []
 extensions = ["alloy", "anyhow", "base64", "regex", "serde_json", "uniswap-lens"]
-std = ["alloy?/std", "thiserror", "uniswap-sdk-core/std", "uniswap-lens?/std", ]
+std = ["alloy?/std", "thiserror", "uniswap-sdk-core/std", "uniswap-lens?/std"]
 
 [dev-dependencies]
 alloy-signer = "0.5"
