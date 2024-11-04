@@ -239,11 +239,16 @@ where
     /// The input amount for the trade assuming no slippage.
     #[inline]
     pub fn input_amount(&self) -> Result<CurrencyAmount<TInput>, Error> {
-        let mut total = CurrencyAmount::from_raw_amount(self.input_currency().clone(), 0)?;
+        let mut total = Fraction::default();
         for Swap { input_amount, .. } in &self.swaps {
-            total = total.add(input_amount)?;
+            total = total + input_amount.as_fraction();
         }
-        Ok(total)
+        CurrencyAmount::from_fractional_amount(
+            self.input_currency().clone(),
+            total.numerator,
+            total.denominator,
+        )
+        .map_err(Error::Core)
     }
 
     /// The input amount for the trade assuming no slippage.
@@ -266,11 +271,16 @@ where
     /// The output amount for the trade assuming no slippage.
     #[inline]
     pub fn output_amount(&self) -> Result<CurrencyAmount<TOutput>, Error> {
-        let mut total = CurrencyAmount::from_raw_amount(self.output_currency().clone(), 0)?;
+        let mut total = Fraction::default();
         for Swap { output_amount, .. } in &self.swaps {
-            total = total.add(output_amount)?;
+            total = total + output_amount.as_fraction();
         }
-        Ok(total)
+        CurrencyAmount::from_fractional_amount(
+            self.output_currency().clone(),
+            total.numerator,
+            total.denominator,
+        )
+        .map_err(Error::Core)
     }
 
     /// The output amount for the trade assuming no slippage.
@@ -616,6 +626,11 @@ where
     /// Given a list of pools, and a fixed amount in, returns the top `max_num_results` trades that
     /// go from an input token amount to an output token, making at most `max_hops` hops.
     ///
+    /// ## Note
+    ///
+    /// This does not consider aggregation, as routes are linear. It's possible a better route
+    /// exists by splitting the amount in among multiple routes.
+    ///
     /// ## Arguments
     ///
     /// * `pools`: The pools to consider in finding the best trade
@@ -650,7 +665,8 @@ where
             None => currency_amount_in.wrapped()?,
         };
         let token_out = currency_out.wrapped();
-        for pool in &pools {
+        for i in 0..pools.len() {
+            let pool = &pools[i];
             // pool irrelevant
             if !pool.involves_token(&amount_in.currency) {
                 continue;
@@ -675,9 +691,9 @@ where
                 )?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
             } else if max_hops > 1 && pools.len() > 1 {
-                let pools_excluding_this_pool = pools
+                let pools_excluding_this_pool = pools[..i]
                     .iter()
-                    .filter(|&p| p.address(None, None) != pool.address(None, None))
+                    .chain(pools[i + 1..].iter())
                     .cloned()
                     .collect();
                 // otherwise, consider all the other paths that lead from this token as long as we
@@ -704,7 +720,9 @@ where
     /// Given a list of pools, and a fixed amount out, returns the top `max_num_results` trades that
     /// go from an input token to an output token amount, making at most `max_hops` hops.
     ///
-    /// Note this does not consider aggregation, as routes are linear. It's possible a better route
+    /// ## Note
+    ///
+    /// This does not consider aggregation, as routes are linear. It's possible a better route
     /// exists by splitting the amount in among multiple routes.
     ///
     /// ## Arguments
@@ -740,7 +758,8 @@ where
             None => currency_amount_out.wrapped()?,
         };
         let token_in = currency_in.wrapped();
-        for pool in &pools {
+        for i in 0..pools.len() {
+            let pool = &pools[i];
             // pool irrelevant
             if !pool.involves_token(&amount_out.currency) {
                 continue;
@@ -765,9 +784,9 @@ where
                 )?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
             } else if max_hops > 1 && pools.len() > 1 {
-                let pools_excluding_this_pool = pools
+                let pools_excluding_this_pool = pools[..i]
                     .iter()
-                    .filter(|&p| p.address(None, None) != pool.address(None, None))
+                    .chain(pools[i + 1..].iter())
                     .cloned()
                     .collect();
                 // otherwise, consider all the other paths that arrive at this token as long as we

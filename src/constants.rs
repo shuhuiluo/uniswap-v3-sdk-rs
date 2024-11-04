@@ -1,5 +1,3 @@
-#![allow(non_camel_case_types)]
-
 use alloy_primitives::{
     address,
     aliases::{I24, U24},
@@ -13,6 +11,8 @@ pub const POOL_INIT_CODE_HASH: B256 =
 
 /// The default factory enabled fee amounts, denominated in hundredths of bips.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
+#[allow(non_camel_case_types)]
 pub enum FeeAmount {
     LOWEST = 100,
     LOW_200 = 200,
