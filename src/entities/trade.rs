@@ -688,7 +688,7 @@ where
                     currency_amount_in.wrapped()?,
                     TradeType::ExactInput,
                 )?;
-                sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
+                sorted_insert(best_trades, trade, max_num_results, trade_comparator);
             } else if max_hops > 1 && pools.len() > 1 {
                 let pools_excluding_this_pool = pools
                     .iter()
@@ -781,7 +781,7 @@ where
                     currency_amount_out.wrapped()?,
                     TradeType::ExactOutput,
                 )?;
-                sorted_insert(best_trades, trade, max_num_results, trade_comparator)?;
+                sorted_insert(best_trades, trade, max_num_results, trade_comparator);
             } else if max_hops > 1 && pools.len() > 1 {
                 let pools_excluding_this_pool = pools
                     .iter()
