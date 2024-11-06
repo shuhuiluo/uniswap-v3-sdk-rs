@@ -42,10 +42,10 @@ pub enum Error {
     #[error("Invalid tick range")]
     InvalidRange,
 
-    #[error("Invalid tick range")]
+    #[error("Overflow in full math mulDiv")]
     MulDivOverflow,
 
-    #[error("Invalid tick range")]
+    #[error("Overflow when adding liquidity delta")]
     AddDeltaOverflow,
 
     #[error("Overflow when casting to U160")]
