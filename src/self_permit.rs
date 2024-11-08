@@ -1,5 +1,5 @@
 use super::abi::ISelfPermit;
-use alloy_primitives::{Bytes, Signature, U256};
+use alloy_primitives::{Bytes, PrimitiveSignature, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
 use uniswap_sdk_core::prelude::*;
 
@@ -26,7 +26,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// ## Examples
 ///
 /// ```
-/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
 /// use alloy_signer::SignerSync;
 /// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
@@ -67,7 +67,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// // Derive the EIP-712 signing hash.
 /// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
 ///
-/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
 ///     signature.recover_address_from_prehash(&hash).unwrap(),
 ///     signer.address()
@@ -96,14 +96,14 @@ pub fn get_erc20_permit_data<P: SolStruct>(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StandardPermitArguments {
-    pub signature: Signature,
+    pub signature: PrimitiveSignature,
     pub amount: U256,
     pub deadline: U256,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AllowedPermitArguments {
-    pub signature: Signature,
+    pub signature: PrimitiveSignature,
     pub nonce: U256,
     pub expiry: U256,
 }
@@ -117,9 +117,9 @@ pub enum PermitOptions {
 impl StandardPermitArguments {
     #[inline]
     #[must_use]
-    pub fn new(r: U256, s: U256, v: u64, amount: U256, deadline: U256) -> Self {
+    pub fn new(r: U256, s: U256, v: bool, amount: U256, deadline: U256) -> Self {
         Self {
-            signature: Signature::from_rs_and_parity(r, s, v).unwrap(),
+            signature: PrimitiveSignature::new(r, s, v),
             amount,
             deadline,
         }
@@ -129,9 +129,9 @@ impl StandardPermitArguments {
 impl AllowedPermitArguments {
     #[inline]
     #[must_use]
-    pub fn new(r: U256, s: U256, v: u64, nonce: U256, expiry: U256) -> Self {
+    pub fn new(r: U256, s: U256, v: bool, nonce: U256, expiry: U256) -> Self {
         Self {
-            signature: Signature::from_rs_and_parity(r, s, v).unwrap(),
+            signature: PrimitiveSignature::new(r, s, v),
             nonce,
             expiry,
         }
@@ -146,7 +146,7 @@ pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
             token: token.address(),
             value: args.amount,
             deadline: args.deadline,
-            v: args.signature.v().y_parity_byte(),
+            v: args.signature.v() as u8,
             r: args.signature.r().into(),
             s: args.signature.s().into(),
         }
@@ -155,7 +155,7 @@ pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
             token: token.address(),
             nonce: args.nonce,
             expiry: args.expiry,
-            v: args.signature.v().y_parity_byte(),
+            v: args.signature.v() as u8,
             r: args.signature.r().into(),
             s: args.signature.s().into(),
         }
@@ -179,7 +179,7 @@ mod tests {
         let standard_permit_options = StandardPermitArguments::new(
             uint!(1_U256),
             uint!(2_U256),
-            0,
+            false,
             uint!(123_U256),
             uint!(123_U256),
         );
@@ -192,7 +192,7 @@ mod tests {
         let allowed_permit_options = AllowedPermitArguments::new(
             uint!(1_U256),
             uint!(2_U256),
-            0,
+            false,
             uint!(123_U256),
             uint!(123_U256),
         );

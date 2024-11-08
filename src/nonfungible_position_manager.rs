@@ -1,5 +1,5 @@
 use crate::prelude::{Error, *};
-use alloy_primitives::{Bytes, Signature, U256};
+use alloy_primitives::{Bytes, PrimitiveSignature, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall};
 use uniswap_sdk_core::prelude::*;
 
@@ -74,7 +74,7 @@ pub struct NFTPermitData {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NFTPermitOptions {
-    pub signature: Signature,
+    pub signature: PrimitiveSignature,
     pub deadline: U256,
     pub spender: Address,
 }
@@ -335,7 +335,7 @@ where
                 spender: permit.spender,
                 tokenId: token_id,
                 deadline: permit.deadline,
-                v: permit.signature.v().y_parity_byte(),
+                v: permit.signature.v() as u8,
                 r: permit.signature.r().into(),
                 s: permit.signature.s().into(),
             }
@@ -435,7 +435,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// ## Examples
 ///
 /// ```
-/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
 /// use alloy_signer::SignerSync;
 /// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
@@ -458,7 +458,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
 ///
 /// let signer = PrivateKeySigner::random();
-/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
 ///     signature.recover_address_from_prehash(&hash).unwrap(),
 ///     signer.address()
