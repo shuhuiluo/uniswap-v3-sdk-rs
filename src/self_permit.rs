@@ -26,7 +26,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// ## Examples
 ///
 /// ```
-/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
 /// use alloy_signer::SignerSync;
 /// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
@@ -67,7 +67,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// // Derive the EIP-712 signing hash.
 /// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
 ///
-/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
 ///     signature.recover_address_from_prehash(&hash).unwrap(),
 ///     signer.address()

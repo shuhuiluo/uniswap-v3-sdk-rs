@@ -435,7 +435,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// ## Examples
 ///
 /// ```
-/// use alloy_primitives::{address, b256, uint, Signature, B256};
+/// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
 /// use alloy_signer::SignerSync;
 /// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
@@ -458,7 +458,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
 ///
 /// let signer = PrivateKeySigner::random();
-/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
+/// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
 ///     signature.recover_address_from_prehash(&hash).unwrap(),
 ///     signer.address()

@@ -298,14 +298,12 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         };
         Ok((
             CurrencyAmount::from_raw_amount(output_token, -output_amount.to_big_int())?,
-            Self::new_with_tick_data_provider(
-                self.token0.clone(),
-                self.token1.clone(),
-                self.fee,
-                sqrt_price_x96,
+            Self {
+                sqrt_ratio_x96: sqrt_price_x96,
+                tick_current: TP::Index::from_i24(sqrt_price_x96.get_tick_at_sqrt_ratio()?),
                 liquidity,
-                self.tick_data_provider.clone(),
-            )?,
+                ..self.clone()
+            },
         ))
     }
 
@@ -355,14 +353,12 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         };
         Ok((
             CurrencyAmount::from_raw_amount(input_token, input_amount.to_big_int())?,
-            Self::new_with_tick_data_provider(
-                self.token0.clone(),
-                self.token1.clone(),
-                self.fee,
-                sqrt_price_x96,
+            Self {
+                sqrt_ratio_x96: sqrt_price_x96,
+                tick_current: TP::Index::from_i24(sqrt_price_x96.get_tick_at_sqrt_ratio()?),
                 liquidity,
-                self.tick_data_provider.clone(),
-            )?,
+                ..self.clone()
+            },
         ))
     }
 }
