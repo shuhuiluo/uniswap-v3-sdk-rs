@@ -300,12 +300,7 @@ mod tests {
                 WETH.clone(),
             );
             let price = route.mid_price().unwrap();
-            assert_eq!(
-                price
-                    .to_significant(4, None)
-                    .unwrap(),
-                "0.009524"
-            );
+            assert_eq!(price.to_significant(4, None).unwrap(), "0.009524");
             assert_eq!(price.base_currency, *ETHER);
             assert_eq!(price.quote_currency, *WETH);
         }
@@ -318,12 +313,7 @@ mod tests {
                 ETHER.clone(),
             );
             let price = route.mid_price().unwrap();
-            assert_eq!(
-                price
-                    .to_significant(4, None)
-                    .unwrap(),
-                "0.009524"
-            );
+            assert_eq!(price.to_significant(4, None).unwrap(), "0.009524");
             assert_eq!(price.base_currency, *WETH);
             assert_eq!(price.quote_currency, *ETHER);
         }
