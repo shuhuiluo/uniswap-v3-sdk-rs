@@ -474,7 +474,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)
+                .to_significant(5, Some(Rounding::RoundHalfUp))
                 .unwrap(),
             "1.01"
         );
@@ -488,7 +488,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)
+                .to_significant(5, Some(Rounding::RoundHalfUp))
                 .unwrap(),
             "1.01"
         );
@@ -506,7 +506,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)
+                .to_significant(5, Some(Rounding::RoundHalfUp))
                 .unwrap(),
             "0.9901"
         );
@@ -520,7 +520,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)
+                .to_significant(5, Some(Rounding::RoundHalfUp))
                 .unwrap(),
             "0.9901"
         );

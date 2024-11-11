@@ -30,7 +30,7 @@ rustc-hash = "2.0"
 serde_json = { version = "1.0", optional = true }
 thiserror = { version = "2", default-features = false }
 uniswap-lens = { version = "0.7", optional = true }
-uniswap-sdk-core = "3.1.0"
+uniswap-sdk-core = "3.2.0"
 
 [features]
 default = []

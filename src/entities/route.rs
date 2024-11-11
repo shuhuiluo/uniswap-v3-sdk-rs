@@ -227,7 +227,7 @@ mod tests {
         fn correct_for_0_1() {
             let route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "0.2000");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "0.2000");
             assert_eq!(price.base_currency, *TOKEN0);
             assert_eq!(price.quote_currency, *TOKEN1);
         }
@@ -243,7 +243,7 @@ mod tests {
         fn correct_for_1_0() {
             let route = Route::new(vec![POOL_0_1.clone()], TOKEN1.clone(), TOKEN0.clone());
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "5.0000");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "5.0000");
             assert_eq!(price.base_currency, *TOKEN1);
             assert_eq!(price.quote_currency, *TOKEN0);
         }
@@ -256,7 +256,7 @@ mod tests {
                 TOKEN2.clone(),
             );
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "0.1000");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "0.1000");
             assert_eq!(price.base_currency, *TOKEN0);
             assert_eq!(price.quote_currency, *TOKEN2);
         }
@@ -269,7 +269,7 @@ mod tests {
                 TOKEN0.clone(),
             );
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "10.0000");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "10.0000");
             assert_eq!(price.base_currency, *TOKEN2);
             assert_eq!(price.quote_currency, *TOKEN0);
         }
@@ -278,7 +278,7 @@ mod tests {
         fn correct_for_ether_0() {
             let route = Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone());
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "0.3333");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "0.3333");
             assert_eq!(price.base_currency, *ETHER);
             assert_eq!(price.quote_currency, *TOKEN0);
         }
@@ -287,7 +287,7 @@ mod tests {
         fn correct_for_1_weth() {
             let route = Route::new(vec![POOL_1_WETH.clone()], TOKEN1.clone(), WETH.clone());
             let price = route.mid_price().unwrap();
-            assert_eq!(price.to_fixed(4, Rounding::RoundHalfUp), "0.1429");
+            assert_eq!(price.to_fixed(4, Some(Rounding::RoundHalfUp)), "0.1429");
             assert_eq!(price.base_currency, *TOKEN1);
             assert_eq!(price.quote_currency, *WETH);
         }
@@ -301,7 +301,9 @@ mod tests {
             );
             let price = route.mid_price().unwrap();
             assert_eq!(
-                price.to_significant(4, Rounding::RoundHalfUp).unwrap(),
+                price
+                    .to_significant(4, Some(Rounding::RoundHalfUp))
+                    .unwrap(),
                 "0.009524"
             );
             assert_eq!(price.base_currency, *ETHER);
@@ -317,7 +319,9 @@ mod tests {
             );
             let price = route.mid_price().unwrap();
             assert_eq!(
-                price.to_significant(4, Rounding::RoundHalfUp).unwrap(),
+                price
+                    .to_significant(4, Some(Rounding::RoundHalfUp))
+                    .unwrap(),
                 "0.009524"
             );
             assert_eq!(price.base_currency, *WETH);
