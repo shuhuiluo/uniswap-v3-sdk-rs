@@ -472,12 +472,7 @@ mod tests {
             0,
         )
         .unwrap();
-        assert_eq!(
-            pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
-            "1.01"
-        );
+        assert_eq!(pool.token0_price().to_significant(5, None).unwrap(), "1.01");
         let pool = Pool::new(
             DAI.clone(),
             USDC.clone(),
@@ -486,12 +481,7 @@ mod tests {
             0,
         )
         .unwrap();
-        assert_eq!(
-            pool.token0_price()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
-            "1.01"
-        );
+        assert_eq!(pool.token0_price().to_significant(5, None).unwrap(), "1.01");
     }
 
     #[test]
@@ -505,9 +495,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            pool.token1_price().to_significant(5, None).unwrap(),
             "0.9901"
         );
         let pool = Pool::new(
@@ -519,9 +507,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            pool.token1_price()
-                .to_significant(5, Rounding::RoundHalfUp)
-                .unwrap(),
+            pool.token1_price().to_significant(5, None).unwrap(),
             "0.9901"
         );
     }
