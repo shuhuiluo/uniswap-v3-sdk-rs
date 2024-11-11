@@ -103,7 +103,7 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN1.clone(), TOKEN0.clone(), -I24::from_limbs([74959]))
                 .unwrap()
-                .to_significant(5, Some(Rounding::RoundHalfUp))
+                .to_significant(5, None)
                 .unwrap(),
             "1800"
         );
@@ -114,7 +114,7 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -I24::from_limbs([74959]))
                 .unwrap()
-                .to_significant(5, Some(Rounding::RoundHalfUp))
+                .to_significant(5, None)
                 .unwrap(),
             "0.00055556"
         );
@@ -125,7 +125,7 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN1.clone(), I24::from_limbs([74959]))
                 .unwrap()
-                .to_significant(5, Some(Rounding::RoundHalfUp))
+                .to_significant(5, None)
                 .unwrap(),
             "1800"
         );
@@ -136,7 +136,7 @@ mod tests {
         assert_eq!(
             tick_to_price(TOKEN1.clone(), TOKEN0.clone(), I24::from_limbs([74959]))
                 .unwrap()
-                .to_significant(5, Some(Rounding::RoundHalfUp))
+                .to_significant(5, None)
                 .unwrap(),
             "0.00055556"
         );
@@ -151,7 +151,7 @@ mod tests {
                 -I24::from_limbs([276225])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "1.01"
         );
@@ -166,7 +166,7 @@ mod tests {
                 -I24::from_limbs([276225])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "0.99015"
         );
@@ -181,7 +181,7 @@ mod tests {
                 -I24::from_limbs([276423])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "0.99015"
         );
@@ -196,7 +196,7 @@ mod tests {
                 -I24::from_limbs([276423])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "1.0099"
         );
@@ -211,7 +211,7 @@ mod tests {
                 -I24::from_limbs([276225])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "1.01"
         );
@@ -226,7 +226,7 @@ mod tests {
                 -I24::from_limbs([276225])
             )
             .unwrap()
-            .to_significant(5, Some(Rounding::RoundHalfUp))
+            .to_significant(5, None)
             .unwrap(),
             "0.99015"
         );

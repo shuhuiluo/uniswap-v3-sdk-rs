@@ -1567,7 +1567,7 @@ mod tests {
                         .clone()
                         .price_impact()
                         .unwrap()
-                        .to_significant(3, Some(Rounding::RoundHalfUp))
+                        .to_significant(3, None)
                         .unwrap(),
                     "17.2"
                 );
@@ -1589,7 +1589,7 @@ mod tests {
                         .clone()
                         .price_impact()
                         .unwrap()
-                        .to_significant(3, Some(Rounding::RoundHalfUp))
+                        .to_significant(3, None)
                         .unwrap(),
                     "19.8"
                 );
@@ -1663,7 +1663,7 @@ mod tests {
                         .clone()
                         .price_impact()
                         .unwrap()
-                        .to_significant(3, Some(Rounding::RoundHalfUp))
+                        .to_significant(3, None)
                         .unwrap(),
                     "23.1"
                 );
@@ -1685,7 +1685,7 @@ mod tests {
                         .clone()
                         .price_impact()
                         .unwrap()
-                        .to_significant(3, Some(Rounding::RoundHalfUp))
+                        .to_significant(3, None)
                         .unwrap(),
                     "25.5"
                 );
