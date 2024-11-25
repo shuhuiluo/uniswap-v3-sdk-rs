@@ -508,7 +508,7 @@ mod tests {
         Lazy::new(|| encode_sqrt_ratio_x96(BigInt::from(10).pow(8), BigInt::from(10).pow(20)));
     static POOL_TICK_CURRENT: Lazy<I24> =
         Lazy::new(|| POOL_SQRT_RATIO_START.get_tick_at_sqrt_ratio().unwrap());
-    const TICK_SPACING: I24 = FeeAmount::LOW.tick_spacing();
+    const TICK_SPACING: I24 = I24::from_limbs([10]);
 
     static DAI_USDC_POOL: Lazy<Pool> = Lazy::new(|| {
         Pool::new(

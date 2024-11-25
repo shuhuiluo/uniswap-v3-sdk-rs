@@ -21,13 +21,14 @@ pub enum FeeAmount {
     LOW = 500,
     MEDIUM = 3000,
     HIGH = 10000,
+    CUSTOM(u32),
 }
 
 impl FeeAmount {
     /// The default factory tick spacings by fee amount.
     #[inline]
     #[must_use]
-    pub const fn tick_spacing(&self) -> I24 {
+    pub fn tick_spacing(&self) -> I24 {
         match self {
             Self::LOWEST => I24::ONE,
             Self::LOW_200 => I24::from_limbs([4]),
@@ -36,6 +37,7 @@ impl FeeAmount {
             Self::LOW => I24::from_limbs([10]),
             Self::MEDIUM => I24::from_limbs([60]),
             Self::HIGH => I24::from_limbs([200]),
+            Self::CUSTOM(fee) => I24::from_limbs([(fee / 50) as u64]),
         }
     }
 }
@@ -51,7 +53,7 @@ impl From<u32> for FeeAmount {
             500 => Self::LOW,
             3000 => Self::MEDIUM,
             10000 => Self::HIGH,
-            _ => panic!("Invalid fee amount"),
+            fee => Self::CUSTOM(fee),
         }
     }
 }
@@ -67,7 +69,7 @@ impl From<i32> for FeeAmount {
             10 => Self::LOW,
             60 => Self::MEDIUM,
             200 => Self::HIGH,
-            _ => panic!("Invalid tick spacing"),
+            tick_spacing => Self::CUSTOM((tick_spacing * 50) as u32),
         }
     }
 }
@@ -75,7 +77,16 @@ impl From<i32> for FeeAmount {
 impl From<FeeAmount> for U24 {
     #[inline]
     fn from(fee: FeeAmount) -> Self {
-        Self::from_limbs([fee as u64])
+        Self::from_limbs([match fee {
+            FeeAmount::LOWEST => 100,
+            FeeAmount::LOW_200 => 200,
+            FeeAmount::LOW_300 => 300,
+            FeeAmount::LOW_400 => 400,
+            FeeAmount::LOW => 500,
+            FeeAmount::MEDIUM => 3000,
+            FeeAmount::HIGH => 10000,
+            FeeAmount::CUSTOM(fee) => fee as u64,
+        }])
     }
 }
 
