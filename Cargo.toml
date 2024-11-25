@@ -1,12 +1,13 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "2.6.0"
+version = "2.7.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/shuhuiluo/uniswap-v3-sdk-rs"
+categories = ["cryptography::cryptocurrencies", "finance", "no-std"]
 keywords = ["uniswap-v3", "ethereum", "sdk"]
 exclude = [".github", ".gitignore", "rustfmt.toml"]
 

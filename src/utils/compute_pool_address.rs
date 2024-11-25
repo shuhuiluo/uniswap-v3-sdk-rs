@@ -1,5 +1,5 @@
 use crate::constants::{FeeAmount, POOL_INIT_CODE_HASH};
-use alloy_primitives::{b256, keccak256, Address, B256};
+use alloy_primitives::{aliases::U24, b256, keccak256, Address, B256};
 use alloy_sol_types::SolValue;
 use uniswap_sdk_core::prelude::{
     compute_zksync_create2_address::compute_zksync_create2_address, ChainId,
@@ -66,7 +66,8 @@ pub fn compute_pool_address(
     } else {
         (token_b, token_a)
     };
-    let salt = keccak256((token_0, token_1, fee as i32).abi_encode());
+    let fee: U24 = fee.into();
+    let salt = keccak256((token_0, token_1, fee).abi_encode());
     const ZKSYNC_CHAIN_ID: u64 = ChainId::ZKSYNC as u64;
 
     // ZKSync uses a different create2 address computation
