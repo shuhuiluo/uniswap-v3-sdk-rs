@@ -1,9 +1,9 @@
 //! Example demonstrating pool creation with tick data provider and swap simulation
-//! 
+//!
 //! # Prerequisites
 //! - Environment variable MAINNET_RPC_URL must be set
 //! - Requires the "extensions" feature
-//! 
+//!
 //! # Note
 //! This example uses mainnet block 17000000 for consistent results
 
