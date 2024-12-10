@@ -61,3 +61,7 @@ harness = false
 [[bench]]
 name = "tick_math"
 harness = false
+
+[[example]]
+name = "from_pool_key_with_tick_data_provider"
+required-features = ["extensions"]
