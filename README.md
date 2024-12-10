@@ -75,7 +75,7 @@ The code below shows an example of creating a pool with a tick map data provider
 #[tokio::main]
 async fn main() {
     // Create a pool with a tick map data provider
-    let pool = Pool::<EphemeralTickMapDataProvider<i32>>::from_pool_key_with_tick_data_provider(
+    let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
         1,
         FACTORY_ADDRESS,
         wbtc.address(),

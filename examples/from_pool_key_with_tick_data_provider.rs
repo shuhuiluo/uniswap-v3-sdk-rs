@@ -27,7 +27,7 @@ async fn main() {
     let weth = token!(1, "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 18, "WETH");
 
     // Create a pool with a tick map data provider
-    let pool = Pool::<EphemeralTickMapDataProvider<i32>>::from_pool_key_with_tick_data_provider(
+    let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
         1,
         FACTORY_ADDRESS,
         wbtc.address(),
@@ -64,6 +64,6 @@ async fn main() {
     let amount_out = U256::abi_decode(res.as_ref(), true).unwrap();
     println!("Quoter amount out: {}", amount_out);
 
-    // Assert that the amounts are equal
+    // Compare local calculation with on-chain quoter to ensure accuracy
     assert_eq!(U256::from_big_int(local_amount_out.quotient()), amount_out);
 }

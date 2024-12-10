@@ -132,18 +132,17 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
     ///     let rpc_url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
     ///     let provider = ProviderBuilder::new().on_http(rpc_url);
     ///     let block_id = Some(BlockId::from(17000000));
-    ///     let pool =
-    ///         Pool::<EphemeralTickMapDataProvider<i32>>::from_pool_key_with_tick_data_provider(
-    ///             1,
-    ///             FACTORY_ADDRESS,
-    ///             address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
-    ///             address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
-    ///             FeeAmount::LOW,
-    ///             provider,
-    ///             block_id,
-    ///         )
-    ///         .await
-    ///         .unwrap();
+    ///     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
+    ///         1,
+    ///         FACTORY_ADDRESS,
+    ///         address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
+    ///         address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+    ///         FeeAmount::LOW,
+    ///         provider,
+    ///         block_id,
+    ///     )
+    ///     .await
+    ///     .unwrap();
     /// }
     /// ```
     #[inline]
