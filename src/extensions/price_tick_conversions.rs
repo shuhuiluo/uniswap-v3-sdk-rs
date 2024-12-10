@@ -155,14 +155,14 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<I24, Er
 /// let min_price = Price::new(
 ///     token0.clone(),
 ///     token1.clone(),
-///     MIN_PRICE.denominator(),
-///     MIN_PRICE.numerator(),
+///     MIN_PRICE.denominator().clone(),
+///     MIN_PRICE.numerator().clone(),
 /// );
 /// let max_price = Price::new(
 ///     token0.clone(),
 ///     token1.clone(),
-///     MAX_PRICE.denominator(),
-///     MAX_PRICE.numerator(),
+///     MAX_PRICE.denominator().clone(),
+///     MAX_PRICE.numerator().clone(),
 /// );
 ///
 /// assert_eq!(
