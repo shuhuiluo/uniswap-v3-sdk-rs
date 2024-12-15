@@ -13,6 +13,7 @@ sol! {
             uint160 sqrtPriceX96
         ) external payable returns (address pool);
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct MintParams {
             address token0;
             address token1;
@@ -37,6 +38,7 @@ sol! {
                 uint256 amount1
             );
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct IncreaseLiquidityParams {
             uint256 tokenId;
             uint256 amount0Desired;
@@ -55,6 +57,7 @@ sol! {
                 uint256 amount1
             );
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct DecreaseLiquidityParams {
             uint256 tokenId;
             uint128 liquidity;
@@ -68,6 +71,7 @@ sol! {
             payable
             returns (uint256 amount0, uint256 amount1);
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct CollectParams {
             uint256 tokenId;
             address recipient;
@@ -85,7 +89,7 @@ sol! {
     }
 
     interface IERC721Permit {
-        #[derive(Debug, PartialEq, Eq)]
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct Permit {
             address spender;
             uint256 tokenId;
@@ -109,7 +113,7 @@ sol! {
     }
 
     interface IERC20Permit {
-        #[derive(Debug, PartialEq, Eq)]
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct Permit {
             address owner;
             address spender;
@@ -120,7 +124,7 @@ sol! {
     }
 
     interface IDaiPermit {
-        #[derive(Debug, PartialEq, Eq)]
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct Permit {
             address holder;
             address spender;
@@ -158,6 +162,7 @@ sol! {
     }
 
     interface IUniswapV3Staker {
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct IncentiveKey {
             address rewardToken;
             address pool;
@@ -217,6 +222,7 @@ sol! {
                 uint256 gasEstimate
             );
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct QuoteExactInputSingleParams {
             address tokenIn;
             address tokenOut;
@@ -243,6 +249,7 @@ sol! {
                 uint256 gasEstimate
             );
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct QuoteExactOutputSingleParams {
             address tokenIn;
             address tokenOut;
@@ -262,6 +269,7 @@ sol! {
     }
 
     interface ISwapRouter {
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactInputSingleParams {
             address tokenIn;
             address tokenOut;
@@ -275,6 +283,7 @@ sol! {
 
         function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactInputParams {
             bytes path;
             address recipient;
@@ -285,6 +294,7 @@ sol! {
 
         function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactOutputSingleParams {
             address tokenIn;
             address tokenOut;
@@ -298,6 +308,7 @@ sol! {
 
         function exactOutputSingle(ExactOutputSingleParams calldata params) external payable returns (uint256 amountIn);
 
+        #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactOutputParams {
             bytes path;
             address recipient;
