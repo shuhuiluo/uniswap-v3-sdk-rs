@@ -17,14 +17,14 @@ pub struct IncreaseSpecificOptions {
     pub token_id: U256,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AddLiquiditySpecificOptions {
     Mint(MintSpecificOptions),
     Increase(IncreaseSpecificOptions),
 }
 
 /// Options for producing the calldata to add liquidity.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AddLiquidityOptions {
     /// How much the pool price is allowed to move.
     pub slippage_tolerance: Percent,
