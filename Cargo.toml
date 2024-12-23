@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "2.9.1"
+version = "3.0.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -39,8 +39,7 @@ extensions = ["alloy", "anyhow", "base64", "regex", "serde_json", "uniswap-lens"
 std = ["alloy?/std", "thiserror/std", "uniswap-sdk-core/std", "uniswap-lens?/std"]
 
 [dev-dependencies]
-alloy-signer = "0.8"
-alloy-signer-local = "0.8"
+alloy = { version = "0.8", features = ["provider-anvil-node", "signer-local"] }
 criterion = "0.5.1"
 dotenv = "0.15.0"
 tokio = { version = "1.40", features = ["full"] }
@@ -64,4 +63,8 @@ harness = false
 
 [[example]]
 name = "from_pool_key_with_tick_data_provider"
+required-features = ["extensions"]
+
+[[example]]
+name = "swap_router"
 required-features = ["extensions"]

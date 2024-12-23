@@ -66,10 +66,12 @@ pub struct CollectOptions<Currency0: BaseCurrency, Currency1: BaseCurrency> {
     pub recipient: Address,
 }
 
+pub type NFTPermitValues = IERC721Permit::Permit;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NFTPermitData {
     pub domain: Eip712Domain,
-    pub values: IERC721Permit::Permit,
+    pub values: NFTPermitValues,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -435,13 +437,12 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// ## Examples
 ///
 /// ```
+/// use alloy::signers::{local::PrivateKeySigner, SignerSync};
 /// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
-/// use alloy_signer::SignerSync;
-/// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let permit = IERC721Permit::Permit {
+/// let permit = NFTPermitValues {
 ///     spender: address!("0000000000000000000000000000000000000002"),
 ///     tokenId: uint!(1_U256),
 ///     nonce: uint!(1_U256),
@@ -467,7 +468,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 #[inline]
 #[must_use]
 pub const fn get_permit_data(
-    permit: IERC721Permit::Permit,
+    permit: NFTPermitValues,
     position_manager: Address,
     chain_id: u64,
 ) -> NFTPermitData {

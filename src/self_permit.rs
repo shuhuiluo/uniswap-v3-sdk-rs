@@ -26,9 +26,8 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// ## Examples
 ///
 /// ```
+/// use alloy::signers::{local::PrivateKeySigner, SignerSync};
 /// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
-/// use alloy_signer::SignerSync;
-/// use alloy_signer_local::PrivateKeySigner;
 /// use alloy_sol_types::SolStruct;
 /// use uniswap_v3_sdk::prelude::*;
 ///
