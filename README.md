@@ -64,8 +64,7 @@ use uniswap_v3_sdk::prelude::*;
 
 ## Note on `no_std`
 
-By default, this library does not depend on the standard library (`std`). However, the `std` feature can be enabled to
-use `thiserror` for error handling.
+By default, this library does not depend on the standard library (`std`). However, the `std` feature can be enabled.
 
 ## Examples
 
