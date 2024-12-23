@@ -4,7 +4,9 @@ sol! {
     interface IMulticall {
         function multicall(bytes[] calldata data) external payable returns (bytes[] memory results);
     }
+}
 
+sol! {
     interface INonfungiblePositionManager {
         function createAndInitializePoolIfNecessary(
             address token0,
@@ -187,7 +189,9 @@ sol! {
             uint256 amountRequested
         ) external returns (uint256 reward);
     }
+}
 
+sol! {
     interface IQuoter {
         function quoteExactInput(bytes memory path, uint256 amountIn) external returns (uint256 amountOut);
 
@@ -267,7 +271,9 @@ sol! {
                 uint256 gasEstimate
             );
     }
+}
 
+sol! {
     interface ISwapRouter {
         #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactInputSingleParams {
