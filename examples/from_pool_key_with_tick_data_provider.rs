@@ -13,7 +13,7 @@ use alloy::{
     rpc::types::TransactionRequest,
     transports::http::reqwest::Url,
 };
-use alloy_primitives::{address, ruint::aliases::U256, U160};
+use alloy_primitives::{address, U256};
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
@@ -42,22 +42,15 @@ async fn main() {
     // Get the output amount from the pool
     let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
     let (local_amount_out, _pool_after) = pool.get_output_amount(&amount_in, None).unwrap();
-    println!("Local amount out: {}", local_amount_out.quotient());
+    let local_amount_out = local_amount_out.quotient();
+    println!("Local amount out: {}", local_amount_out);
 
-    let route = Route::new(vec![pool.clone()], wbtc, weth);
-    let params = quote_call_parameters(
-        &route,
-        &amount_in,
-        TradeType::ExactInput,
-        Some(QuoteOptions {
-            sqrt_price_limit_x96: U160::ZERO,
-            use_quoter_v2: false,
-        }),
-    );
+    // Get the output amount from the quoter
+    let route = Route::new(vec![pool], wbtc, weth);
+    let params = quote_call_parameters(&route, &amount_in, TradeType::ExactInput, None);
     let tx = TransactionRequest::default()
         .to(*QUOTER_ADDRESSES.get(&1).unwrap())
         .input(params.calldata.into());
-    // Get the output amount from the quoter
     let res = provider.call(&tx).block(block_id).await.unwrap();
     let amount_out = IQuoter::quoteExactInputSingleCall::abi_decode_returns(res.as_ref(), true)
         .unwrap()
@@ -65,5 +58,5 @@ async fn main() {
     println!("Quoter amount out: {}", amount_out);
 
     // Compare local calculation with on-chain quoter to ensure accuracy
-    assert_eq!(U256::from_big_int(local_amount_out.quotient()), amount_out);
+    assert_eq!(U256::from_big_int(local_amount_out), amount_out);
 }
