@@ -274,14 +274,13 @@ sol! {
 }
 
 sol! {
-    interface ISwapRouter {
+    interface IV3SwapRouter {
         #[derive(Debug, Default, PartialEq, Eq)]
         struct ExactInputSingleParams {
             address tokenIn;
             address tokenOut;
             uint24 fee;
             address recipient;
-            uint256 deadline;
             uint256 amountIn;
             uint256 amountOutMinimum;
             uint160 sqrtPriceLimitX96;
@@ -293,7 +292,6 @@ sol! {
         struct ExactInputParams {
             bytes path;
             address recipient;
-            uint256 deadline;
             uint256 amountIn;
             uint256 amountOutMinimum;
         }
@@ -306,7 +304,6 @@ sol! {
             address tokenOut;
             uint24 fee;
             address recipient;
-            uint256 deadline;
             uint256 amountOut;
             uint256 amountInMaximum;
             uint160 sqrtPriceLimitX96;
@@ -318,7 +315,6 @@ sol! {
         struct ExactOutputParams {
             bytes path;
             address recipient;
-            uint256 deadline;
             uint256 amountOut;
             uint256 amountInMaximum;
         }
