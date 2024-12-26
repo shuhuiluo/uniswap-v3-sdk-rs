@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "3.0.0"
+version = "3.1.0"
 edition = "2021"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
@@ -67,4 +67,8 @@ required-features = ["extensions"]
 
 [[example]]
 name = "swap_router"
+required-features = ["extensions"]
+
+[[example]]
+name = "self_permit"
 required-features = ["extensions"]
