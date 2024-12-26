@@ -20,12 +20,12 @@ use alloy_sol_types::SolCall;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
 
-sol!(
+sol! {
     #[sol(rpc)]
-    contract IERC20 {
+    interface IERC20 {
         function balanceOf(address target) returns (uint256);
     }
-);
+}
 
 #[tokio::main]
 async fn main() {

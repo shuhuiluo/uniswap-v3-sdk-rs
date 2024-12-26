@@ -1,5 +1,5 @@
 use super::abi::ISelfPermit;
-use alloy_primitives::{Bytes, PrimitiveSignature, U256};
+use alloy_primitives::{Bytes, PrimitiveSignature, B256, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
 use uniswap_sdk_core::prelude::*;
 
@@ -7,6 +7,14 @@ use uniswap_sdk_core::prelude::*;
 pub struct ERC20PermitData<P: SolStruct> {
     pub domain: Eip712Domain,
     pub values: P,
+}
+
+impl<P: SolStruct> ERC20PermitData<P> {
+    #[inline]
+    #[must_use]
+    pub fn eip712_signing_hash(&self) -> B256 {
+        self.values.eip712_signing_hash(&self.domain)
+    }
 }
 
 /// Get the EIP-2612 domain and values to sign for an ERC20 permit.
@@ -55,7 +63,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 ///     b256!("ea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb")
 /// );
 ///
-/// let data = get_erc20_permit_data(
+/// let permit_data = get_erc20_permit_data(
 ///     permit,
 ///     "ONE",
 ///     "1",
@@ -64,7 +72,7 @@ pub struct ERC20PermitData<P: SolStruct> {
 /// );
 ///
 /// // Derive the EIP-712 signing hash.
-/// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
+/// let hash: B256 = permit_data.eip712_signing_hash();
 ///
 /// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
@@ -139,13 +147,13 @@ impl AllowedPermitArguments {
 
 #[inline]
 #[must_use]
-pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
+pub fn encode_permit(token: &impl BaseCurrency, options: PermitOptions) -> Bytes {
     match options {
         PermitOptions::Standard(args) => ISelfPermit::selfPermitCall {
             token: token.address(),
             value: args.amount,
             deadline: args.deadline,
-            v: args.signature.v() as u8,
+            v: args.signature.v() as u8 + 27,
             r: args.signature.r().into(),
             s: args.signature.s().into(),
         }
@@ -154,7 +162,7 @@ pub fn encode_permit(token: &Token, options: PermitOptions) -> Bytes {
             token: token.address(),
             nonce: args.nonce,
             expiry: args.expiry,
-            v: args.signature.v() as u8,
+            v: args.signature.v() as u8 + 27,
             r: args.signature.r().into(),
             s: args.signature.s().into(),
         }
@@ -182,8 +190,11 @@ mod tests {
             uint!(123_U256),
             uint!(123_U256),
         );
-        let calldata = encode_permit(&TOKEN, PermitOptions::Standard(standard_permit_options));
-        assert_eq!(calldata, hex!("f3995c670000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
+        let calldata = encode_permit(
+            &TOKEN.clone(),
+            PermitOptions::Standard(standard_permit_options),
+        );
+        assert_eq!(calldata, hex!("f3995c670000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000001b00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
     }
 
     #[test]
@@ -195,7 +206,10 @@ mod tests {
             uint!(123_U256),
             uint!(123_U256),
         );
-        let calldata = encode_permit(&TOKEN, PermitOptions::Allowed(allowed_permit_options));
-        assert_eq!(calldata, hex!("4659a4940000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
+        let calldata = encode_permit(
+            &TOKEN.clone(),
+            PermitOptions::Allowed(allowed_permit_options),
+        );
+        assert_eq!(calldata, hex!("4659a4940000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000001b00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002").to_vec());
     }
 }
