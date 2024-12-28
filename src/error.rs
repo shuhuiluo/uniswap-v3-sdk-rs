@@ -38,10 +38,6 @@ pub enum Error {
     #[error("Invalid price")]
     InvalidPrice,
 
-    #[cfg(feature = "extensions")]
-    #[error("Invalid tick range")]
-    InvalidRange,
-
     #[error("Overflow in full math mulDiv")]
     MulDivOverflow,
 
@@ -60,6 +56,13 @@ pub enum Error {
     #[error("No tick data provider was given")]
     NoTickDataError,
 
+    #[error("{0}")]
+    TickListError(#[from] TickListError),
+
+    #[cfg(feature = "extensions")]
+    #[error("Invalid tick range")]
+    InvalidRange,
+
     #[cfg(feature = "extensions")]
     #[error("{0}")]
     ContractError(#[from] ContractError),
@@ -68,8 +71,9 @@ pub enum Error {
     #[error("{0}")]
     LensError(#[from] LensError),
 
-    #[error("{0}")]
-    TickListError(#[from] TickListError),
+    #[cfg(feature = "extensions")]
+    #[error("Invalid access list")]
+    InvalidAccessList,
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, thiserror::Error)]
@@ -80,4 +84,11 @@ pub enum TickListError {
     AtOrAboveLargest,
     #[error("Not contained in tick list")]
     NotContained,
+}
+
+#[cfg(feature = "extensions")]
+impl From<alloy::transports::TransportError> for Error {
+    fn from(e: alloy::transports::TransportError) -> Self {
+        Self::ContractError(ContractError::TransportError(e))
+    }
 }
