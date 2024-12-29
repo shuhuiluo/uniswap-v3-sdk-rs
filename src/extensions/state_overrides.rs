@@ -21,7 +21,7 @@ pub async fn get_erc20_state_overrides<T, P>(
     owner: Address,
     spender: Address,
     amount: U256,
-    provider: P,
+    provider: &P,
 ) -> Result<StateOverride, Error>
 where
     T: Transport + Clone,
@@ -90,10 +90,9 @@ mod tests {
         let owner = address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640");
         let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
         let amount = U256::from(1_000_000);
-        let overrides =
-            get_erc20_state_overrides(USDC.address(), owner, npm, amount, provider.clone())
-                .await
-                .unwrap();
+        let overrides = get_erc20_state_overrides(USDC.address(), owner, npm, amount, &provider)
+            .await
+            .unwrap();
         let usdc = IERC20::new(USDC.address(), provider);
         let balance = usdc
             .balanceOf(owner)

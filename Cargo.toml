@@ -72,3 +72,7 @@ required-features = ["extensions"]
 [[example]]
 name = "self_permit"
 required-features = ["extensions"]
+
+[[example]]
+name = "nonfungible_position_manager"
+required-features = ["extensions"]
