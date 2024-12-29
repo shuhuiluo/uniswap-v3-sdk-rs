@@ -95,9 +95,7 @@ async fn main() {
         .send_transaction(tx)
         .await
         .unwrap()
-        .register()
-        .await
-        .unwrap()
+        .watch()
         .await
         .unwrap();
 
