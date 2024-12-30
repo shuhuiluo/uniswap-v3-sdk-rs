@@ -24,7 +24,7 @@ impl<I: TickIndex> TickMap<I> {
             let compressed = tick.index.compress(tick_spacing);
             let (word_pos, bit_pos) = compressed.position();
             let word = bitmap.get(&word_pos).unwrap_or(&U256::ZERO);
-            bitmap.insert(word_pos, word | uint!(1_U256) << bit_pos);
+            bitmap.insert(word_pos, word | (uint!(1_U256) << bit_pos));
         }
         Self {
             bitmap,
