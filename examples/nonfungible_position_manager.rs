@@ -212,7 +212,7 @@ async fn burn_liquidity<T, P>(
             recipient: owner.address(),
         },
     };
-    let params = remove_call_parameters(&position, options).unwrap();
+    let params = remove_call_parameters(position, options).unwrap();
     let tx = TransactionRequest::default()
         .from(sender)
         .to(npm)
