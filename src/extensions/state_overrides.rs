@@ -1,4 +1,5 @@
 use crate::prelude::Error;
+use alloc::vec::Vec;
 use alloy::{
     eips::eip2930::{AccessList, AccessListItem},
     providers::Provider,

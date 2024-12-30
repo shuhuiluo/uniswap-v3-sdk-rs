@@ -5,11 +5,14 @@ use alloy_sol_types::{Error, SolCall};
 #[inline]
 #[must_use]
 pub fn encode_multicall<B: Into<Bytes>>(data: Vec<B>) -> Bytes {
-    let data: Vec<Bytes> = data.into_iter().map(Into::into).collect();
     if data.len() == 1 {
-        data[0].clone()
+        data.into_iter().next().unwrap().into()
     } else {
-        IMulticall::multicallCall { data }.abi_encode().into()
+        IMulticall::multicallCall {
+            data: data.into_iter().map(Into::into).collect(),
+        }
+        .abi_encode()
+        .into()
     }
 }
 
@@ -91,7 +94,7 @@ mod tests {
                 hex!("ac9650d800000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000020aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000020bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
             );
 
-            let decoded_calldata: Vec<Vec<u8>> = Multicall::decode_multicall(encoded).unwrap();
+            let decoded_calldata = <Vec<Vec<u8>>>::decode_multicall(encoded).unwrap();
             assert_eq!(decoded_calldata, calldata_list);
         }
     }
