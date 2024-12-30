@@ -1,6 +1,6 @@
 use crate::prelude::{Error, *};
-use alloy_primitives::{Bytes, PrimitiveSignature, U256};
-use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall};
+use alloy_primitives::{Bytes, PrimitiveSignature, B256, U256};
+use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -72,6 +72,14 @@ pub type NFTPermitValues = IERC721Permit::Permit;
 pub struct NFTPermitData {
     pub domain: Eip712Domain,
     pub values: NFTPermitValues,
+}
+
+impl NFTPermitData {
+    #[inline]
+    #[must_use]
+    pub fn eip712_signing_hash(&self) -> B256 {
+        self.values.eip712_signing_hash(&self.domain)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -337,7 +345,7 @@ where
                 spender: permit.spender,
                 tokenId: token_id,
                 deadline: permit.deadline,
-                v: permit.signature.v() as u8,
+                v: permit.signature.v() as u8 + 27,
                 r: permit.signature.r().into(),
                 s: permit.signature.s().into(),
             }
@@ -456,7 +464,7 @@ pub fn safe_transfer_from_parameters(options: SafeTransferOptions) -> MethodPara
 /// let data: NFTPermitData = get_permit_data(permit, position_manager, 1);
 ///
 /// // Derive the EIP-712 signing hash.
-/// let hash: B256 = data.values.eip712_signing_hash(&data.domain);
+/// let hash: B256 = data.eip712_signing_hash();
 ///
 /// let signer = PrivateKeySigner::random();
 /// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
