@@ -618,7 +618,7 @@ where
         let mut populated_routes: Vec<Swap<TInput, TOutput, TP>> = Vec::with_capacity(routes.len());
         for (amount, route) in routes {
             let trade = Self::from_route(route, amount, trade_type)?;
-            populated_routes.push(trade.swaps[0].clone());
+            populated_routes.push(trade.swaps.into_iter().next().unwrap());
         }
         Self::new(populated_routes, trade_type)
     }
