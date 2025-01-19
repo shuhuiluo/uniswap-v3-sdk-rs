@@ -1,6 +1,5 @@
-use super::ToBig;
 use alloy_primitives::{Uint, U256};
-use num_bigint::BigUint;
+use uniswap_sdk_core::prelude::{BigUint, ToBig};
 
 #[inline]
 fn sort_to_big_uint<const BITS: usize, const LIMBS: usize>(
@@ -145,7 +144,6 @@ pub fn max_liquidity_for_amounts<const BITS: usize, const LIMBS: usize>(
 mod tests {
     use super::*;
     use crate::utils::encode_sqrt_ratio_x96;
-    use num_traits::Num;
 
     #[test]
     fn imprecise_price_inside_100_token0_200_token1() {

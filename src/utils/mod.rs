@@ -13,7 +13,6 @@ pub mod sqrt_price_math;
 pub mod swap_math;
 pub mod tick_list;
 pub mod tick_math;
-mod types;
 
 pub use bit_math::*;
 pub use compute_pool_address::compute_pool_address;
@@ -30,9 +29,9 @@ pub use sqrt_price_math::*;
 pub use swap_math::*;
 pub use tick_list::TickList;
 pub use tick_math::*;
-pub use types::*;
 
 use alloy_primitives::{uint, Bytes, U160, U256};
+use uniswap_sdk_core::prelude::{BigInt, BigUint};
 
 pub(crate) const ONE: U160 = uint!(1_U160);
 pub(crate) const TWO: U256 = uint!(2_U256);
@@ -40,6 +39,8 @@ pub(crate) const THREE: U256 = uint!(3_U256);
 pub const Q96: U256 = U256::from_limbs([0, 1 << 32, 0, 0]);
 pub const Q128: U256 = U256::from_limbs([0, 0, 1, 0]);
 pub const Q192: U256 = U256::from_limbs([0, 0, 0, 1]);
+pub(crate) const Q192_BIG_INT: BigInt =
+    BigInt::from_bits(BigUint::from_digits([0, 0, 0, 1, 0, 0, 0, 0]));
 
 /// Generated method parameters for executing a call.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -206,14 +206,12 @@ impl<TP: TickDataProvider> Position<TP> {
             sqrt_ratio_x96_lower = MIN_SQRT_RATIO + ONE;
         }
 
-        let sqrt_ratio_x96_upper = if price_upper
-            >= Fraction::new(MAX_SQRT_RATIO.to_big_int().pow(2), Q192.to_big_int())
-        {
-            MAX_SQRT_RATIO - ONE
-        } else {
-            encode_sqrt_ratio_x96(price_upper.numerator, price_upper.denominator)
-        };
-
+        let sqrt_ratio_x96_upper =
+            if price_upper >= Fraction::new(MAX_SQRT_RATIO.to_big_int().pow(2), Q192_BIG_INT) {
+                MAX_SQRT_RATIO - ONE
+            } else {
+                encode_sqrt_ratio_x96(price_upper.numerator, price_upper.denominator)
+            };
         (sqrt_ratio_x96_lower, sqrt_ratio_x96_upper)
     }
 
