@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use alloy_primitives::{aliases::U24, keccak256, I256, U160, U256};
 use alloy_sol_types::SolValue;
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -56,15 +54,7 @@ fn compute_swap_step_benchmark(c: &mut Criterion) {
 fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
     let inputs = generate_inputs()
         .into_iter()
-        .map(|(a, b, c, d, e)| {
-            (
-                U256::from(a),
-                U256::from(b),
-                c,
-                d.into_raw().try_into().unwrap(),
-                e,
-            )
-        })
+        .map(|(a, b, c, d, e)| (U256::from(a), U256::from(b), c, d, e))
         .collect::<Vec<_>>();
     c.bench_function("compute_swap_step_ref", |b| {
         b.iter(|| {
@@ -91,6 +81,6 @@ fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
 criterion_group!(
     benches,
     compute_swap_step_benchmark,
-    // compute_swap_step_benchmark_ref,
+    compute_swap_step_benchmark_ref,
 );
 criterion_main!(benches);
