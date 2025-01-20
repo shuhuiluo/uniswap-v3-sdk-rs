@@ -1,7 +1,7 @@
-use super::FromBig;
 use alloy_primitives::Uint;
-use num_bigint::BigInt;
-use uniswap_sdk_core::utils::sqrt;
+use bnum::cast::CastFrom;
+use fastnum::I1024;
+use uniswap_sdk_core::prelude::*;
 
 /// Returns the sqrt ratio as a Q64.96 corresponding to a given ratio of `amount1` and `amount0`.
 ///
@@ -18,9 +18,9 @@ pub fn encode_sqrt_ratio_x96<const BITS: usize, const LIMBS: usize>(
     amount1: impl Into<BigInt>,
     amount0: impl Into<BigInt>,
 ) -> Uint<BITS, LIMBS> {
-    let numerator = amount1.into() << 192;
-    let denominator = amount0.into();
-    Uint::from_big_int(sqrt(&(numerator / denominator)).unwrap())
+    let numerator = I1024::cast_from(amount1.into()) << 192;
+    let denominator = I1024::cast_from(amount0.into());
+    Uint::from_big_int(sqrt(BigInt::cast_from(numerator / denominator)).unwrap())
 }
 
 #[cfg(test)]
