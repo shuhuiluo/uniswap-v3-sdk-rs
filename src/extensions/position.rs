@@ -420,8 +420,8 @@ where
         position.pool.clone(),
         new_tick_lower,
         new_tick_upper,
-        U256::from_big_uint(amount0_after.round(0).digits()),
-        U256::from_big_uint(amount1_after.round(0).digits()),
+        U256::from_big_uint(amount0_after.to_big_uint()),
+        U256::from_big_uint(amount1_after.to_big_uint()),
         false,
     )
 }

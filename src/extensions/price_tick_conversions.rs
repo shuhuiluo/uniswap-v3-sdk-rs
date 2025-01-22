@@ -248,7 +248,7 @@ where
 pub fn price_to_sqrt_ratio_x96(price: BigDecimal) -> U160 {
     assert!(!price.is_negative(), "Invalid price: must be non-negative");
     let price_x192 = price * Q192.to_big_decimal();
-    let sqrt_ratio_x96 = U160::from_big_uint(price_x192.round(0).digits().sqrt());
+    let sqrt_ratio_x96 = U160::from_big_uint(price_x192.to_big_uint().sqrt());
     if sqrt_ratio_x96 < MIN_SQRT_RATIO {
         MIN_SQRT_RATIO
     } else if sqrt_ratio_x96 > MAX_SQRT_RATIO {
@@ -419,7 +419,7 @@ pub fn tick_range_from_width_and_ratio(
         let price_lower_sqrt = ((b * b - a * c * BigDecimal::from(4)).sqrt() - b) / (a * TWO);
         let sqrt_ratio_lower_x96 = price_lower_sqrt * Q96.to_big_decimal();
         let tick_lower =
-            U160::from_big_uint(sqrt_ratio_lower_x96.round(0).digits()).get_tick_at_sqrt_ratio()?;
+            U160::from_big_uint(sqrt_ratio_lower_x96.to_big_uint()).get_tick_at_sqrt_ratio()?;
         (tick_lower, tick_lower + width)
     };
     Ok((tick_lower, tick_upper))
