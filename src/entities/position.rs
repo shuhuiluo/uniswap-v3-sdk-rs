@@ -1,5 +1,6 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{U160, U256};
+use num_traits::ToPrimitive;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
@@ -121,7 +122,7 @@ impl<TP: TickDataProvider> Position<TP> {
                 .to_big_int(),
             )
         } else {
-            CurrencyAmount::from_raw_amount(self.pool.token0.clone(), BigInt::zero())
+            CurrencyAmount::from_raw_amount(self.pool.token0.clone(), BigInt::ZERO)
         }
         .map_err(Error::Core)
     }
@@ -143,7 +144,7 @@ impl<TP: TickDataProvider> Position<TP> {
     #[inline]
     pub fn amount1(&self) -> Result<CurrencyAmount<Token>, Error> {
         if self.pool.tick_current < self.tick_lower {
-            CurrencyAmount::from_raw_amount(self.pool.token1.clone(), BigInt::zero())
+            CurrencyAmount::from_raw_amount(self.pool.token1.clone(), BigInt::ZERO)
         } else if self.pool.tick_current < self.tick_upper {
             CurrencyAmount::from_raw_amount(
                 self.pool.token1.clone(),

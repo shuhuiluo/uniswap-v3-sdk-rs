@@ -1,6 +1,7 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, PrimitiveSignature, B256, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
+use num_traits::ToPrimitive;
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -496,7 +497,7 @@ pub const fn get_permit_data(
 mod tests {
     use super::*;
     use crate::tests::*;
-    use alloy_primitives::{hex, uint};
+    use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
 
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");

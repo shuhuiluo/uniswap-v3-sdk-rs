@@ -17,7 +17,7 @@ use alloy::{
     sol,
     transports::http::reqwest::Url,
 };
-use alloy_primitives::{address, keccak256, PrimitiveSignature, B256, U256};
+use alloy_primitives::{keccak256, PrimitiveSignature, B256, U256};
 use alloy_sol_types::SolValue;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;

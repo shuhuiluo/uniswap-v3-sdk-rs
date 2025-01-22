@@ -178,7 +178,7 @@ pub fn encode_deposit<TP: TickDataProvider>(incentive_keys: &[IncentiveKey<TP>])
 mod tests {
     use super::*;
     use crate::tests::*;
-    use alloy_primitives::{hex, uint};
+    use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::{prelude::*, token};
 

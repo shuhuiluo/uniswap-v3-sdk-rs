@@ -367,6 +367,7 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
 mod tests {
     use super::*;
     use crate::tests::*;
+    use alloy_primitives::address;
 
     const ONE_ETHER: U160 = U160::from_limbs([10_u64.pow(18), 0, 0]);
 

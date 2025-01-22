@@ -78,7 +78,7 @@ where
         calldatas.push(encode_permit(token_in, input_token_permit));
     }
 
-    let mut total_amount_out = BigInt::zero();
+    let mut total_amount_out = BigInt::ZERO;
     for trade in trades.iter_mut() {
         total_amount_out += trade
             .minimum_amount_out_cached(slippage_tolerance.clone(), None)?
@@ -91,7 +91,7 @@ where
     // flags for whether funds should be sent first to the router
     let router_must_custody = output_is_native || fee.is_some();
 
-    let mut total_value = BigInt::zero();
+    let mut total_value = BigInt::ZERO;
     if input_is_native {
         for trade in trades.iter_mut() {
             total_value += trade
@@ -223,7 +223,7 @@ where
 mod tests {
     use super::*;
     use crate::tests::*;
-    use alloy_primitives::{hex, uint};
+    use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =

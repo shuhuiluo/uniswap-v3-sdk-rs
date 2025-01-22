@@ -1,7 +1,7 @@
 use super::FromBig;
 use alloy_primitives::Uint;
 use num_bigint::BigInt;
-use uniswap_sdk_core::utils::sqrt::sqrt;
+use uniswap_sdk_core::utils::sqrt;
 
 /// Returns the sqrt ratio as a Q64.96 corresponding to a given ratio of `amount1` and `amount0`.
 ///

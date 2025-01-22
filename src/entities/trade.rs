@@ -1,6 +1,7 @@
 use crate::prelude::{Error, *};
-use rustc_hash::FxHashSet;
-use uniswap_sdk_core::prelude::{sorted_insert::sorted_insert, *};
+use alloy_primitives::map::rustc_hash::FxHashSet;
+use core::cmp::Ordering;
+use uniswap_sdk_core::prelude::{sorted_insert, *};
 
 /// Trades comparator, an extension of the input output comparator that also considers other
 /// dimensions of the trade in ranking them
@@ -815,6 +816,7 @@ where
 mod tests {
     use super::*;
     use crate::tests::*;
+    use num_traits::ToPrimitive;
     use once_cell::sync::Lazy;
 
     fn v2_style_pool(

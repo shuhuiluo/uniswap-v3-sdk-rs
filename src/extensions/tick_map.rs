@@ -4,8 +4,7 @@
 
 use crate::prelude::*;
 use alloy::uint;
-use alloy_primitives::{aliases::I24, U256};
-use rustc_hash::FxHashMap;
+use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, U256};
 
 #[derive(Clone, Debug)]
 pub struct TickMap<I = I24> {

@@ -12,6 +12,7 @@ use alloy::{
 use alloy_primitives::{Address, ChainId, U256};
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
+use num_bigint::ToBigInt;
 use uniswap_lens::{
     bindings::{
         ephemeralallpositionsbyowner::EphemeralAllPositionsByOwner,
@@ -483,7 +484,8 @@ mod tests {
     use super::*;
     use crate::tests::PROVIDER;
     use alloy_primitives::{address, uint};
-    use num_traits::Signed;
+    use core::str::FromStr;
+    use num_traits::{Signed, Zero};
 
     const NPM: Address = address!("C36442b4a4522E871399CD717aBDD847Ab11FE88");
     const BLOCK_ID: Option<BlockId> = Some(BlockId::Number(BlockNumberOrTag::Number(17188000)));
