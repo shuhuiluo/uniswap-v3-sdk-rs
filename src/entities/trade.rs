@@ -1,4 +1,5 @@
 use crate::prelude::{Error, *};
+use alloc::vec;
 use alloy_primitives::map::rustc_hash::FxHashSet;
 use core::cmp::Ordering;
 use uniswap_sdk_core::prelude::{sorted_insert, *};
