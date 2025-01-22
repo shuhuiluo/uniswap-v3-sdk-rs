@@ -79,11 +79,8 @@ pub mod prelude {
         abi::*, constants::*, entities::*, error::*, multicall::*, nonfungible_position_manager::*,
         payments::*, quoter::*, self_permit::*, staker::*, swap_router::*, utils::*,
     };
-    pub use alloc::{
-        string::{String, ToString},
-        vec,
-        vec::Vec,
-    };
+
+    pub use uniswap_sdk_core as sdk_core;
 
     #[cfg(feature = "extensions")]
     pub use crate::extensions::*;

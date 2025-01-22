@@ -174,7 +174,7 @@ pub fn encode_permit(token: &impl BaseCurrency, options: PermitOptions) -> Bytes
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::{address, hex, uint};
+    use alloy_primitives::{hex, uint};
     use once_cell::sync::Lazy;
     use uniswap_sdk_core::token;
 

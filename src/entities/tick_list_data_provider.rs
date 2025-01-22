@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use alloc::vec::Vec;
 use derive_more::Deref;
 
 /// A data provider for ticks that is backed by an in-memory array of ticks.

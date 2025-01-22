@@ -13,7 +13,7 @@ use alloy::{
     rpc::types::TransactionRequest,
     transports::http::reqwest::Url,
 };
-use alloy_primitives::{address, U256};
+use alloy_primitives::U256;
 use alloy_sol_types::SolCall;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;

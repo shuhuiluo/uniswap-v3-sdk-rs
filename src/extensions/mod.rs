@@ -17,3 +17,5 @@ pub use price_tick_conversions::*;
 pub use state_overrides::*;
 pub use tick_bit_map::*;
 pub use tick_map::*;
+
+pub use uniswap_lens as lens;

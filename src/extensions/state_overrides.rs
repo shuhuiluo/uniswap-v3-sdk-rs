@@ -1,3 +1,6 @@
+//! ## State Overrides
+//! This module provides functions to generate state overrides for ERC20 tokens.
+
 use crate::prelude::Error;
 use alloc::vec::Vec;
 use alloy::{
