@@ -1,7 +1,8 @@
 # Uniswap V3 SDK Rust
 
 [![Rust CI](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml)
-[![docs.rs](https://img.shields.io/docsrs/uniswap-v3-sdk)](https://docs.rs/uniswap-v3-sdk/latest/uniswap_v3_sdk/)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/shuhuiluo/uniswap-v3-sdk-rs?logo=rust&label=CodeRabbit&color=orange)
+[![docs.rs](https://img.shields.io/docsrs/uniswap-v3-sdk)](https://docs.rs/uniswap-v3-sdk/latest)
 [![crates.io](https://img.shields.io/crates/v/uniswap-v3-sdk.svg)](https://crates.io/crates/uniswap-v3-sdk)
 
 A Rust SDK for building applications on top of Uniswap V3. Migration from the
@@ -49,7 +50,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "3.3.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "3.4.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
@@ -115,7 +116,7 @@ To test a specific module, use `cargo test --test <module_name>`.
 
 ### Linting
 
-Linting is done with `clippy` and `rustfmt`. To run the linter, use:
+Linting is done with `clippy` and `rustfmt`. To run the linter, use
 
 ```shell
 cargo clippy --all-targets --all-features -- -D warnings
@@ -124,7 +125,13 @@ cargo fmt --all -- --check
 
 ### Benchmarking
 
-Benchmarking is done with `criterion`. To run the benchmarks, use `cargo bench`.
+Benchmarking is done with `criterion`. To run all the benchmarks, use
+
+```shell
+cargo bench
+```
+
+To run a specific benchmark, use `cargo bench --bench <bench_name>`.
 
 ## License
 

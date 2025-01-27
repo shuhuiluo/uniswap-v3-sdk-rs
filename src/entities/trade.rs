@@ -553,7 +553,7 @@ where
         amount: CurrencyAmount<impl BaseCurrency>,
         trade_type: TradeType,
     ) -> Result<Self, Error> {
-        let mut token_amount: CurrencyAmount<&Token> = amount.wrapped()?;
+        let mut token_amount: CurrencyAmount<Token> = amount.wrapped_owned()?;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
         match trade_type {
@@ -563,7 +563,7 @@ where
                     "INPUT"
                 );
                 for pool in &route.pools {
-                    (token_amount, _) = pool.get_output_amount(&token_amount, None)?;
+                    token_amount = pool.get_output_amount(&token_amount, None)?;
                 }
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
@@ -582,7 +582,7 @@ where
                     "OUTPUT"
                 );
                 for pool in route.pools.iter().rev() {
-                    (token_amount, _) = pool.get_input_amount(&token_amount, None)?;
+                    token_amount = pool.get_input_amount(&token_amount, None)?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
@@ -673,7 +673,7 @@ where
                 continue;
             }
             let amount_out = match pool.get_output_amount(&amount_in, None) {
-                Ok((amount_out, _)) => amount_out,
+                Ok(amount_out) => amount_out,
                 Err(Error::InsufficientLiquidity) => continue,
                 Err(e) => return Err(e),
             };
@@ -711,7 +711,7 @@ where
                         max_hops: Some(max_hops - 1),
                     },
                     next_pools,
-                    Some(amount_out),
+                    Some(amount_out.wrapped()?),
                     best_trades,
                 )?;
             }
@@ -766,7 +766,7 @@ where
                 continue;
             }
             let amount_in = match pool.get_input_amount(&amount_out, None) {
-                Ok((amount_in, _)) => amount_in,
+                Ok(amount_in) => amount_in,
                 Err(Error::InsufficientLiquidity) => continue,
                 Err(e) => return Err(e),
             };
@@ -804,7 +804,7 @@ where
                         max_hops: Some(max_hops - 1),
                     },
                     next_pools,
-                    Some(amount_in),
+                    Some(amount_in.wrapped()?),
                     best_trades,
                 )?;
             }
