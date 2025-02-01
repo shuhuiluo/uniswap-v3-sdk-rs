@@ -5,12 +5,9 @@ use crate::prelude::Error;
 use alloc::vec::Vec;
 use alloy::{
     eips::eip2930::{AccessList, AccessListItem},
+    network::{Network, TransactionBuilder},
     providers::Provider,
-    rpc::types::{
-        state::{AccountOverride, StateOverride},
-        TransactionRequest,
-    },
-    transports::Transport,
+    rpc::types::state::{AccountOverride, StateOverride},
 };
 use alloy_primitives::{
     map::{B256HashMap, B256HashSet},
@@ -20,7 +17,7 @@ use alloy_sol_types::SolCall;
 use uniswap_lens::bindings::ierc20::IERC20;
 
 #[inline]
-pub async fn get_erc20_state_overrides<T, P>(
+pub async fn get_erc20_state_overrides<N, P>(
     token: Address,
     owner: Address,
     spender: Address,
@@ -28,17 +25,17 @@ pub async fn get_erc20_state_overrides<T, P>(
     provider: &P,
 ) -> Result<StateOverride, Error>
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
-    let balance_tx = TransactionRequest::default()
-        .to(token)
-        .gas_limit(0x11E1A300) // avoids "intrinsic gas too low" error
-        .input(IERC20::balanceOfCall { account: owner }.abi_encode().into());
-    let allowance_tx = TransactionRequest::default()
-        .to(token)
-        .gas_limit(0x11E1A300)
-        .input(IERC20::allowanceCall { owner, spender }.abi_encode().into());
+    let balance_tx = N::TransactionRequest::default()
+        .with_to(token)
+        .with_gas_limit(0x11E1A300) // avoids "intrinsic gas too low" error
+        .with_input(IERC20::balanceOfCall { account: owner }.abi_encode());
+    let allowance_tx = N::TransactionRequest::default()
+        .with_to(token)
+        .with_gas_limit(0x11E1A300)
+        .with_input(IERC20::allowanceCall { owner, spender }.abi_encode());
     let balance_access_list = provider.create_access_list(&balance_tx).await?.access_list;
     let allowance_access_list = provider
         .create_access_list(&allowance_tx)

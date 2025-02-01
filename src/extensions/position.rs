@@ -6,8 +6,8 @@
 use crate::prelude::{Error, *};
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
+    network::Network,
     providers::Provider,
-    transports::Transport,
 };
 use alloy_primitives::{Address, ChainId, U256};
 use anyhow::Result;
@@ -26,13 +26,13 @@ use uniswap_lens::{
 use uniswap_sdk_core::{prelude::*, token};
 
 #[inline]
-pub const fn get_nonfungible_position_manager_contract<T, P>(
+pub const fn get_nonfungible_position_manager_contract<N, P>(
     nonfungible_position_manager: Address,
     provider: P,
-) -> IUniswapV3NonfungiblePositionManagerInstance<T, P>
+) -> IUniswapV3NonfungiblePositionManagerInstance<(), P, N>
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     IUniswapV3NonfungiblePositionManagerInstance::new(nonfungible_position_manager, provider)
 }
@@ -47,7 +47,7 @@ where
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
 #[inline]
-pub async fn get_position<T, P>(
+pub async fn get_position<N, P>(
     chain_id: ChainId,
     nonfungible_position_manager: Address,
     token_id: U256,
@@ -55,8 +55,8 @@ pub async fn get_position<T, P>(
     block_id: Option<BlockId>,
 ) -> Result<Position, Error>
 where
-    T: Transport + Clone,
-    P: Provider<T> + Clone,
+    N: Network,
+    P: Provider<N> + Clone,
 {
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
@@ -107,7 +107,7 @@ impl Position {
     /// * `provider`: The alloy provider
     /// * `block_id`: Optional block number to query
     #[inline]
-    pub async fn from_token_id<T, P>(
+    pub async fn from_token_id<N, P>(
         chain_id: ChainId,
         nonfungible_position_manager: Address,
         token_id: U256,
@@ -115,8 +115,8 @@ impl Position {
         block_id: Option<BlockId>,
     ) -> Result<Self, Error>
     where
-        T: Transport + Clone,
-        P: Provider<T>,
+        N: Network,
+        P: Provider<N>,
     {
         let EphemeralGetPosition::PositionState {
             position,
@@ -164,7 +164,7 @@ impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
     ///
     /// [`Position<EphemeralTickMapDataProvider<I>>`]
     #[inline]
-    pub async fn from_token_id_with_tick_data_provider<T, P>(
+    pub async fn from_token_id_with_tick_data_provider<N, P>(
         chain_id: ChainId,
         nonfungible_position_manager: Address,
         token_id: U256,
@@ -172,8 +172,8 @@ impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
         block_id: Option<BlockId>,
     ) -> Result<Self, Error>
     where
-        T: Transport + Clone,
-        P: Provider<T> + Clone,
+        N: Network,
+        P: Provider<N> + Clone,
     {
         let position = Position::from_token_id(
             chain_id,
@@ -224,15 +224,15 @@ impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
 #[inline]
-pub async fn get_all_positions_by_owner<T, P>(
+pub async fn get_all_positions_by_owner<N, P>(
     nonfungible_position_manager: Address,
     owner: Address,
     provider: P,
     block_id: Option<BlockId>,
 ) -> Result<Vec<EphemeralAllPositionsByOwner::PositionState>, Error>
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     position_lens::get_all_positions_by_owner(
         nonfungible_position_manager,
@@ -258,7 +258,7 @@ where
 ///
 /// A tuple of the collectable token amounts.
 #[inline]
-pub async fn get_collectable_token_amounts<T, P>(
+pub async fn get_collectable_token_amounts<N, P>(
     _chain_id: ChainId,
     nonfungible_position_manager: Address,
     token_id: U256,
@@ -266,8 +266,8 @@ pub async fn get_collectable_token_amounts<T, P>(
     block_id: Option<BlockId>,
 ) -> Result<(U256, U256)>
 where
-    T: Transport + Clone,
-    P: Provider<T> + Clone,
+    N: Network,
+    P: Provider<N> + Clone,
 {
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
@@ -357,15 +357,15 @@ where
 /// * `provider`: The alloy provider
 /// * `block_id`: Optional block number to query
 #[inline]
-pub async fn get_token_svg<T, P>(
+pub async fn get_token_svg<N, P>(
     nonfungible_position_manager: Address,
     token_id: U256,
     provider: P,
     block_id: Option<BlockId>,
 ) -> Result<String>
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     let uri = get_nonfungible_position_manager_contract(nonfungible_position_manager, provider)
         .tokenURI(token_id)

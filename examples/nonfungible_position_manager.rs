@@ -1,14 +1,14 @@
 use alloy::{
     eips::BlockId,
+    network::{Network, TransactionBuilder},
     node_bindings::WEI_IN_ETHER,
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
-    rpc::types::TransactionRequest,
     signers::{
         k256::ecdsa::SigningKey,
         local::{LocalSigner, PrivateKeySigner},
         SignerSync,
     },
-    transports::{http::reqwest::Url, Transport},
+    transports::http::reqwest::Url,
 };
 use alloy_primitives::{address, Address, U256};
 use uniswap_lens::bindings::ierc721enumerable::IERC721Enumerable;
@@ -30,13 +30,11 @@ async fn main() {
     let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_config(|anvil| {
-            anvil
-                .fork(rpc_url)
-                .fork_block_number(block_id.as_u64().unwrap())
-        });
+    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+        anvil
+            .fork(rpc_url)
+            .fork_block_number(block_id.as_u64().unwrap())
+    });
     provider.anvil_auto_impersonate_account(true).await.unwrap();
     let account: LocalSigner<SigningKey> = PrivateKeySigner::random();
     provider
@@ -120,10 +118,10 @@ async fn main() {
 }
 
 /// Mint a position
-async fn mint_liquidity<T, P>(position: &mut Position, from: Address, provider: &P) -> U256
+async fn mint_liquidity<N, P>(position: &mut Position, from: Address, provider: &P) -> U256
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
 
@@ -139,10 +137,10 @@ where
         }),
     };
     let params = add_call_parameters(position, options).unwrap();
-    let tx = TransactionRequest::default()
-        .from(from)
-        .to(npm)
-        .input(params.calldata.into());
+    let tx = N::TransactionRequest::default()
+        .with_from(from)
+        .with_to(npm)
+        .with_input(params.calldata);
     provider
         .send_transaction(tx)
         .await
@@ -160,15 +158,15 @@ where
 }
 
 /// Burn a position with a permit
-async fn burn_liquidity<T, P>(
+async fn burn_liquidity<N, P>(
     token_id: U256,
     position: &Position,
     owner: &LocalSigner<SigningKey>,
     sender: Address,
     provider: &P,
 ) where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
 
@@ -213,10 +211,10 @@ async fn burn_liquidity<T, P>(
         },
     };
     let params = remove_call_parameters(position, options).unwrap();
-    let tx = TransactionRequest::default()
-        .from(sender)
-        .to(npm)
-        .input(params.calldata.into());
+    let tx = N::TransactionRequest::default()
+        .with_from(sender)
+        .with_to(npm)
+        .with_input(params.calldata);
     provider
         .send_transaction(tx)
         .await

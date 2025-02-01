@@ -6,8 +6,8 @@
 use crate::prelude::*;
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
+    network::Network,
     providers::Provider,
-    transports::Transport,
 };
 use alloy_primitives::{Address, ChainId, B256};
 use uniswap_lens::{
@@ -19,16 +19,16 @@ use uniswap_lens::{
 use uniswap_sdk_core::{prelude::Token, token};
 
 #[inline]
-pub fn get_pool_contract<T, P>(
+pub fn get_pool_contract<N, P>(
     factory: Address,
     token_a: Address,
     token_b: Address,
     fee: FeeAmount,
     provider: P,
-) -> IUniswapV3PoolInstance<T, P>
+) -> IUniswapV3PoolInstance<(), P, N>
 where
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     IUniswapV3PoolInstance::new(
         compute_pool_address(factory, token_a, token_b, fee, None, None),
@@ -49,7 +49,7 @@ impl Pool {
     /// * `provider`: The alloy provider
     /// * `block_id`: Optional block number to query.
     #[inline]
-    pub async fn from_pool_key<T, P>(
+    pub async fn from_pool_key<N, P>(
         chain_id: ChainId,
         factory: Address,
         token_a: Address,
@@ -59,8 +59,8 @@ impl Pool {
         block_id: Option<BlockId>,
     ) -> Result<Self, Error>
     where
-        T: Transport + Clone,
-        P: Provider<T> + Clone,
+        N: Network,
+        P: Provider<N> + Clone,
     {
         let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
         let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.clone());
@@ -146,7 +146,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
     /// }
     /// ```
     #[inline]
-    pub async fn from_pool_key_with_tick_data_provider<T, P>(
+    pub async fn from_pool_key_with_tick_data_provider<N, P>(
         chain_id: ChainId,
         factory: Address,
         token_a: Address,
@@ -156,8 +156,8 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
         block_id: Option<BlockId>,
     ) -> Result<Self, Error>
     where
-        T: Transport + Clone,
-        P: Provider<T> + Clone,
+        N: Network,
+        P: Provider<N> + Clone,
     {
         let pool = Pool::from_pool_key(
             chain_id,
@@ -265,7 +265,7 @@ pub fn reconstruct_liquidity_array<I: TickIndex>(
 ///
 /// An array of ticks and corresponding cumulative liquidity.
 #[inline]
-pub async fn get_liquidity_array_for_pool<TP, T, P>(
+pub async fn get_liquidity_array_for_pool<TP, N, P>(
     pool: Pool<TP>,
     tick_lower: TP::Index,
     tick_upper: TP::Index,
@@ -276,8 +276,8 @@ pub async fn get_liquidity_array_for_pool<TP, T, P>(
 ) -> Result<Vec<(TP::Index, u128)>, Error>
 where
     TP: TickDataProvider,
-    T: Transport + Clone,
-    P: Provider<T>,
+    N: Network,
+    P: Provider<N>,
 {
     let (tick_current_aligned, tick_lower, tick_upper) = normalize_ticks(
         pool.tick_current,
