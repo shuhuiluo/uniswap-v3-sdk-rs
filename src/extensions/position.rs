@@ -56,11 +56,11 @@ pub async fn get_position<N, P>(
 ) -> Result<Position, Error>
 where
     N: Network,
-    P: Provider<N> + Clone,
+    P: Provider<N>,
 {
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
-        get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.clone());
+        get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     // TODO: use multicall
     let factory = npm_contract.factory().block(block_id_).call().await?._0;
     let position = npm_contract
@@ -173,13 +173,13 @@ impl<I: TickIndex> Position<EphemeralTickMapDataProvider<I>> {
     ) -> Result<Self, Error>
     where
         N: Network,
-        P: Provider<N> + Clone,
+        P: Provider<N>,
     {
         let position = Position::from_token_id(
             chain_id,
             nonfungible_position_manager,
             token_id,
-            provider.clone(),
+            provider.root(),
             block_id,
         )
         .await?;
@@ -267,11 +267,11 @@ pub async fn get_collectable_token_amounts<N, P>(
 ) -> Result<(U256, U256)>
 where
     N: Network,
-    P: Provider<N> + Clone,
+    P: Provider<N>,
 {
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
-        get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.clone());
+        get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     // TODO: use multicall
     let factory = npm_contract.factory().block(block_id_).call().await?._0;
     let position = npm_contract

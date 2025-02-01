@@ -60,12 +60,12 @@ impl Pool {
     ) -> Result<Self, Error>
     where
         N: Network,
-        P: Provider<N> + Clone,
+        P: Provider<N>,
     {
         let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
-        let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.clone());
-        let token_a_contract = IERC20Metadata::new(token_a, provider.clone());
-        let token_b_contract = IERC20Metadata::new(token_b, provider);
+        let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.root());
+        let token_a_contract = IERC20Metadata::new(token_a, provider.root());
+        let token_b_contract = IERC20Metadata::new(token_b, provider.root());
         // TODO: use multicall
         let slot_0 = pool_contract.slot0().block(block_id).call().await?;
         let liquidity = pool_contract.liquidity().block(block_id).call().await?._0;
@@ -157,7 +157,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
     ) -> Result<Self, Error>
     where
         N: Network,
-        P: Provider<N> + Clone,
+        P: Provider<N>,
     {
         let pool = Pool::from_pool_key(
             chain_id,
@@ -165,7 +165,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
             token_a,
             token_b,
             fee,
-            provider.clone(),
+            provider.root(),
             block_id,
         )
         .await?;
