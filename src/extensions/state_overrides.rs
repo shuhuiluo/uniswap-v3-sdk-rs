@@ -48,10 +48,20 @@ where
         return Err(Error::InvalidAccessList);
     }
     // get rid of the storage key of implementation address
-    let balance_slots_set =
-        B256HashSet::from_iter(filtered_balance_access_list[0].storage_keys.clone());
-    let allowance_slots_set =
-        B256HashSet::from_iter(filtered_allowance_access_list[0].storage_keys.clone());
+    let balance_slots_set = B256HashSet::from_iter(
+        filtered_balance_access_list
+            .into_iter()
+            .next()
+            .unwrap()
+            .storage_keys,
+    );
+    let allowance_slots_set = B256HashSet::from_iter(
+        filtered_allowance_access_list
+            .into_iter()
+            .next()
+            .unwrap()
+            .storage_keys,
+    );
     let state_diff = B256HashMap::from_iter(
         balance_slots_set
             .symmetric_difference(&allowance_slots_set)
