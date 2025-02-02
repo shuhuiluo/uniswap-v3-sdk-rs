@@ -9,6 +9,7 @@ use alloy::{
     eips::{BlockId, BlockNumberOrTag},
     network::Network,
     providers::Provider,
+    rpc::types::Bundle,
     transports::{TransportError, TransportErrorKind},
 };
 use alloy_primitives::{Address, ChainId, U256};
@@ -256,26 +257,43 @@ where
 ///
 /// A tuple of the collectable token amounts.
 #[inline]
-pub async fn get_collectable_token_amounts<N, P>(
+pub async fn get_collectable_token_amounts<P>(
     nonfungible_position_manager: Address,
     token_id: U256,
     provider: P,
     block_id: Option<BlockId>,
 ) -> Result<(U256, U256), Error>
 where
-    N: Network,
-    P: Provider<N>,
+    // N: Network,
+    P: Provider,
 {
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     // TODO: use multicall
-    let factory = npm_contract.factory().block(block_id_).call().await?._0;
-    let position = npm_contract
+    let factory_req = npm_contract
+        .factory()
+        .block(block_id_)
+        .into_transaction_request();
+    let position_req = npm_contract
         .positions(token_id)
         .block(block_id_)
-        .call()
-        .await?;
+        .into_transaction_request();
+    let bundles = vec![Bundle::from(vec![factory_req, position_req])];
+    let mut resp = provider
+        .call_many(&bundles)
+        .await?
+        .into_iter()
+        .next()
+        .unwrap()
+        .into_iter();
+    let factory = npm_contract
+        .factory()
+        .decode_output(resp.next().unwrap().value.unwrap(), true)?
+        ._0;
+    let position = npm_contract
+        .positions(token_id)
+        .decode_output(resp.next().unwrap().value.unwrap(), true)?;
     let pool_contract = get_pool_contract(
         factory,
         position.token0,
