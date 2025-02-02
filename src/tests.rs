@@ -130,8 +130,11 @@ pub(crate) static RPC_URL: Lazy<alloy::transports::http::reqwest::Url> = Lazy::n
 });
 
 #[cfg(feature = "extensions")]
-pub(crate) static PROVIDER: Lazy<alloy::providers::ReqwestProvider> =
-    Lazy::new(|| alloy::providers::ProviderBuilder::new().on_http(RPC_URL.clone()));
+pub(crate) static PROVIDER: Lazy<alloy::providers::RootProvider> = Lazy::new(|| {
+    alloy::providers::ProviderBuilder::new()
+        .disable_recommended_fillers()
+        .on_http(RPC_URL.clone())
+});
 
 #[cfg(feature = "extensions")]
 pub(crate) static BLOCK_ID: Lazy<Option<alloy::eips::BlockId>> =

@@ -38,13 +38,11 @@ async fn main() {
     let block_id = BlockId::from(17000000);
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_config(|anvil| {
-            anvil
-                .fork(rpc_url)
-                .fork_block_number(block_id.as_u64().unwrap())
-        });
+    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+        anvil
+            .fork(rpc_url)
+            .fork_block_number(block_id.as_u64().unwrap())
+    });
     provider.anvil_auto_impersonate_account(true).await.unwrap();
 
     let usdc = token!(1, "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", 6);

@@ -65,13 +65,11 @@ async fn main() {
     println!("Quoter amount out: {}", amount_out);
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_config(|anvil| {
-            anvil
-                .fork(rpc_url)
-                .fork_block_number(block_id.as_u64().unwrap())
-        });
+    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+        anvil
+            .fork(rpc_url)
+            .fork_block_number(block_id.as_u64().unwrap())
+    });
     let account = provider.get_accounts().await.unwrap()[0];
 
     // Build the swap transaction

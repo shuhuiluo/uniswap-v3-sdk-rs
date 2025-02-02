@@ -114,14 +114,14 @@ where
 
     /// Returns the input currency of the swap
     #[inline]
-    pub fn input_currency(&self) -> &TInput {
-        &self.input_amount.currency
+    pub const fn input_currency(&self) -> &TInput {
+        &self.input_amount.meta.currency
     }
 
     /// Returns the output currency of the swap
     #[inline]
-    pub fn output_currency(&self) -> &TOutput {
-        &self.output_amount.currency
+    pub const fn output_currency(&self) -> &TOutput {
+        &self.output_amount.meta.currency
     }
 }
 
