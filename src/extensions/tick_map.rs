@@ -3,8 +3,8 @@
 //! efficient than [`TickList`].
 
 use crate::prelude::*;
-use alloy::uint;
-use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, U256};
+use alloc::vec::Vec;
+use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, uint, U256};
 
 #[derive(Clone, Debug)]
 pub struct TickMap<I = I24> {
