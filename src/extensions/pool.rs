@@ -4,6 +4,7 @@
 //! in a single `eth_call`.
 
 use crate::prelude::*;
+use alloc::{string::ToString, vec, vec::Vec};
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
     network::Network,

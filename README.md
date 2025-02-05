@@ -50,7 +50,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "3.4.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "3.5.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
@@ -88,7 +88,7 @@ async fn main() {
         .unwrap();
     // Get the output amount from the pool
     let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
-    let (amount_out, _pool_after) = pool.get_output_amount(&amount_in, None).unwrap();
+    let amount_out = pool.get_output_amount(&amount_in, None).unwrap();
 }
 ```
 

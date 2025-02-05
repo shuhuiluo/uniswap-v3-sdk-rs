@@ -4,6 +4,7 @@
 //! `eth_call`, etc.
 
 use crate::prelude::{Error, *};
+use alloc::string::ToString;
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
     network::Network,
