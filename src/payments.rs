@@ -1,7 +1,7 @@
-use crate::prelude::{FromBig, IPeripheryPaymentsWithFee};
+use crate::prelude::IPeripheryPaymentsWithFee;
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolCall;
-use uniswap_sdk_core::prelude::{FractionBase, Percent};
+use uniswap_sdk_core::prelude::{FractionBase, FromBig, Percent};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FeeOptions {

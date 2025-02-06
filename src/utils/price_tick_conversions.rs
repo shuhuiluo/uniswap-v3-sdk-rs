@@ -21,12 +21,11 @@ pub fn tick_to_price(
     tick: I24,
 ) -> Result<Price<Token, Token>, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    let ratio_x192 = sqrt_ratio_x96.to_big_uint().pow(2);
-    let q192 = Q192.to_big_uint();
+    let ratio_x192 = sqrt_ratio_x96.to_big_int().pow(2);
     Ok(if base_token.sorts_before(&quote_token)? {
-        Price::new(base_token, quote_token, q192, ratio_x192)
+        Price::new(base_token, quote_token, Q192_BIG_INT, ratio_x192)
     } else {
-        Price::new(base_token, quote_token, ratio_x192, q192)
+        Price::new(base_token, quote_token, ratio_x192, Q192_BIG_INT)
     })
 }
 
@@ -41,9 +40,9 @@ pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24, Error> 
     const ONE: I24 = I24::from_limbs([1]);
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     let sqrt_ratio_x96: U160 = if sorted {
-        encode_sqrt_ratio_x96(price.numerator.clone(), price.denominator.clone())
+        encode_sqrt_ratio_x96(price.numerator, price.denominator)
     } else {
-        encode_sqrt_ratio_x96(price.denominator.clone(), price.numerator.clone())
+        encode_sqrt_ratio_x96(price.denominator, price.numerator)
     };
     let tick = sqrt_ratio_x96.get_tick_at_sqrt_ratio()?;
     let next_tick_price = tick_to_price(

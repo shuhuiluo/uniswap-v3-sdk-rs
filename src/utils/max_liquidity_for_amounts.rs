@@ -1,6 +1,5 @@
-use super::ToBig;
 use alloy_primitives::{Uint, U256};
-use num_bigint::BigUint;
+use uniswap_sdk_core::prelude::{BigUint, ToBig};
 
 #[inline]
 fn sort_to_big_uint<const BITS: usize, const LIMBS: usize>(
@@ -37,7 +36,7 @@ pub fn max_liquidity_for_amount0_imprecise<const BITS: usize, const LIMBS: usize
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
-    let intermediate = (&sqrt_ratio_a_x96 * &sqrt_ratio_b_x96) >> 96;
+    let intermediate = (sqrt_ratio_a_x96 * sqrt_ratio_b_x96) >> 96;
     amount0.to_big_uint() * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
@@ -61,7 +60,7 @@ pub fn max_liquidity_for_amount0_precise<const BITS: usize, const LIMBS: usize>(
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
-    let numerator = amount0.to_big_uint() * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
+    let numerator = amount0.to_big_uint() * sqrt_ratio_a_x96 * sqrt_ratio_b_x96;
     let denominator = (sqrt_ratio_b_x96 - sqrt_ratio_a_x96) << 96;
 
     numerator / denominator
@@ -145,7 +144,6 @@ pub fn max_liquidity_for_amounts<const BITS: usize, const LIMBS: usize>(
 mod tests {
     use super::*;
     use crate::utils::encode_sqrt_ratio_x96;
-    use num_traits::Num;
 
     #[test]
     fn imprecise_price_inside_100_token0_200_token1() {

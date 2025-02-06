@@ -1,9 +1,6 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{ChainId, B256, I256, U160};
-use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
-
-static _Q192: Lazy<BigUint> = Lazy::new(|| Q192.to_big_uint());
 
 /// Represents a V3 pool
 #[derive(Clone, Debug)]
@@ -156,12 +153,12 @@ impl<TP: TickDataProvider> Pool<TP> {
     /// token0
     #[inline]
     pub fn token0_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
+        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_int();
         Price::new(
             self.token0.clone(),
             self.token1.clone(),
-            _Q192.clone(),
-            &sqrt_ratio_x96 * &sqrt_ratio_x96,
+            Q192_BIG_INT,
+            sqrt_ratio_x96 * sqrt_ratio_x96,
         )
     }
 
@@ -169,12 +166,12 @@ impl<TP: TickDataProvider> Pool<TP> {
     /// token1
     #[inline]
     pub fn token1_price(&self) -> Price<Token, Token> {
-        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_uint();
+        let sqrt_ratio_x96 = self.sqrt_ratio_x96.to_big_int();
         Price::new(
             self.token1.clone(),
             self.token0.clone(),
-            &sqrt_ratio_x96 * &sqrt_ratio_x96,
-            _Q192.clone(),
+            sqrt_ratio_x96 * sqrt_ratio_x96,
+            Q192_BIG_INT,
         )
     }
 
@@ -663,6 +660,7 @@ mod tests {
     mod swaps {
         use super::*;
         use crate::utils::tick_math::{MAX_TICK, MIN_TICK};
+        use once_cell::sync::Lazy;
 
         static POOL: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
             Pool::new_with_tick_data_provider(

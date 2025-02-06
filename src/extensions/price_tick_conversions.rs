@@ -4,17 +4,17 @@
 
 use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, U160};
-use num_bigint::ToBigInt;
-use num_traits::{Signed, Zero};
+use fastnum::dec512;
+use num_integer::Roots;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
 
 pub static MIN_PRICE: Lazy<Fraction> =
-    Lazy::new(|| Fraction::new(MIN_SQRT_RATIO.to_big_int().pow(2), Q192.to_big_int()));
+    Lazy::new(|| Fraction::new(MIN_SQRT_RATIO.to_big_int().pow(2), Q192_BIG_INT));
 pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
     Fraction::new(
         MAX_SQRT_RATIO.to_big_int().pow(2) - ONE.to_big_int(),
-        Q192.to_big_int(),
+        Q192_BIG_INT,
     )
 });
 
@@ -68,7 +68,8 @@ where
     };
     let decimals = fraction.len();
     let without_decimals =
-        <BigInt as core::str::FromStr>::from_str(&alloc::format!("{}{}", whole, fraction))?;
+        <BigInt as core::str::FromStr>::from_str(&alloc::format!("{}{}", whole, fraction))
+            .map_err(|e| anyhow::anyhow!("Invalid price string: {}", e))?;
     let numerator = without_decimals * BigInt::from(10).pow(quote_token.decimals() as u32);
     let denominator = BigInt::from(10).pow(decimals as u32 + base_token.decimals() as u32);
     Ok(Price::new(base_token, quote_token, denominator, numerator))
@@ -108,12 +109,11 @@ pub fn sqrt_ratio_x96_to_price(
     base_token: Token,
     quote_token: Token,
 ) -> Result<Price<Token, Token>, Error> {
-    let ratio_x192 = sqrt_ratio_x96.to_big_uint().pow(2);
-    let q192 = Q192.to_big_uint();
+    let ratio_x192 = sqrt_ratio_x96.to_big_int().pow(2);
     Ok(if base_token.sorts_before(&quote_token)? {
-        Price::new(base_token, quote_token, q192, ratio_x192)
+        Price::new(base_token, quote_token, Q192_BIG_INT, ratio_x192)
     } else {
-        Price::new(base_token, quote_token, ratio_x192, q192)
+        Price::new(base_token, quote_token, ratio_x192, Q192_BIG_INT)
     })
 }
 
@@ -155,14 +155,14 @@ pub fn price_to_closest_tick_safe(price: &Price<Token, Token>) -> Result<I24, Er
 /// let min_price = Price::new(
 ///     token0.clone(),
 ///     token1.clone(),
-///     MIN_PRICE.denominator().clone(),
-///     MIN_PRICE.numerator().clone(),
+///     MIN_PRICE.denominator(),
+///     MIN_PRICE.numerator(),
 /// );
 /// let max_price = Price::new(
 ///     token0.clone(),
 ///     token1.clone(),
-///     MAX_PRICE.denominator().clone(),
-///     MAX_PRICE.numerator().clone(),
+///     MAX_PRICE.denominator(),
+///     MAX_PRICE.numerator(),
 /// );
 ///
 /// assert_eq!(
@@ -200,20 +200,20 @@ pub fn price_to_closest_usable_tick(
 /// ```
 /// use alloy_primitives::aliases::I24;
 /// use num_traits::{FromPrimitive, Pow, ToPrimitive};
+/// use uniswap_sdk_core::prelude::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// assert_eq!(
-///     tick_to_big_price(I24::from_limbs([100]))
-///         .unwrap()
-///         .to_f32()
-///         .unwrap(),
-///     1.0001f64.pow(100i32).to_f32().unwrap()
+/// assert!(
+///     (tick_to_big_price(I24::from_limbs([100])).unwrap()
+///         - BigDecimal::from(1.0001f64.pow(100i32)))
+///     .abs()
+///         < BigDecimal::from(1e-14)
 /// );
 /// ```
 #[inline]
 pub fn tick_to_big_price(tick: I24) -> Result<BigDecimal, Error> {
     let sqrt_ratio_x96 = get_sqrt_ratio_at_tick(tick)?;
-    Ok(BigDecimal::from(sqrt_ratio_x96.to_big_int().pow(2)) / Q192.to_big_decimal())
+    Ok(sqrt_ratio_x96.to_big_int().pow(2).to_big_decimal() / Q192.to_big_decimal())
 }
 
 /// Convert a [`FractionBase`] object to a [`BigDecimal`].
@@ -242,20 +242,20 @@ where
 /// use uniswap_v3_sdk::prelude::*;
 ///
 /// let price = tick_to_big_price(MAX_TICK).unwrap();
-/// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
+/// assert_eq!(price_to_sqrt_ratio_x96(price), MAX_SQRT_RATIO);
 /// ```
 #[inline]
 #[must_use]
-pub fn price_to_sqrt_ratio_x96(price: &BigDecimal) -> U160 {
+pub fn price_to_sqrt_ratio_x96(price: BigDecimal) -> U160 {
     assert!(!price.is_negative(), "Invalid price: must be non-negative");
     let price_x192 = price * Q192.to_big_decimal();
-    let sqrt_ratio_x96 = price_x192.to_bigint().unwrap().sqrt();
-    if sqrt_ratio_x96 < MIN_SQRT_RATIO.to_big_int() {
+    let sqrt_ratio_x96 = U160::from_big_uint(price_x192.to_big_uint().sqrt());
+    if sqrt_ratio_x96 < MIN_SQRT_RATIO {
         MIN_SQRT_RATIO
-    } else if sqrt_ratio_x96 > MAX_SQRT_RATIO.to_big_int() {
+    } else if sqrt_ratio_x96 > MAX_SQRT_RATIO {
         MAX_SQRT_RATIO
     } else {
-        U160::from_big_int(sqrt_ratio_x96)
+        sqrt_ratio_x96
     }
 }
 
@@ -279,19 +279,19 @@ pub fn token0_ratio_to_price(
     tick_lower: I24,
     tick_upper: I24,
 ) -> Result<BigDecimal, Error> {
-    let one = BigDecimal::from(1);
+    const ONE: BigDecimal = dec512!(1);
     assert!(
         tick_upper > tick_lower,
         "Invalid tick range: tickUpper must be greater than tickLower"
     );
     assert!(
-        !(token0_ratio.is_negative() || token0_ratio > one),
+        !(token0_ratio.is_negative() || token0_ratio > ONE),
         "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
     );
     if token0_ratio.is_zero() {
         return tick_to_big_price(tick_upper);
     }
-    if token0_ratio == one {
+    if token0_ratio == ONE {
         return tick_to_big_price(tick_lower);
     }
     let sqrt_ratio_lower_x96 = get_sqrt_ratio_at_tick(tick_lower)?;
@@ -299,12 +299,13 @@ pub fn token0_ratio_to_price(
     let l = sqrt_ratio_lower_x96.to_big_decimal() / Q96.to_big_decimal();
     let u = sqrt_ratio_upper_x96.to_big_decimal() / Q96.to_big_decimal();
     let r = token0_ratio;
-    let a = &r - one.clone();
-    let b = &u * (one - BigDecimal::from(2) * &r);
+    let a = r - ONE;
+    let b = u * (ONE - dec512!(2) * r);
     let c = r * l * u;
-    let numerator = &b + (b.square() - BigDecimal::from(4) * &a * c).sqrt().unwrap();
-    let denominator = BigDecimal::from(-2) * a;
-    Ok((numerator / denominator).square())
+    let numerator = b + (b * b - dec512!(4) * a * c).sqrt();
+    let denominator = dec512!(-2) * a;
+    let sqrt_price = numerator / denominator;
+    Ok(sqrt_price * sqrt_price)
 }
 
 /// Given a price ratio of token1/token0, calculate the proportion of the position value that is
@@ -329,15 +330,15 @@ pub fn token0_price_to_ratio(
     if tick_upper <= tick_lower {
         return Err(Error::InvalidRange);
     }
-    let sqrt_price_x96 = price_to_sqrt_ratio_x96(&price);
+    let sqrt_price_x96 = price_to_sqrt_ratio_x96(price);
     let tick = sqrt_price_x96.get_tick_at_sqrt_ratio()?;
     // only token0
     if tick < tick_lower {
-        Ok(BigDecimal::from(1))
+        Ok(dec512!(1))
     }
     // only token1
     else if tick >= tick_upper {
-        Ok(BigDecimal::zero())
+        Ok(BigDecimal::ZERO)
     } else {
         let liquidity = 2_u128 << 96;
         let amount0 = get_amount_0_delta(
@@ -353,7 +354,7 @@ pub fn token0_price_to_ratio(
             false,
         )?;
         let value0 = amount0.to_big_decimal() * price;
-        Ok(&value0 / (&value0 + amount1.to_big_decimal()))
+        Ok(value0 / (value0 + amount1.to_big_decimal()))
     }
 }
 
@@ -374,6 +375,8 @@ pub fn token0_price_to_ratio(
 ///
 /// ```
 /// use alloy_primitives::aliases::I24;
+/// use fastnum::dec512;
+/// use num_traits::real::Real;
 /// use uniswap_sdk_core::prelude::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
@@ -382,15 +385,15 @@ pub fn token0_price_to_ratio(
 /// let token0_ratio = "0.3".parse::<BigDecimal>().unwrap();
 /// let width = I24::from_limbs([1000]);
 /// let (tick_lower, tick_upper) =
-///     tick_range_from_width_and_ratio(width, tick_current, token0_ratio.clone()).unwrap();
+///     tick_range_from_width_and_ratio(width, tick_current, token0_ratio).unwrap();
 /// assert_eq!(tick_upper - tick_lower, width);
-/// let price_lower_sqrt = tick_to_big_price(tick_lower).unwrap().sqrt().unwrap();
-/// let price_upper_sqrt = tick_to_big_price(tick_upper).unwrap().sqrt().unwrap();
-/// let one = BigDecimal::from(1);
-/// let amount0 = one.clone() / price.sqrt().unwrap() - one / price_upper_sqrt;
-/// let amount1 = price.sqrt().unwrap() - price_lower_sqrt;
-/// let value0 = amount0 * &price;
-/// let ratio = &value0 / (&value0 + amount1);
+/// let price_lower_sqrt = tick_to_big_price(tick_lower).unwrap().sqrt();
+/// let price_upper_sqrt = tick_to_big_price(tick_upper).unwrap().sqrt();
+/// const ONE: BigDecimal = dec512!(1);
+/// let amount0 = ONE / price.sqrt() - ONE / price_upper_sqrt;
+/// let amount1 = price.sqrt() - price_lower_sqrt;
+/// let value0 = amount0 * price;
+/// let ratio = value0 / (value0 + amount1);
 /// assert!((ratio - token0_ratio).abs() < "0.001".parse::<BigDecimal>().unwrap());
 /// ```
 #[inline]
@@ -399,26 +402,25 @@ pub fn tick_range_from_width_and_ratio(
     tick_current: I24,
     token0_ratio: BigDecimal,
 ) -> Result<(I24, I24), Error> {
-    let one = BigDecimal::from(1);
-    let two = BigDecimal::from(2);
+    const ONE: BigDecimal = dec512!(1);
+    const TWO: BigDecimal = dec512!(2);
     assert!(
-        !(token0_ratio.is_negative() || token0_ratio > one),
+        !(token0_ratio.is_negative() || token0_ratio > ONE),
         "Invalid token0ValueProportion: must be a value between 0 and 1, inclusive"
     );
     let (tick_lower, tick_upper) = if token0_ratio.is_zero() {
         (tick_current - width, tick_current)
-    } else if token0_ratio == one {
+    } else if token0_ratio == ONE {
         (tick_current, tick_current + width)
     } else {
         let price = tick_to_big_price(tick_current)?;
         let a = token0_ratio;
-        let b = (one.clone() - &a * two.clone()) * price.sqrt().unwrap();
-        let c = &price * (&a - one) / tick_to_big_price(width)?.sqrt().unwrap();
-        let price_lower_sqrt =
-            ((&b * &b - &a * &c * BigDecimal::from(4)).sqrt().unwrap() - &b) / (&a * two);
+        let b = (ONE - a * TWO) * price.sqrt();
+        let c = price * (a - ONE) / tick_to_big_price(width)?.sqrt();
+        let price_lower_sqrt = ((b * b - a * c * dec512!(4)).sqrt() - b) / (a * TWO);
         let sqrt_ratio_lower_x96 = price_lower_sqrt * Q96.to_big_decimal();
-        let tick_lower = U160::from_big_int(sqrt_ratio_lower_x96.to_bigint().unwrap())
-            .get_tick_at_sqrt_ratio()?;
+        let tick_lower =
+            U160::from_big_uint(sqrt_ratio_lower_x96.to_big_uint()).get_tick_at_sqrt_ratio()?;
         (tick_lower, tick_lower + width)
     };
     Ok((tick_lower, tick_upper))
@@ -427,31 +429,32 @@ pub fn tick_range_from_width_and_ratio(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::str::FromStr;
 
     #[test]
     fn test_token0_ratio_to_price_conversion() {
         let tick_lower = I24::from_limbs([253320]);
         let tick_upper = I24::from_limbs([264600]);
         assert_eq!(
-            token0_ratio_to_price(BigDecimal::from(0), tick_lower, tick_upper).unwrap(),
+            token0_ratio_to_price(dec512!(0), tick_lower, tick_upper).unwrap(),
             tick_to_big_price(tick_upper).unwrap()
         );
         assert_eq!(
-            token0_ratio_to_price(BigDecimal::from(1), tick_lower, tick_upper).unwrap(),
+            token0_ratio_to_price(dec512!(1), tick_lower, tick_upper).unwrap(),
             tick_to_big_price(tick_lower).unwrap()
         );
-        let price =
-            token0_ratio_to_price(BigDecimal::from_str("0.3").unwrap(), tick_lower, tick_upper)
-                .unwrap();
+        let price = token0_ratio_to_price(dec512!(0.3), tick_lower, tick_upper).unwrap();
         assert_eq!(
-            price.with_scale_round(30, RoundingMode::HalfUp).to_string(),
+            price
+                .with_rounding_mode(RoundingMode::HalfUp)
+                .round(30)
+                .to_string(),
             "226996287752.678057810335753063814266625941"
         );
         let token0_ratio = token0_price_to_ratio(price, tick_lower, tick_upper).unwrap();
         assert_eq!(
             token0_ratio
-                .with_scale_round(30, RoundingMode::HalfUp)
+                .with_rounding_mode(RoundingMode::HalfUp)
+                .round(30)
                 .to_string(),
             "0.299999999999999999999998780740"
         );

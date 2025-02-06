@@ -12,7 +12,6 @@ use alloy::{
     transports::{TransportError, TransportErrorKind},
 };
 use alloy_primitives::{Address, ChainId, U256};
-use num_bigint::ToBigInt;
 use uniswap_lens::{
     bindings::{
         ephemeralallpositionsbyowner::EphemeralAllPositionsByOwner,
@@ -409,20 +408,17 @@ where
         .add(&position.amount1_cached()?)?;
     let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
     let price = fraction_to_big_decimal(&price);
-    let token0_ratio = token0_price_to_ratio(
-        price.clone(),
-        new_tick_lower.to_i24(),
-        new_tick_upper.to_i24(),
-    )?;
-    let amount1_after = (BigDecimal::from(1) - token0_ratio) * &equity_before;
+    let token0_ratio =
+        token0_price_to_ratio(price, new_tick_lower.to_i24(), new_tick_upper.to_i24())?;
+    let amount1_after = (fastnum::dec512!(1) - token0_ratio) * equity_before;
     // token0's equity denominated in token1 divided by the price
-    let amount0_after = (equity_before - &amount1_after) / price;
+    let amount0_after = (equity_before - amount1_after) / price;
     Position::from_amounts(
         position.pool.clone(),
         new_tick_lower,
         new_tick_upper,
-        U256::from_big_int(amount0_after.to_bigint().unwrap()),
-        U256::from_big_int(amount1_after.to_bigint().unwrap()),
+        U256::from_big_uint(amount0_after.to_big_uint()),
+        U256::from_big_uint(amount1_after.to_big_uint()),
         false,
     )
 }
@@ -436,7 +432,7 @@ where
 #[inline]
 pub fn get_position_at_price<TP>(
     position: Position<TP>,
-    new_price: &BigDecimal,
+    new_price: BigDecimal,
 ) -> Result<Position<TP>, Error>
 where
     TP: TickDataProvider,
@@ -469,7 +465,7 @@ where
 #[inline]
 pub fn get_rebalanced_position_at_price<TP>(
     position: Position<TP>,
-    new_price: &BigDecimal,
+    new_price: BigDecimal,
     new_tick_lower: TP::Index,
     new_tick_upper: TP::Index,
 ) -> Result<Position<TP>, Error>
@@ -488,8 +484,7 @@ mod tests {
     use super::*;
     use crate::tests::PROVIDER;
     use alloy_primitives::{address, uint};
-    use core::str::FromStr;
-    use num_traits::{Signed, Zero};
+    use fastnum::decimal::Context;
 
     const NPM: Address = address!("C36442b4a4522E871399CD717aBDD847Ab11FE88");
     const BLOCK_ID: Option<BlockId> = Some(BlockId::Number(BlockNumberOrTag::Number(17188000)));
@@ -592,7 +587,7 @@ mod tests {
         assert!(amount0 - reverted_position.amount0().unwrap().quotient() < BigInt::from(10));
         let amount1 = position.amount1().unwrap().quotient();
         assert!(
-            &amount1 - reverted_position.amount1().unwrap().quotient()
+            amount1 - reverted_position.amount1().unwrap().quotient()
                 < amount1 / BigInt::from(1000000)
         );
         assert!(position.liquidity - reverted_position.liquidity < position.liquidity / 1000000);
@@ -604,7 +599,8 @@ mod tests {
             .await
             .unwrap();
         // corresponds to tick -870686
-        let small_price = BigDecimal::from_str("1.5434597458370203830544e-38").unwrap();
+        let small_price =
+            BigDecimal::from_str("1.5434597458370203830544e-38", Context::default()).unwrap();
         let position = Position::new(
             Pool::new(
                 position.pool.token0,
@@ -618,12 +614,12 @@ mod tests {
             -887220,
             52980,
         );
-        let mut position1 = get_position_at_price(position.clone(), &small_price).unwrap();
+        let mut position1 = get_position_at_price(position.clone(), small_price).unwrap();
         assert!(position1.amount0().unwrap().quotient().is_positive());
         assert!(position1.amount1().unwrap().quotient().is_zero());
         let position2 = get_position_at_price(
             position.clone(),
-            &fraction_to_big_decimal(
+            fraction_to_big_decimal(
                 &tick_to_price(
                     position.pool.token0,
                     position.pool.token1,
@@ -662,7 +658,7 @@ mod tests {
         .unwrap();
         let position_rebalanced_at_tick_upper = get_rebalanced_position_at_price(
             position.clone(),
-            &fraction_to_big_decimal(&price_upper),
+            fraction_to_big_decimal(&price_upper),
             new_tick_lower,
             new_tick_upper,
         )
