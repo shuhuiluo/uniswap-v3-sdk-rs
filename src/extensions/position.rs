@@ -408,11 +408,8 @@ where
         .add(&position.amount1_cached()?)?;
     let equity_before = fraction_to_big_decimal(&equity_in_token1_before);
     let price = fraction_to_big_decimal(&price);
-    let token0_ratio = token0_price_to_ratio(
-        price.clone(),
-        new_tick_lower.to_i24(),
-        new_tick_upper.to_i24(),
-    )?;
+    let token0_ratio =
+        token0_price_to_ratio(price, new_tick_lower.to_i24(), new_tick_upper.to_i24())?;
     let amount1_after = (BigDecimal::from(1) - token0_ratio) * equity_before;
     // token0's equity denominated in token1 divided by the price
     let amount0_after = (equity_before - amount1_after) / price;
@@ -487,7 +484,7 @@ mod tests {
     use super::*;
     use crate::tests::PROVIDER;
     use alloy_primitives::{address, uint};
-    use core::str::FromStr;
+    use fastnum::decimal::Context;
 
     const NPM: Address = address!("C36442b4a4522E871399CD717aBDD847Ab11FE88");
     const BLOCK_ID: Option<BlockId> = Some(BlockId::Number(BlockNumberOrTag::Number(17188000)));
@@ -590,7 +587,7 @@ mod tests {
         assert!(amount0 - reverted_position.amount0().unwrap().quotient() < BigInt::from(10));
         let amount1 = position.amount1().unwrap().quotient();
         assert!(
-            &amount1 - reverted_position.amount1().unwrap().quotient()
+            amount1 - reverted_position.amount1().unwrap().quotient()
                 < amount1 / BigInt::from(1000000)
         );
         assert!(position.liquidity - reverted_position.liquidity < position.liquidity / 1000000);

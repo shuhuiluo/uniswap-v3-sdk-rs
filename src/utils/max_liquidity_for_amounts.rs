@@ -36,7 +36,7 @@ pub fn max_liquidity_for_amount0_imprecise<const BITS: usize, const LIMBS: usize
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
-    let intermediate = (&sqrt_ratio_a_x96 * &sqrt_ratio_b_x96) >> 96;
+    let intermediate = (sqrt_ratio_a_x96 * sqrt_ratio_b_x96) >> 96;
     amount0.to_big_uint() * intermediate / (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
 }
 
@@ -60,7 +60,7 @@ pub fn max_liquidity_for_amount0_precise<const BITS: usize, const LIMBS: usize>(
 ) -> BigUint {
     let (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = sort_to_big_uint(sqrt_ratio_a_x96, sqrt_ratio_b_x96);
 
-    let numerator = amount0.to_big_uint() * &sqrt_ratio_a_x96 * &sqrt_ratio_b_x96;
+    let numerator = amount0.to_big_uint() * sqrt_ratio_a_x96 * sqrt_ratio_b_x96;
     let denominator = (sqrt_ratio_b_x96 - sqrt_ratio_a_x96) << 96;
 
     numerator / denominator

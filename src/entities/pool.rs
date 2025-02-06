@@ -158,7 +158,7 @@ impl<TP: TickDataProvider> Pool<TP> {
             self.token0.clone(),
             self.token1.clone(),
             Q192_BIG_INT,
-            &sqrt_ratio_x96 * &sqrt_ratio_x96,
+            sqrt_ratio_x96 * sqrt_ratio_x96,
         )
     }
 
@@ -170,7 +170,7 @@ impl<TP: TickDataProvider> Pool<TP> {
         Price::new(
             self.token1.clone(),
             self.token0.clone(),
-            &sqrt_ratio_x96 * &sqrt_ratio_x96,
+            sqrt_ratio_x96 * sqrt_ratio_x96,
             Q192_BIG_INT,
         )
     }

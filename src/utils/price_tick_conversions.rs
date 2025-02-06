@@ -40,9 +40,9 @@ pub fn price_to_closest_tick(price: &Price<Token, Token>) -> Result<I24, Error> 
     const ONE: I24 = I24::from_limbs([1]);
     let sorted = price.base_currency.sorts_before(&price.quote_currency)?;
     let sqrt_ratio_x96: U160 = if sorted {
-        encode_sqrt_ratio_x96(price.numerator.clone(), price.denominator.clone())
+        encode_sqrt_ratio_x96(price.numerator, price.denominator)
     } else {
-        encode_sqrt_ratio_x96(price.denominator.clone(), price.numerator.clone())
+        encode_sqrt_ratio_x96(price.denominator, price.numerator)
     };
     let tick = sqrt_ratio_x96.get_tick_at_sqrt_ratio()?;
     let next_tick_price = tick_to_price(

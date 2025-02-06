@@ -4,10 +4,8 @@
 
 use crate::prelude::{Error, *};
 use alloy_primitives::{aliases::I24, U160};
-use core::str::FromStr;
 use fastnum::dec512;
 use num_integer::Roots;
-use num_traits::{real::Real, Float};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::prelude::*;
 
@@ -70,7 +68,8 @@ where
     };
     let decimals = fraction.len();
     let without_decimals =
-        <BigInt as core::str::FromStr>::from_str(&alloc::format!("{}{}", whole, fraction))?;
+        <BigInt as core::str::FromStr>::from_str(&alloc::format!("{}{}", whole, fraction))
+            .map_err(|e| anyhow::anyhow!("Invalid price string: {}", e))?;
     let numerator = without_decimals * BigInt::from(10).pow(quote_token.decimals() as u32);
     let denominator = BigInt::from(10).pow(decimals as u32 + base_token.decimals() as u32);
     Ok(Price::new(base_token, quote_token, denominator, numerator))
