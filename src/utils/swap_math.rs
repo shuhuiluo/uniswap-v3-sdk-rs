@@ -166,12 +166,10 @@ pub fn v3_swap<TP: TickDataProvider>(
     amount_specified: I256,
     sqrt_price_limit_x96: Option<U160>,
 ) -> Result<SwapState<TP::Index>, Error> {
-    let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or_else(|| {
-        if zero_for_one {
-            MIN_SQRT_RATIO + ONE
-        } else {
-            MAX_SQRT_RATIO - ONE
-        }
+    let sqrt_price_limit_x96 = sqrt_price_limit_x96.unwrap_or(if zero_for_one {
+        MIN_SQRT_RATIO + ONE
+    } else {
+        MAX_SQRT_RATIO - ONE
     });
 
     if zero_for_one {

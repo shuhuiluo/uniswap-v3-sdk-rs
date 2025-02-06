@@ -2,6 +2,7 @@ use crate::prelude::{
     tick_math::{MAX_TICK, MIN_TICK},
     *,
 };
+pub(crate) use alloc::vec;
 use alloy_primitives::U160;
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::{prelude::*, token};

@@ -17,6 +17,7 @@ impl<I: TickIndex> TickListDataProvider<I> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
     use once_cell::sync::Lazy;
 
     static PROVIDER: Lazy<TickListDataProvider> =

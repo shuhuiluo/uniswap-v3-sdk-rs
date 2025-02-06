@@ -71,25 +71,21 @@ By default, this library does not depend on the standard library (`std`). Howeve
 
 The code below shows an example of creating a pool with a tick map data provider and simulating a swap with it.
 
-```rust
-#[tokio::main]
-async fn main() {
-    // Create a pool with a tick map data provider
-    let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
-        1,
-        FACTORY_ADDRESS,
-        wbtc.address(),
-        weth.address(),
-        FeeAmount::LOW,
-        provider.clone(),
-        block_id,
-    )
-        .await
-        .unwrap();
-    // Get the output amount from the pool
-    let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
-    let amount_out = pool.get_output_amount(&amount_in, None).unwrap();
-}
+```rust,ignore
+let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
+    1,
+    FACTORY_ADDRESS,
+    wbtc.address(),
+    weth.address(),
+    FeeAmount::LOW,
+    provider.clone(),
+    block_id,
+)
+    .await
+    .unwrap();
+// Get the output amount from the pool
+let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
+let amount_out = pool.get_output_amount(&amount_in, None).unwrap();
 ```
 
 For runnable examples, see the [examples](./examples) directory.

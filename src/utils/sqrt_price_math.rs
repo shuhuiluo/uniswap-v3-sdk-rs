@@ -472,6 +472,7 @@ pub fn get_amount_1_delta_signed<const BITS: usize, const LIMBS: usize>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec::Vec;
     use alloy_primitives::{keccak256, U160};
     use alloy_sol_types::SolValue;
     use uniswap_v3_math::{error::UniswapV3MathError, sqrt_price_math};

@@ -3,14 +3,10 @@
 //! [`Price`] prices. Ported from [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk/blob/8bc54456753f454848d25029631f4e64ff573e12/price.ts).
 
 use crate::prelude::{Error, *};
-use alloc::format;
 use alloy_primitives::{aliases::I24, U160};
-use anyhow::{bail, Result};
-use core::str::FromStr;
 use num_bigint::ToBigInt;
 use num_traits::{Signed, Zero};
 use once_cell::sync::Lazy;
-use regex::Regex;
 use uniswap_sdk_core::prelude::*;
 
 pub static MIN_PRICE: Lazy<Fraction> =
@@ -47,12 +43,13 @@ pub static MAX_PRICE: Lazy<Fraction> = Lazy::new(|| {
 /// )
 /// .unwrap();
 /// ```
+#[cfg(feature = "parse_price")]
 #[inline]
 pub fn parse_price<TBase, TQuote>(
     base_token: TBase,
     quote_token: TQuote,
     price: &str,
-) -> Result<Price<TBase, TQuote>>
+) -> anyhow::Result<Price<TBase, TQuote>>
 where
     TBase: BaseCurrency,
     TQuote: BaseCurrency,
@@ -60,9 +57,9 @@ where
     // Check whether `price` is a valid string of decimal number.
     // This regex matches any number of digits optionally followed by '.' which is then followed by
     // at least one digit.
-    let re = Regex::new(r"^\d*\.?\d+$").unwrap();
+    let re = regex::Regex::new(r"^\d*\.?\d+$")?;
     if !re.is_match(price) {
-        bail!("Invalid price string");
+        anyhow::bail!("Invalid price string");
     }
 
     let (whole, fraction) = match price.split_once('.') {
@@ -70,7 +67,8 @@ where
         None => (price, ""),
     };
     let decimals = fraction.len();
-    let without_decimals = BigInt::from_str(&format!("{}{}", whole, fraction))?;
+    let without_decimals =
+        <BigInt as core::str::FromStr>::from_str(&alloc::format!("{}{}", whole, fraction))?;
     let numerator = without_decimals * BigInt::from(10).pow(quote_token.decimals() as u32);
     let denominator = BigInt::from(10).pow(decimals as u32 + base_token.decimals() as u32);
     Ok(Price::new(base_token, quote_token, denominator, numerator))
@@ -201,7 +199,6 @@ pub fn price_to_closest_usable_tick(
 ///
 /// ```
 /// use alloy_primitives::aliases::I24;
-/// use bigdecimal::BigDecimal;
 /// use num_traits::{FromPrimitive, Pow, ToPrimitive};
 /// use uniswap_v3_sdk::prelude::*;
 ///
@@ -242,10 +239,9 @@ where
 /// ## Examples
 ///
 /// ```
-/// use bigdecimal::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// let price: BigDecimal = tick_to_big_price(MAX_TICK).unwrap();
+/// let price = tick_to_big_price(MAX_TICK).unwrap();
 /// assert_eq!(price_to_sqrt_ratio_x96(&price), MAX_SQRT_RATIO);
 /// ```
 #[inline]
@@ -378,7 +374,7 @@ pub fn token0_price_to_ratio(
 ///
 /// ```
 /// use alloy_primitives::aliases::I24;
-/// use bigdecimal::BigDecimal;
+/// use uniswap_sdk_core::prelude::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
 /// let tick_current = I24::from_limbs([200000]);
@@ -431,6 +427,7 @@ pub fn tick_range_from_width_and_ratio(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::str::FromStr;
 
     #[test]
     fn test_token0_ratio_to_price_conversion() {

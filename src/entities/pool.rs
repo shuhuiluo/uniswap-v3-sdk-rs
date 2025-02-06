@@ -342,7 +342,6 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         self.sqrt_ratio_x96 = sqrt_price_x96;
         self.tick_current = TP::Index::from_i24(sqrt_price_x96.get_tick_at_sqrt_ratio()?);
         self.liquidity = liquidity;
-        // TODO: update tick data provider
         CurrencyAmount::from_raw_amount(output_token.clone(), -output_amount.to_big_int())
             .map_err(Error::Core)
     }
@@ -440,7 +439,6 @@ impl<TP: Clone + TickDataProvider> Pool<TP> {
         self.sqrt_ratio_x96 = sqrt_price_x96;
         self.tick_current = TP::Index::from_i24(sqrt_price_x96.get_tick_at_sqrt_ratio()?);
         self.liquidity = liquidity;
-        // TODO: update tick data provider
         CurrencyAmount::from_raw_amount(input_token.clone(), input_amount.to_big_int())
             .map_err(Error::Core)
     }

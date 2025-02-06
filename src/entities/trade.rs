@@ -1,8 +1,8 @@
 use crate::prelude::{Error, *};
 use alloc::vec;
-use alloy_primitives::map::rustc_hash::FxHashSet;
+use alloy_primitives::map::HashSet;
 use core::cmp::Ordering;
-use uniswap_sdk_core::prelude::{sorted_insert, *};
+use uniswap_sdk_core::prelude::*;
 
 /// Trades comparator, an extension of the input output comparator that also considers other
 /// dimensions of the trade in ranking them
@@ -188,7 +188,7 @@ where
             .iter()
             .flat_map(|swap| swap.route.pools.iter())
             .map(|pool| pool.address(None, None));
-        let pool_address_set = FxHashSet::from_iter(pool_addresses);
+        let pool_address_set: HashSet<Address> = HashSet::from_iter(pool_addresses);
         assert_eq!(num_pools, pool_address_set.len(), "POOLS_DUPLICATED");
         Ok(Self {
             swaps,
