@@ -56,6 +56,7 @@ impl_multicall!(Vec<Bytes>, Vec<Vec<u8>>);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
     use alloy_primitives::hex;
 
     mod encode {

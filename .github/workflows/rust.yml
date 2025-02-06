@@ -59,6 +59,8 @@ jobs:
             ${{ runner.os }}-cargo-registry-
       - name: Build
         run: cargo build
+      - name: Build with std feature
+        run: cargo build --features std
       - name: Build with extensions
         run: cargo build --features extensions
       - name: Run tests for core library

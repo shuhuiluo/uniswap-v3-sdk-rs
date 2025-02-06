@@ -9,10 +9,9 @@ use alloy::{
     eips::{BlockId, BlockNumberOrTag},
     network::Network,
     providers::Provider,
+    transports::{TransportError, TransportErrorKind},
 };
 use alloy_primitives::{Address, ChainId, U256};
-use anyhow::Result;
-use base64::{engine::general_purpose, Engine};
 use num_bigint::ToBigInt;
 use uniswap_lens::{
     bindings::{
@@ -249,7 +248,6 @@ where
 ///
 /// ## Arguments
 ///
-/// * `chain_id`: The chain id
 /// * `nonfungible_position_manager`: The nonfungible position manager address
 /// * `token_id`: The token id
 /// * `provider`: The alloy provider
@@ -260,12 +258,11 @@ where
 /// A tuple of the collectable token amounts.
 #[inline]
 pub async fn get_collectable_token_amounts<N, P>(
-    _chain_id: ChainId,
     nonfungible_position_manager: Address,
     token_id: U256,
     provider: P,
     block_id: Option<BlockId>,
-) -> Result<(U256, U256)>
+) -> Result<(U256, U256), Error>
 where
     N: Network,
     P: Provider<N>,
@@ -363,7 +360,7 @@ pub async fn get_token_svg<N, P>(
     token_id: U256,
     provider: P,
     block_id: Option<BlockId>,
-) -> Result<String>
+) -> Result<String, Error>
 where
     N: Network,
     P: Provider<N>,
@@ -374,9 +371,15 @@ where
         .call()
         .await?
         ._0;
-    let json_uri =
-        general_purpose::URL_SAFE.decode(uri.replace("data:application/json;base64,", ""))?;
-    let image = serde_json::from_slice::<serde_json::Value>(&json_uri)?
+    let json_uri = base64::Engine::decode(
+        &base64::engine::general_purpose::URL_SAFE,
+        uri.replace("data:application/json;base64,", ""),
+    )
+    .map_err(|e| {
+        TransportError::Transport(TransportErrorKind::Custom(alloc::boxed::Box::new(e)))
+    })?;
+    let image = serde_json::from_slice::<serde_json::Value>(&json_uri)
+        .map_err(TransportError::SerError)?
         .get("image")
         .unwrap()
         .to_string();
@@ -553,7 +556,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_collectable_token_amounts() {
         let (tokens_owed_0, tokens_owed_1) =
-            get_collectable_token_amounts(1, NPM, uint!(4_U256), PROVIDER.clone(), BLOCK_ID)
+            get_collectable_token_amounts(NPM, uint!(4_U256), PROVIDER.clone(), BLOCK_ID)
                 .await
                 .unwrap();
         assert_eq!(tokens_owed_0, uint!(3498422_U256));

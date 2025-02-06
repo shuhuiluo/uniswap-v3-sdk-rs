@@ -1,6 +1,6 @@
 use alloy_primitives::{Signed, Uint};
-use bigdecimal::BigDecimal;
 use num_bigint::{BigInt, BigUint, Sign};
+use uniswap_sdk_core::prelude::BigDecimal;
 
 pub trait ToBig {
     fn to_big_uint(&self) -> BigUint;
