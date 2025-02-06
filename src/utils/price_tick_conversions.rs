@@ -109,7 +109,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn tick_to_price_test_2() {
         assert_eq!(
             tick_to_price(TOKEN0.clone(), TOKEN1.clone(), -I24::from_limbs([74959]))
@@ -132,7 +131,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn tick_to_price_test_4() {
         assert_eq!(
             tick_to_price(TOKEN1.clone(), TOKEN0.clone(), I24::from_limbs([74959]))
@@ -189,7 +187,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn tick_to_price_test_8() {
         assert_eq!(
             tick_to_price(

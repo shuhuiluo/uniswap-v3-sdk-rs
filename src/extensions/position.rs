@@ -410,7 +410,7 @@ where
     let price = fraction_to_big_decimal(&price);
     let token0_ratio =
         token0_price_to_ratio(price, new_tick_lower.to_i24(), new_tick_upper.to_i24())?;
-    let amount1_after = (BigDecimal::from(1) - token0_ratio) * equity_before;
+    let amount1_after = (fastnum::dec512!(1) - token0_ratio) * equity_before;
     // token0's equity denominated in token1 divided by the price
     let amount0_after = (equity_before - amount1_after) / price;
     Position::from_amounts(

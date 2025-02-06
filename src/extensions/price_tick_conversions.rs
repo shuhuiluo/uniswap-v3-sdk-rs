@@ -203,9 +203,11 @@ pub fn price_to_closest_usable_tick(
 /// use uniswap_sdk_core::prelude::BigDecimal;
 /// use uniswap_v3_sdk::prelude::*;
 ///
-/// assert_eq!(
-///     tick_to_big_price(I24::from_limbs([100])).unwrap(),
-///     BigDecimal::from(1.0001f64.pow(100i32))
+/// assert!(
+///     (tick_to_big_price(I24::from_limbs([100])).unwrap()
+///         - BigDecimal::from(1.0001f64.pow(100i32)))
+///     .abs()
+///         < BigDecimal::from(1e-14)
 /// );
 /// ```
 #[inline]
@@ -332,7 +334,7 @@ pub fn token0_price_to_ratio(
     let tick = sqrt_price_x96.get_tick_at_sqrt_ratio()?;
     // only token0
     if tick < tick_lower {
-        Ok(BigDecimal::from(1))
+        Ok(dec512!(1))
     }
     // only token1
     else if tick >= tick_upper {
@@ -390,8 +392,8 @@ pub fn token0_price_to_ratio(
 /// const ONE: BigDecimal = dec512!(1);
 /// let amount0 = ONE / price.sqrt() - ONE / price_upper_sqrt;
 /// let amount1 = price.sqrt() - price_lower_sqrt;
-/// let value0 = amount0 * &price;
-/// let ratio = &value0 / (&value0 + amount1);
+/// let value0 = amount0 * price;
+/// let ratio = value0 / (value0 + amount1);
 /// assert!((ratio - token0_ratio).abs() < "0.001".parse::<BigDecimal>().unwrap());
 /// ```
 #[inline]
@@ -415,7 +417,7 @@ pub fn tick_range_from_width_and_ratio(
         let a = token0_ratio;
         let b = (ONE - a * TWO) * price.sqrt();
         let c = price * (a - ONE) / tick_to_big_price(width)?.sqrt();
-        let price_lower_sqrt = ((b * b - a * c * BigDecimal::from(4)).sqrt() - b) / (a * TWO);
+        let price_lower_sqrt = ((b * b - a * c * dec512!(4)).sqrt() - b) / (a * TWO);
         let sqrt_ratio_lower_x96 = price_lower_sqrt * Q96.to_big_decimal();
         let tick_lower =
             U160::from_big_uint(sqrt_ratio_lower_x96.to_big_uint()).get_tick_at_sqrt_ratio()?;

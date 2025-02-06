@@ -4,6 +4,7 @@
 
 use crate::prelude::*;
 use alloy_primitives::{ruint::UintTryFrom, Uint, I256, U256};
+use num_traits::Zero;
 
 const U160_MAX: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
 
@@ -274,7 +275,7 @@ pub fn get_next_sqrt_price_from_input<const BITS: usize, const LIMBS: usize>(
     amount_in: U256,
     zero_for_one: bool,
 ) -> Result<Uint<BITS, LIMBS>, Error> {
-    if sqrt_price_x96.is_zero() || liquidity == 0 {
+    if sqrt_price_x96.is_zero() || liquidity.is_zero() {
         return Err(Error::InvalidPriceOrLiquidity);
     }
 
@@ -306,7 +307,7 @@ pub fn get_next_sqrt_price_from_output<const BITS: usize, const LIMBS: usize>(
     amount_out: U256,
     zero_for_one: bool,
 ) -> Result<Uint<BITS, LIMBS>, Error> {
-    if sqrt_price_x96.is_zero() || liquidity == 0 {
+    if sqrt_price_x96.is_zero() || liquidity.is_zero() {
         return Err(Error::InvalidPriceOrLiquidity);
     }
 
