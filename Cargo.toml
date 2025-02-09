@@ -53,7 +53,7 @@ std = [
     "base64?/std",
     "derive_more/std",
     "fastnum/std",
-    "once_cell/std",
+    "once_cell?/std",
     "serde_json?/std",
     "thiserror/std",
     "uniswap-lens?/std",
