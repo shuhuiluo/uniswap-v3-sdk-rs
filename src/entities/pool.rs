@@ -248,9 +248,7 @@ impl<TP: TickDataProvider> Pool<TP> {
             sqrt_price_limit_x96,
         )
     }
-}
 
-impl<TP: Clone + TickDataProvider> Pool<TP> {
     /// Given an input amount of a token, return the computed output amount
     ///
     /// ## Arguments
