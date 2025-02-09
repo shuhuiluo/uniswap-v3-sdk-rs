@@ -504,14 +504,7 @@ where
             self.minimum_amount_out_cached(slippage_tolerance, None)?,
         ))
     }
-}
 
-impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
-where
-    TInput: BaseCurrency,
-    TOutput: BaseCurrency,
-    TP: Clone + TickDataProvider,
-{
     /// Constructs an exact in trade with the given amount in and route
     ///
     /// ## Arguments
@@ -624,7 +617,14 @@ where
         }
         Self::new(populated_routes, trade_type)
     }
+}
 
+impl<TInput, TOutput, TP> Trade<TInput, TOutput, TP>
+where
+    TInput: BaseCurrency,
+    TOutput: BaseCurrency,
+    TP: Clone + TickDataProvider,
+{
     /// Given a list of pools, and a fixed amount in, returns the top `max_num_results` trades that
     /// go from an input token amount to an output token, making at most `max_hops` hops.
     ///
