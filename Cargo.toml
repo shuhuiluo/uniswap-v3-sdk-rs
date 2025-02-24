@@ -58,11 +58,11 @@ std = [
 ]
 
 [dev-dependencies]
-alloy = { version = "0.11", default-features = false, features = ["provider-anvil-node", "signer-local"] }
+alloy = { version = "0.11", default-features = false, features = ["provider-anvil-node", "reqwest", "signer-local"] }
 criterion = "0.5.1"
 dotenv = "0.15.0"
 tokio = { version = "1.43", features = ["full"] }
-uniswap_v3_math = "0.5.3"
+uniswap_v3_math = "0.6.0"
 
 [[bench]]
 name = "bit_math"

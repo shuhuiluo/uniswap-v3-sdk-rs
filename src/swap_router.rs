@@ -99,6 +99,11 @@ where
                 .quotient();
         }
     }
+    let intermediate_recipient = if router_must_custody {
+        Address::ZERO
+    } else {
+        recipient
+    };
 
     for trade in trades.iter() {
         for Swap {
@@ -125,11 +130,7 @@ where
                             tokenIn: route.input.wrapped().address(),
                             tokenOut: route.output.wrapped().address(),
                             fee: route.pools[0].fee.into(),
-                            recipient: if router_must_custody {
-                                Address::ZERO
-                            } else {
-                                recipient
-                            },
+                            recipient: intermediate_recipient,
                             amountIn: amount_in,
                             amountOutMinimum: amount_out,
                             sqrtPriceLimitX96: sqrt_price_limit_x96.unwrap_or_default(),
@@ -142,11 +143,7 @@ where
                             tokenIn: route.input.wrapped().address(),
                             tokenOut: route.output.wrapped().address(),
                             fee: route.pools[0].fee.into(),
-                            recipient: if router_must_custody {
-                                Address::ZERO
-                            } else {
-                                recipient
-                            },
+                            recipient: intermediate_recipient,
                             amountOut: amount_out,
                             amountInMaximum: amount_in,
                             sqrtPriceLimitX96: sqrt_price_limit_x96.unwrap_or_default(),
@@ -164,11 +161,7 @@ where
                     TradeType::ExactInput => IV3SwapRouter::exactInputCall {
                         params: IV3SwapRouter::ExactInputParams {
                             path,
-                            recipient: if router_must_custody {
-                                Address::ZERO
-                            } else {
-                                recipient
-                            },
+                            recipient: intermediate_recipient,
                             amountIn: amount_in,
                             amountOutMinimum: amount_out,
                         },
@@ -178,11 +171,7 @@ where
                     TradeType::ExactOutput => IV3SwapRouter::exactOutputCall {
                         params: IV3SwapRouter::ExactOutputParams {
                             path,
-                            recipient: if router_must_custody {
-                                Address::ZERO
-                            } else {
-                                recipient
-                            },
+                            recipient: intermediate_recipient,
                             amountOut: amount_out,
                             amountInMaximum: amount_in,
                         },
