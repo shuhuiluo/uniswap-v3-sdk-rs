@@ -377,7 +377,7 @@ pub fn token0_price_to_ratio(
 /// use alloy_primitives::aliases::I24;
 /// use fastnum::dec512;
 /// use num_traits::real::Real;
-/// use uniswap_sdk_core::prelude::BigDecimal;
+/// use uniswap_sdk_core::prelude::*;
 /// use uniswap_v3_sdk::prelude::*;
 ///
 /// let tick_current = I24::from_limbs([200000]);
