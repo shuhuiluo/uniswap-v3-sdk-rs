@@ -6,6 +6,8 @@ use crate::prelude::*;
 #[cfg(feature = "extensions")]
 use alloy::contract::Error as ContractError;
 #[cfg(feature = "extensions")]
+use alloy::providers::MulticallError;
+#[cfg(feature = "extensions")]
 use uniswap_lens::error::Error as LensError;
 
 use alloy_primitives::{aliases::I24, U160};
@@ -70,6 +72,10 @@ pub enum Error {
     #[cfg(feature = "extensions")]
     #[error("{0}")]
     LensError(#[from] LensError),
+
+    #[cfg(feature = "extensions")]
+    #[error("{0}")]
+    MulticallError(#[from] MulticallError),
 
     #[cfg(feature = "extensions")]
     #[error("Invalid access list")]

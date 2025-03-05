@@ -67,15 +67,26 @@ impl Pool {
         let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.root());
         let token_a_contract = IERC20Metadata::new(token_a, provider.root());
         let token_b_contract = IERC20Metadata::new(token_b, provider.root());
-        // TODO: use multicall
-        let slot_0 = pool_contract.slot0().block(block_id).call().await?;
-        let liquidity = pool_contract.liquidity().block(block_id).call().await?._0;
-        let token_a_decimals = token_a_contract.decimals().block(block_id).call().await?._0;
-        let token_a_name = token_a_contract.name().block(block_id).call().await?._0;
-        let token_a_symbol = token_a_contract.symbol().block(block_id).call().await?._0;
-        let token_b_decimals = token_b_contract.decimals().block(block_id).call().await?._0;
-        let token_b_name = token_b_contract.name().block(block_id).call().await?._0;
-        let token_b_symbol = token_b_contract.symbol().block(block_id).call().await?._0;
+        let multicall = provider
+            .multicall()
+            .add(pool_contract.slot0())
+            .add(pool_contract.liquidity())
+            .add(token_a_contract.decimals())
+            .add(token_a_contract.name())
+            .add(token_a_contract.symbol())
+            .add(token_b_contract.decimals())
+            .add(token_b_contract.name())
+            .add(token_b_contract.symbol());
+        let (
+            slot_0,
+            liquidity,
+            token_a_decimals,
+            token_a_name,
+            token_a_symbol,
+            token_b_decimals,
+            token_b_name,
+            token_b_symbol,
+        ) = multicall.block(block_id).aggregate().await?;
         let sqrt_price_x96 = slot_0.sqrtPriceX96;
         assert!(
             !sqrt_price_x96.is_zero(),
@@ -85,20 +96,20 @@ impl Pool {
             token!(
                 chain_id,
                 token_a,
-                token_a_decimals,
-                token_a_symbol,
-                token_a_name
+                token_a_decimals._0,
+                token_a_symbol._0,
+                token_a_name._0
             ),
             token!(
                 chain_id,
                 token_b,
-                token_b_decimals,
-                token_b_symbol,
-                token_b_name
+                token_b_decimals._0,
+                token_b_symbol._0,
+                token_b_name._0
             ),
             fee,
             sqrt_price_x96,
-            liquidity,
+            liquidity._0,
         )
     }
 }
