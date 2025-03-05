@@ -60,25 +60,25 @@ where
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
-    // TODO: use multicall
-    let factory = npm_contract.factory().block(block_id_).call().await?._0;
-    let position = npm_contract
-        .positions(token_id)
-        .block(block_id_)
-        .call()
-        .await?;
-    let positionsReturn {
-        token0,
-        token1,
-        fee,
-        tickLower: tick_lower,
-        tickUpper: tick_upper,
-        liquidity,
-        ..
-    } = position;
+    let multicall = provider
+        .multicall()
+        .add(npm_contract.factory())
+        .add(npm_contract.positions(token_id));
+    let (
+        factory,
+        positionsReturn {
+            token0,
+            token1,
+            fee,
+            tickLower: tick_lower,
+            tickUpper: tick_upper,
+            liquidity,
+            ..
+        },
+    ) = multicall.block(block_id_).aggregate().await?;
     let pool = Pool::from_pool_key(
         chain_id,
-        factory,
+        factory._0,
         token0,
         token1,
         fee.into(),
@@ -269,45 +269,30 @@ where
     let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
-    // TODO: use multicall
-    let factory = npm_contract.factory().block(block_id_).call().await?._0;
-    let position = npm_contract
-        .positions(token_id)
-        .block(block_id_)
-        .call()
-        .await?;
+    let multicall = provider
+        .multicall()
+        .add(npm_contract.factory())
+        .add(npm_contract.positions(token_id));
+    let (factory, position) = multicall.block(block_id_).aggregate().await?;
     let pool_contract = get_pool_contract(
-        factory,
+        factory._0,
         position.token0,
         position.token1,
         position.fee.into(),
-        provider,
+        provider.root(),
     );
-    let tick = pool_contract.slot0().block(block_id_).call().await?.tick;
-    let fee_growth_global_0x128 = pool_contract
-        .feeGrowthGlobal0X128()
-        .block(block_id_)
-        .call()
-        .await?
-        ._0;
-    let fee_growth_global_1x128 = pool_contract
-        .feeGrowthGlobal1X128()
-        .block(block_id_)
-        .call()
-        .await?
-        ._0;
-    let tick_info_lower = pool_contract
-        .ticks(position.tickLower)
-        .block(block_id_)
-        .call()
-        .await?;
+    let multicall = provider
+        .multicall()
+        .add(pool_contract.slot0())
+        .add(pool_contract.feeGrowthGlobal0X128())
+        .add(pool_contract.feeGrowthGlobal1X128())
+        .add(pool_contract.ticks(position.tickLower))
+        .add(pool_contract.ticks(position.tickUpper));
+    let (slot0, fee_growth_global_0x128, fee_growth_global_1x128, tick_info_lower, tick_info_upper) =
+        multicall.block(block_id_).aggregate().await?;
+    let tick = slot0.tick;
     let fee_growth_outside_0x128_lower = tick_info_lower.feeGrowthOutside0X128;
     let fee_growth_outside_1x128_lower = tick_info_lower.feeGrowthOutside1X128;
-    let tick_info_upper = pool_contract
-        .ticks(position.tickUpper)
-        .block(block_id_)
-        .call()
-        .await?;
     let fee_growth_outside_0x128_upper = tick_info_upper.feeGrowthOutside0X128;
     let fee_growth_outside_1x128_upper = tick_info_upper.feeGrowthOutside1X128;
 
@@ -324,10 +309,10 @@ where
         )
     } else {
         (
-            fee_growth_global_0x128
+            fee_growth_global_0x128._0
                 - fee_growth_outside_0x128_lower
                 - fee_growth_outside_0x128_upper,
-            fee_growth_global_1x128
+            fee_growth_global_1x128._0
                 - fee_growth_outside_1x128_lower
                 - fee_growth_outside_1x128_upper,
         )
