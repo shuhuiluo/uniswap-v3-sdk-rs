@@ -171,7 +171,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
         )
         .await?;
         let tick_data_provider = EphemeralTickMapDataProvider::new(
-            pool.address(None, None),
+            pool.address(None, Some(factory)),
             provider,
             None,
             None,
