@@ -58,7 +58,7 @@ async fn main() {
     let tx = TransactionRequest::default()
         .to(*QUOTER_ADDRESSES.get(&1).unwrap())
         .input(params.calldata.into());
-    let res = provider.call(&tx).block(block_id).await.unwrap();
+    let res = provider.call(tx).block(block_id).await.unwrap();
     let amount_out = IQuoter::quoteExactInputSingleCall::abi_decode_returns(res.as_ref(), true)
         .unwrap()
         .amountOut;
