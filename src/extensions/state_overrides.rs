@@ -108,7 +108,7 @@ mod tests {
         let balance = usdc
             .balanceOf(owner)
             .call()
-            .overrides(&overrides)
+            .overrides(overrides.clone())
             .await
             .unwrap()
             ._0;
@@ -116,7 +116,7 @@ mod tests {
         let allowance = usdc
             .allowance(owner, npm)
             .call()
-            .overrides(&overrides)
+            .overrides(overrides)
             .await
             .unwrap()
             ._0;
