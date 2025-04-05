@@ -18,8 +18,8 @@ use alloy_sol_types::SolCall;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
 
+// Ethereum mainnet
 const CHAIN_ID: u64 = 1;
-
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
