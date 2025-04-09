@@ -24,12 +24,18 @@ async fn main() {
     let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
     let provider = ProviderBuilder::new().on_http(rpc_url);
     let block_id = BlockId::from(17000000);
-    let wbtc = token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
-    let weth = WETH9::on_chain(1).unwrap();
+    const CHAIN_ID: u64 = 1;
+    let wbtc = token!(
+        CHAIN_ID,
+        "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        8,
+        "WBTC"
+    );
+    let weth = WETH9::on_chain(CHAIN_ID).unwrap();
 
     // Create a pool with a tick map data provider
     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
-        1,
+        CHAIN_ID,
         FACTORY_ADDRESS,
         wbtc.address(),
         weth.address(),
@@ -49,7 +55,7 @@ async fn main() {
     let route = Route::new(vec![pool], wbtc, weth);
     let params = quote_call_parameters(&route, &amount_in, TradeType::ExactInput, None);
     let tx = TransactionRequest::default()
-        .to(*QUOTER_ADDRESSES.get(&1).unwrap())
+        .to(*QUOTER_ADDRESSES.get(&CHAIN_ID).unwrap())
         .input(params.calldata.into());
     let res = provider.call(tx).block(block_id).await.unwrap();
     let amount_out = IQuoter::quoteExactInputSingleCall::abi_decode_returns(res.as_ref(), true)

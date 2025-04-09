@@ -124,7 +124,7 @@ pub enum PermitOptions {
 impl StandardPermitArguments {
     #[inline]
     #[must_use]
-    pub fn new(r: U256, s: U256, v: bool, amount: U256, deadline: U256) -> Self {
+    pub const fn new(r: U256, s: U256, v: bool, amount: U256, deadline: U256) -> Self {
         Self {
             signature: PrimitiveSignature::new(r, s, v),
             amount,
@@ -136,7 +136,7 @@ impl StandardPermitArguments {
 impl AllowedPermitArguments {
     #[inline]
     #[must_use]
-    pub fn new(r: U256, s: U256, v: bool, nonce: U256, expiry: U256) -> Self {
+    pub const fn new(r: U256, s: U256, v: bool, nonce: U256, expiry: U256) -> Self {
         Self {
             signature: PrimitiveSignature::new(r, s, v),
             nonce,
