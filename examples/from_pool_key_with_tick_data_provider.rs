@@ -26,7 +26,7 @@ async fn main() {
     let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
     let provider = ProviderBuilder::new().on_http(rpc_url);
     let block_id = BlockId::from(17000000);
-    let wbtc = token!(CHAIN_ID, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
+    let wbtc = token!(1, "2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8, "WBTC");
     let weth = WETH9::on_chain(CHAIN_ID).unwrap();
 
     // Create a pool with a tick map data provider
