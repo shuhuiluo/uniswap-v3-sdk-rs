@@ -10,7 +10,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-  MSRV: 1.82.0
+  MSRV: 1.82
 
 jobs:
   lint:
@@ -55,23 +55,18 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-msrv-${{ env.MSRV }}-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
+            ${{ runner.os }}-cargo-msrv-${{ env.MSRV }}-
             ${{ runner.os }}-cargo-msrv-
       - name: Install Rust ${{ env.MSRV }}
         run: rustup install ${{ env.MSRV }} --profile minimal
       - name: Verify MSRV version
         run: cargo +${{ env.MSRV }} -V
       - name: Build with MSRV
+        run: cargo +${{ env.MSRV }} build
+      - name: Build with all features
         run: cargo +${{ env.MSRV }} build --all-features
-      - name: Run tests for core library
-        run: cargo +${{ env.MSRV }} test
-      - name: Run tests for std feature
-        run: cargo +${{ env.MSRV }} test --features std
-      - name: Run tests for extensions
-        run: cargo +${{ env.MSRV }} test --features extensions --lib extensions -- --test-threads=1
-      - name: Run doc tests
-        run: cargo +${{ env.MSRV }} test --doc --all-features
 
   test:
     needs: [ lint, msrv ]
