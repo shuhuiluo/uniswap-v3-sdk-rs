@@ -64,15 +64,9 @@ jobs:
       - name: Verify MSRV version
         run: cargo +${{ env.MSRV }} -V
       - name: Build with MSRV
+        run: cargo +${{ env.MSRV }} build
+      - name: Build with all features
         run: cargo +${{ env.MSRV }} build --all-features
-      - name: Run tests for core library
-        run: cargo +${{ env.MSRV }} test
-      - name: Run tests for std feature
-        run: cargo +${{ env.MSRV }} test --features std
-      - name: Run tests for extensions
-        run: cargo +${{ env.MSRV }} test --features extensions --lib extensions -- --test-threads=1
-      - name: Run doc tests
-        run: cargo +${{ env.MSRV }} test --doc --all-features
 
   test:
     needs: [ lint, msrv ]
