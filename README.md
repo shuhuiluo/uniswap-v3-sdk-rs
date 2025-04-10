@@ -45,6 +45,17 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 
 </details>
 
+## Supported Rust Versions (MSRV)
+
+<!--
+When updating this, also update:
+- clippy.toml
+- Cargo.toml
+- .github/workflows/ci.yml
+-->
+
+The current MSRV (minimum supported rust version) is 1.82.
+
 ## Getting started
 
 Add the following to your `Cargo.toml` file:

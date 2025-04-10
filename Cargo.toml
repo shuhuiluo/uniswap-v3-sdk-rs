@@ -2,6 +2,7 @@
 name = "uniswap-v3-sdk"
 version = "3.7.0"
 edition = "2021"
+rust-version = "1.82"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
 description = "Uniswap V3 SDK for Rust"
 license = "MIT"
