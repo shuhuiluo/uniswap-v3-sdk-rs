@@ -233,7 +233,7 @@ impl<TP: TickDataProvider> Pool<TP> {
         })
     }
 
-    fn _swap(
+    async fn _swap(
         &self,
         zero_for_one: bool,
         amount_specified: I256,
@@ -250,6 +250,7 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified,
             sqrt_price_limit_x96,
         )
+        .await
     }
 
     /// Given an input amount of a token, return the computed output amount
@@ -261,7 +262,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The output amount
     #[inline]
-    pub fn get_output_amount(
+    pub async fn get_output_amount(
         &self,
         input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -276,11 +277,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified_remaining,
             amount_calculated: output_amount,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(input_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(input_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -304,7 +307,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The output amount
     #[inline]
-    pub fn get_output_amount_mut(
+    pub async fn get_output_amount_mut(
         &mut self,
         input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -321,11 +324,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             sqrt_price_x96,
             liquidity,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(input_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(input_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -355,7 +360,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The input amount
     #[inline]
-    pub fn get_input_amount(
+    pub async fn get_input_amount(
         &self,
         output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -370,11 +375,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified_remaining,
             amount_calculated: input_amount,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(-output_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(-output_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -401,7 +408,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The input amount
     #[inline]
-    pub fn get_input_amount_mut(
+    pub async fn get_input_amount_mut(
         &mut self,
         output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -418,11 +425,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             sqrt_price_x96,
             liquidity,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(-output_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(-output_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);

@@ -1,18 +1,20 @@
+#![allow(async_fn_in_trait)]
+
 use crate::prelude::*;
 use core::ops::Deref;
 
 /// Provides information about ticks
-pub trait TickDataProvider {
+pub trait TickDataProvider: Send + Sync {
     type Index: TickIndex;
 
     /// Return information corresponding to a specific tick
     ///
     /// ## Arguments
     ///
-    /// * `tick`: The tick to load
+    /// * `index`: The tick to load
     ///
     /// returns: Result<&Tick<Self::Index>, Error>
-    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error>;
+    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error>;
 
     /// Return the next tick that is initialized within a single word
     ///
@@ -23,7 +25,7 @@ pub trait TickDataProvider {
     /// * `tick_spacing`: The tick spacing of the pool
     ///
     /// returns: Result<(Self::Index, bool), Error>
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: Self::Index,
         lte: bool,
@@ -35,17 +37,17 @@ pub trait TickDataProvider {
 /// [`TickDataProvider`]
 impl<TP> TickDataProvider for TP
 where
-    TP: Deref<Target: TickDataProvider>,
+    TP: Deref<Target: TickDataProvider> + Send + Sync,
 {
     type Index = <<TP as Deref>::Target as TickDataProvider>::Index;
 
     #[inline]
-    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error> {
-        self.deref().get_tick(tick)
+    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+        self.deref().get_tick(index).await
     }
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: Self::Index,
         lte: bool,
@@ -53,6 +55,7 @@ where
     ) -> Result<(Self::Index, bool), Error> {
         self.deref()
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing)
+            .await
     }
 }
 
@@ -65,12 +68,12 @@ impl TickDataProvider for NoTickDataProvider {
     type Index = i32;
 
     #[inline]
-    fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
+    async fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
         Err(Error::NoTickDataError)
     }
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         _: i32,
         _: bool,

@@ -512,11 +512,11 @@ where
     /// * `route`: The route of the exact in trade
     /// * `amount_in`: The amount being passed in
     #[inline]
-    pub fn exact_in(
+    pub async fn exact_in(
         route: Route<TInput, TOutput, TP>,
         amount_in: CurrencyAmount<Token>,
     ) -> Result<Self, Error> {
-        Self::from_route(route, amount_in, TradeType::ExactInput)
+        Self::from_route(route, amount_in, TradeType::ExactInput).await
     }
 
     /// Constructs an exact out trade with the given amount out and route
@@ -526,11 +526,11 @@ where
     /// * `route`: The route of the exact out trade
     /// * `amount_out`: The amount returned by the trade
     #[inline]
-    pub fn exact_out(
+    pub async fn exact_out(
         route: Route<TInput, TOutput, TP>,
         amount_out: CurrencyAmount<Token>,
     ) -> Result<Self, Error> {
-        Self::from_route(route, amount_out, TradeType::ExactOutput)
+        Self::from_route(route, amount_out, TradeType::ExactOutput).await
     }
 
     /// Constructs a trade by simulating swaps through the given route
@@ -541,7 +541,7 @@ where
     /// * `amount`: The amount specified, either input or output, depending on `trade_type`
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     #[inline]
-    pub fn from_route(
+    pub async fn from_route(
         route: Route<TInput, TOutput, TP>,
         amount: CurrencyAmount<impl BaseCurrency>,
         trade_type: TradeType,
@@ -556,7 +556,7 @@ where
                     "INPUT"
                 );
                 for pool in &route.pools {
-                    token_amount = pool.get_output_amount(&token_amount, None)?;
+                    token_amount = pool.get_output_amount(&token_amount, None).await?;
                 }
                 output_amount = CurrencyAmount::from_fractional_amount(
                     route.output.clone(),
@@ -575,7 +575,7 @@ where
                     "OUTPUT"
                 );
                 for pool in route.pools.iter().rev() {
-                    token_amount = pool.get_input_amount(&token_amount, None)?;
+                    token_amount = pool.get_input_amount(&token_amount, None).await?;
                 }
                 input_amount = CurrencyAmount::from_fractional_amount(
                     route.input.clone(),
@@ -603,7 +603,7 @@ where
     ///   each
     /// * `trade_type`: Whether the trade is an exact input or exact output swap
     #[inline]
-    pub fn from_routes(
+    pub async fn from_routes(
         routes: Vec<(
             CurrencyAmount<impl BaseCurrency>,
             Route<TInput, TOutput, TP>,
@@ -612,7 +612,7 @@ where
     ) -> Result<Self, Error> {
         let mut populated_routes: Vec<Swap<TInput, TOutput, TP>> = Vec::with_capacity(routes.len());
         for (amount, route) in routes {
-            let trade = Self::from_route(route, amount, trade_type)?;
+            let trade = Self::from_route(route, amount, trade_type).await?;
             populated_routes.push(trade.swaps.into_iter().next().unwrap());
         }
         Self::new(populated_routes, trade_type)
@@ -646,7 +646,7 @@ where
     /// * `best_trades`: Used in recursion; the current list of best trades
     #[inline]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn best_trade_exact_in<'a>(
+    pub async fn best_trade_exact_in<'a>(
         pools: Vec<Pool<TP>>,
         currency_amount_in: &'a CurrencyAmount<TInput>,
         currency_out: &'a TOutput,
@@ -672,7 +672,7 @@ where
             if !pool.involves_token(&amount_in.currency) {
                 continue;
             }
-            let amount_out = match pool.get_output_amount(&amount_in, None) {
+            let amount_out = match pool.get_output_amount(&amount_in, None).await {
                 Ok(amount_out) => amount_out,
                 Err(Error::InsufficientLiquidity) => continue,
                 Err(e) => return Err(e),
@@ -689,7 +689,8 @@ where
                     ),
                     currency_amount_in.wrapped()?,
                     TradeType::ExactInput,
-                )?;
+                )
+                .await?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator);
             } else if max_hops > 1 && pools.len() > 1 {
                 let pools_excluding_this_pool = pools
@@ -713,7 +714,8 @@ where
                     next_pools,
                     Some(amount_out.wrapped()?),
                     best_trades,
-                )?;
+                )
+                .await?;
             }
         }
         Ok(best_trades)
@@ -739,7 +741,7 @@ where
     /// * `best_trades`: Used in recursion; the current list of best trades
     #[inline]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn best_trade_exact_out<'a>(
+    pub async fn best_trade_exact_out<'a>(
         pools: Vec<Pool<TP>>,
         currency_in: &'a TInput,
         currency_amount_out: &'a CurrencyAmount<TOutput>,
@@ -765,7 +767,7 @@ where
             if !pool.involves_token(&amount_out.currency) {
                 continue;
             }
-            let amount_in = match pool.get_input_amount(&amount_out, None) {
+            let amount_in = match pool.get_input_amount(&amount_out, None).await {
                 Ok(amount_in) => amount_in,
                 Err(Error::InsufficientLiquidity) => continue,
                 Err(e) => return Err(e),
@@ -782,7 +784,8 @@ where
                     ),
                     currency_amount_out.wrapped()?,
                     TradeType::ExactOutput,
-                )?;
+                )
+                .await?;
                 sorted_insert(best_trades, trade, max_num_results, trade_comparator);
             } else if max_hops > 1 && pools.len() > 1 {
                 let pools_excluding_this_pool = pools
@@ -806,7 +809,8 @@ where
                     next_pools,
                     Some(amount_in.wrapped()?),
                     best_trades,
-                )?;
+                )
+                .await?;
             }
         }
         Ok(best_trades)

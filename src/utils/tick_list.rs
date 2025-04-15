@@ -111,7 +111,7 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     type Index = I;
 
     #[inline]
-    fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
+    async fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
         let i = self.binary_search_by_tick(index)?;
         let tick = &self[i];
         if tick.index != index {
@@ -121,7 +121,7 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     }
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: I,
         lte: bool,
@@ -305,13 +305,14 @@ mod tests {
     mod next_initialized_tick_within_one_word {
         use super::*;
 
-        #[test]
-        fn test_words_around_0_lte_true() {
+        #[tokio::test]
+        async fn test_words_around_0_lte_true() {
             macro_rules! test_for_true {
                 ($tick:expr, $next:expr, $initialized:expr) => {
                     assert_eq!(
                         TICKS
                             .next_initialized_tick_within_one_word($tick, true, 1)
+                            .await
                             .unwrap(),
                         ($next, $initialized)
                     );
