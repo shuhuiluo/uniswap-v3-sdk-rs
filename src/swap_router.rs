@@ -295,7 +295,7 @@ mod tests {
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -309,7 +309,7 @@ mod tests {
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -323,7 +323,7 @@ mod tests {
         fn multi_hop_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_0_1_WETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -351,7 +351,7 @@ mod tests {
         fn eth_in_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_ETH_1.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -365,7 +365,7 @@ mod tests {
         fn eth_in_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_ETH_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -379,7 +379,7 @@ mod tests {
         fn eth_out_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -393,7 +393,7 @@ mod tests {
         fn eth_out_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -407,7 +407,7 @@ mod tests {
         fn sqrt_price_limit_x96() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -427,7 +427,7 @@ mod tests {
         fn fee_with_eth_out() {
             let trade = Trade::from_route(
                 ROUTE_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -473,7 +473,7 @@ mod tests {
         fn fee() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -500,13 +500,13 @@ mod tests {
         fn two_single_hop_exact_input() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -520,13 +520,13 @@ mod tests {
         fn one_single_hop_one_multi_hop_exact_input() {
             let trade1 = Trade::from_route(
                 ROUTE_0_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_2_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -540,13 +540,13 @@ mod tests {
         fn two_multi_hop_exact_input() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_2_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -560,13 +560,13 @@ mod tests {
         fn eth_in_exact_input() {
             let trade1 = Trade::from_route(
                 ROUTE_ETH_1_3.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_ETH_3.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -580,13 +580,13 @@ mod tests {
         fn eth_in_exact_output() {
             let trade1 = Trade::from_route(
                 ROUTE_ETH_1_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_ETH_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -600,13 +600,13 @@ mod tests {
         fn eth_out_exact_input() {
             let trade1 = Trade::from_route(
                 ROUTE_3_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_3_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -620,13 +620,13 @@ mod tests {
         fn eth_out_exact_output() {
             let trade1 = Trade::from_route(
                 ROUTE_3_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_3_ETH.clone(),
-                CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
+                ETHER_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -640,13 +640,13 @@ mod tests {
         fn two_single_hop_exact_output() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -660,13 +660,13 @@ mod tests {
         fn one_single_hop_one_multi_hop_exact_output() {
             let trade1 = Trade::from_route(
                 ROUTE_0_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_2_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -680,13 +680,13 @@ mod tests {
         fn two_multi_hop_exact_output() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_2_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -707,7 +707,7 @@ mod tests {
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -719,13 +719,13 @@ mod tests {
         fn different_token_out_fails() {
             let trade1 = Trade::from_route(
                 ROUTE_0_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_1_WETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -736,13 +736,13 @@ mod tests {
         fn sqrt_price_limit_x96() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -762,13 +762,13 @@ mod tests {
         fn fee_with_eth_out() {
             let trade1 = Trade::from_route(
                 ROUTE_3_1_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_3_ETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -791,13 +791,13 @@ mod tests {
         fn fee_with_eth_in() {
             let trade1 = Trade::from_route(
                 ROUTE_ETH_1_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_ETH_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
+                TOKEN3_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -820,13 +820,13 @@ mod tests {
         fn fee() {
             let trade1 = Trade::from_route(
                 ROUTE_0_1_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
             let trade2 = Trade::from_route(
                 ROUTE_0_2_3.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -853,14 +853,8 @@ mod tests {
         fn one_single_hop_one_multi_hop_exact_input() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
-                        ROUTE_0_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
-                        ROUTE_0_2_3.clone(),
-                    ),
+                    (TOKEN0_AMOUNT_100.clone(), ROUTE_0_3.clone()),
+                    (TOKEN0_AMOUNT_100.clone(), ROUTE_0_2_3.clone()),
                 ],
                 TradeType::ExactInput,
             )
@@ -875,14 +869,8 @@ mod tests {
         fn two_multi_hop_exact_input() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
-                        ROUTE_0_1_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
-                        ROUTE_0_2_3.clone(),
-                    ),
+                    (TOKEN0_AMOUNT_100.clone(), ROUTE_0_1_3.clone()),
+                    (TOKEN0_AMOUNT_100.clone(), ROUTE_0_2_3.clone()),
                 ],
                 TradeType::ExactInput,
             )
@@ -897,14 +885,8 @@ mod tests {
         fn eth_in_exact_input() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
-                        ROUTE_ETH_1_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
-                        ROUTE_ETH_3.clone(),
-                    ),
+                    (ETHER_AMOUNT_100.clone(), ROUTE_ETH_1_3.clone()),
+                    (ETHER_AMOUNT_100.clone(), ROUTE_ETH_3.clone()),
                 ],
                 TradeType::ExactInput,
             )
@@ -919,14 +901,8 @@ mod tests {
         fn eth_in_exact_output() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_ETH_1_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_ETH_3.clone(),
-                    ),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_ETH_1_3.clone()),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_ETH_3.clone()),
                 ],
                 TradeType::ExactOutput,
             )
@@ -941,14 +917,8 @@ mod tests {
         fn eth_out_exact_input() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_3_1_ETH.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_3_ETH.clone(),
-                    ),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_3_1_ETH.clone()),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_3_ETH.clone()),
                 ],
                 TradeType::ExactInput,
             )
@@ -963,14 +933,8 @@ mod tests {
         fn eth_out_exact_output() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
-                        ROUTE_3_1_ETH.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(ETHER.clone(), 100).unwrap(),
-                        ROUTE_3_ETH.clone(),
-                    ),
+                    (ETHER_AMOUNT_100.clone(), ROUTE_3_1_ETH.clone()),
+                    (ETHER_AMOUNT_100.clone(), ROUTE_3_ETH.clone()),
                 ],
                 TradeType::ExactOutput,
             )
@@ -985,14 +949,8 @@ mod tests {
         fn one_single_hop_one_multi_hop_exact_output() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_0_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_0_2_3.clone(),
-                    ),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_0_3.clone()),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_0_2_3.clone()),
                 ],
                 TradeType::ExactOutput,
             )
@@ -1007,14 +965,8 @@ mod tests {
         fn two_multi_hop_exact_output() {
             let trade = Trade::from_routes(
                 vec![
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_0_1_3.clone(),
-                    ),
-                    (
-                        CurrencyAmount::from_raw_amount(TOKEN3.clone(), 100).unwrap(),
-                        ROUTE_0_2_3.clone(),
-                    ),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_0_1_3.clone()),
+                    (TOKEN3_AMOUNT_100.clone(), ROUTE_0_2_3.clone()),
                 ],
                 TradeType::ExactOutput,
             )

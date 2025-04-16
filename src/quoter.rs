@@ -138,7 +138,7 @@ mod tests {
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -156,7 +156,7 @@ mod tests {
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -178,7 +178,7 @@ mod tests {
         fn multi_hop_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_0_1_WETH.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -220,7 +220,7 @@ mod tests {
         fn sqrt_price_limit_x96() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -249,7 +249,7 @@ mod tests {
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -273,7 +273,7 @@ mod tests {
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_0_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
