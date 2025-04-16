@@ -120,6 +120,15 @@ mod tests {
         Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN1.clone()));
     static POOL_1_WETH: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN1.clone(), WETH.clone()));
+    static ROUTE_0_1: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> = Lazy::new(|| {
+        Route::new(
+            vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
+            TOKEN0.clone(),
+            WETH.clone(),
+        )
+    });
 
     mod single_trade_input {
         use super::*;
@@ -128,7 +137,7 @@ mod tests {
         #[test]
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
+                ROUTE_0_1.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
@@ -146,7 +155,7 @@ mod tests {
         #[test]
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
+                ROUTE_0_1.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
             )
@@ -168,11 +177,7 @@ mod tests {
         #[test]
         fn multi_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(
-                    vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-                    TOKEN0.clone(),
-                    WETH.clone(),
-                ),
+                ROUTE_0_1_WETH.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
@@ -193,11 +198,7 @@ mod tests {
         #[test]
         fn multi_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(
-                    vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-                    TOKEN0.clone(),
-                    WETH.clone(),
-                ),
+                ROUTE_0_1_WETH.clone(),
                 CurrencyAmount::from_raw_amount(WETH.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
             )
@@ -218,7 +219,7 @@ mod tests {
         #[test]
         fn sqrt_price_limit_x96() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
+                ROUTE_0_1.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
@@ -247,7 +248,7 @@ mod tests {
         #[test]
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
+                ROUTE_0_1.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
                 TradeType::ExactInput,
             )
@@ -271,7 +272,7 @@ mod tests {
         #[test]
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
+                ROUTE_0_1.clone(),
                 CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
             )

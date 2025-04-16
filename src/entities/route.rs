@@ -127,7 +127,7 @@ mod tests {
 
         #[test]
         fn constructs_a_path_from_the_tokens() {
-            let route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
+            let route = ROUTE_0_1.clone();
             assert_eq!(route.pools, vec![POOL_0_1.clone()]);
             assert_eq!(route.token_path(), vec![TOKEN0.clone(), TOKEN1.clone()]);
             assert_eq!(route.input, *TOKEN0);
@@ -164,7 +164,7 @@ mod tests {
 
         #[test]
         fn supports_ether_input() {
-            let route = Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone());
+            let route = ROUTE_ETH_0.clone();
             assert_eq!(route.pools, vec![POOL_0_WETH.clone()]);
             assert_eq!(route.input, *ETHER);
             assert_eq!(route.output, *TOKEN0);

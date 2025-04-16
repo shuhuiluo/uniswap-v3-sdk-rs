@@ -97,6 +97,10 @@ pub(crate) static POOL_1_WETH: Lazy<Pool> = Lazy::new(|| {
     )
     .unwrap()
 });
+pub(crate) static ROUTE_0_1: Lazy<Route<Token, Token, NoTickDataProvider>> =
+    Lazy::new(|| Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()));
+pub(crate) static ROUTE_ETH_0: Lazy<Route<Ether, Token, NoTickDataProvider>> =
+    Lazy::new(|| Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone()));
 
 pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvider> {
     Pool::new_with_tick_data_provider(
