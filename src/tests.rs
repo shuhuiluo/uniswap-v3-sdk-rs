@@ -98,6 +98,39 @@ pub(crate) static POOL_1_WETH: Lazy<Pool> = Lazy::new(|| {
     .unwrap()
 });
 
+#[macro_export]
+macro_rules! create_route {
+    ($pool:expr, $token_in:expr, $token_out:expr) => {
+        Route::new(vec![$pool.clone()], $token_in.clone(), $token_out.clone())
+    };
+    ($($pool:expr),+; $token_in:expr, $token_out:expr) => {
+        Route::new(vec![$($pool.clone()),+], $token_in.clone(), $token_out.clone())
+    };
+}
+
+pub(crate) static ROUTE_0_1: Lazy<Route<Token, Token, NoTickDataProvider>> =
+    Lazy::new(|| create_route!(POOL_0_1, TOKEN0, TOKEN1));
+pub(crate) static ROUTE_ETH_0: Lazy<Route<Ether, Token, NoTickDataProvider>> =
+    Lazy::new(|| create_route!(POOL_0_WETH, ETHER, TOKEN0));
+
+#[macro_export]
+macro_rules! currency_amount {
+    ($currency:expr, $amount:expr) => {
+        CurrencyAmount::from_raw_amount($currency.clone(), $amount).unwrap()
+    };
+}
+
+pub(crate) static ETHER_AMOUNT_100: Lazy<CurrencyAmount<Ether>> =
+    Lazy::new(|| currency_amount!(ETHER, 100));
+pub(crate) static TOKEN0_AMOUNT_100: Lazy<CurrencyAmount<Token>> =
+    Lazy::new(|| currency_amount!(TOKEN0, 100));
+pub(crate) static TOKEN1_AMOUNT_100: Lazy<CurrencyAmount<Token>> =
+    Lazy::new(|| currency_amount!(TOKEN1, 100));
+pub(crate) static TOKEN2_AMOUNT_100: Lazy<CurrencyAmount<Token>> =
+    Lazy::new(|| currency_amount!(TOKEN2, 100));
+pub(crate) static TOKEN3_AMOUNT_100: Lazy<CurrencyAmount<Token>> =
+    Lazy::new(|| currency_amount!(TOKEN3, 100));
+
 pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvider> {
     Pool::new_with_tick_data_provider(
         token0,

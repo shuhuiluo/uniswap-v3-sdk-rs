@@ -59,7 +59,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, tests::*};
     use alloy_primitives::hex;
     use once_cell::sync::Lazy;
 
@@ -74,34 +74,15 @@ mod tests {
         .unwrap()
     });
 
-    static ROUTE_0_1: Lazy<Route<Token, Token, NoTickDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()));
-    static ROUTE_0_1_2: Lazy<Route<Token, Token, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_2_LOW.clone()],
-            TOKEN0.clone(),
-            TOKEN2.clone(),
-        )
-    });
+    static ROUTE_0_1_2: Lazy<Route<Token, Token, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_2_LOW; TOKEN0, TOKEN2));
 
     static ROUTE_0_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_WETH.clone()], TOKEN0.clone(), ETHER.clone()));
-    static ROUTE_0_1_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-            TOKEN0.clone(),
-            ETHER.clone(),
-        )
-    });
-    static ROUTE_WETH_0: Lazy<Route<Ether, Token, NoTickDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone()));
-    static ROUTE_WETH_0_1: Lazy<Route<Ether, Token, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_WETH.clone(), POOL_0_1.clone()],
-            ETHER.clone(),
-            TOKEN1.clone(),
-        )
-    });
+        Lazy::new(|| create_route!(POOL_0_WETH, TOKEN0, ETHER));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_WETH; TOKEN0, ETHER));
+    static ROUTE_WETH_0_1: Lazy<Route<Ether, Token, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_WETH, POOL_0_1; ETHER, TOKEN1));
 
     #[test]
     fn pack_them_for_exact_input_single_hop() {
@@ -138,7 +119,7 @@ mod tests {
     #[test]
     fn wrap_ether_input_for_exact_input_single_hop() {
         assert_eq!(
-            encode_route_to_path(&ROUTE_WETH_0, false).to_vec(),
+            encode_route_to_path(&ROUTE_ETH_0, false).to_vec(),
             hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001")
         );
     }
@@ -146,7 +127,7 @@ mod tests {
     #[test]
     fn wrap_ether_input_for_exact_output_single_hop() {
         assert_eq!(
-            encode_route_to_path(&ROUTE_WETH_0, true).to_vec(),
+            encode_route_to_path(&ROUTE_ETH_0, true).to_vec(),
             hex!("0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
         );
     }

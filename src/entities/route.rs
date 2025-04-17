@@ -119,7 +119,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, tests::*};
     use once_cell::sync::Lazy;
 
     mod path {
@@ -127,7 +127,7 @@ mod tests {
 
         #[test]
         fn constructs_a_path_from_the_tokens() {
-            let route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
+            let route = ROUTE_0_1.clone();
             assert_eq!(route.pools, vec![POOL_0_1.clone()]);
             assert_eq!(route.token_path(), vec![TOKEN0.clone(), TOKEN1.clone()]);
             assert_eq!(route.input, *TOKEN0);
@@ -138,22 +138,18 @@ mod tests {
         #[test]
         #[should_panic(expected = "INPUT")]
         fn fails_if_the_input_is_not_in_the_first_pool() {
-            Route::new(vec![POOL_0_1.clone()], WETH.clone(), TOKEN1.clone());
+            create_route!(POOL_0_1, WETH, TOKEN1);
         }
 
         #[test]
         #[should_panic(expected = "OUTPUT")]
         fn fails_if_output_is_not_in_the_last_pool() {
-            Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), WETH.clone());
+            create_route!(POOL_0_1, TOKEN0, WETH);
         }
 
         #[test]
         fn can_have_a_token_as_both_input_and_output() {
-            let route = Route::new(
-                vec![POOL_0_WETH.clone(), POOL_0_1.clone(), POOL_1_WETH.clone()],
-                WETH.clone(),
-                WETH.clone(),
-            );
+            let route = create_route!(POOL_0_WETH, POOL_0_1, POOL_1_WETH; WETH, WETH);
             assert_eq!(
                 route.pools,
                 vec![POOL_0_WETH.clone(), POOL_0_1.clone(), POOL_1_WETH.clone()]
@@ -164,7 +160,7 @@ mod tests {
 
         #[test]
         fn supports_ether_input() {
-            let route = Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone());
+            let route = ROUTE_ETH_0.clone();
             assert_eq!(route.pools, vec![POOL_0_WETH.clone()]);
             assert_eq!(route.input, *ETHER);
             assert_eq!(route.output, *TOKEN0);
@@ -172,7 +168,7 @@ mod tests {
 
         #[test]
         fn supports_ether_output() {
-            let route = Route::new(vec![POOL_0_WETH.clone()], TOKEN0.clone(), ETHER.clone());
+            let route = create_route!(POOL_0_WETH, TOKEN0, ETHER);
             assert_eq!(route.pools, vec![POOL_0_WETH.clone()]);
             assert_eq!(route.input, *TOKEN0);
             assert_eq!(route.output, *ETHER);
@@ -225,7 +221,7 @@ mod tests {
 
         #[test]
         fn correct_for_0_1() {
-            let route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
+            let route = create_route!(POOL_0_1; TOKEN0, TOKEN1);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "0.2000");
             assert_eq!(price.base_currency, *TOKEN0);
@@ -234,14 +230,14 @@ mod tests {
 
         #[test]
         fn is_cached() {
-            let mut route = Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone());
+            let mut route = create_route!(POOL_0_1; TOKEN0, TOKEN1);
             let price = route.mid_price_cached().unwrap();
             assert_eq!(price, route._mid_price.unwrap());
         }
 
         #[test]
         fn correct_for_1_0() {
-            let route = Route::new(vec![POOL_0_1.clone()], TOKEN1.clone(), TOKEN0.clone());
+            let route = create_route!(POOL_0_1; TOKEN1, TOKEN0);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "5.0000");
             assert_eq!(price.base_currency, *TOKEN1);
@@ -250,11 +246,7 @@ mod tests {
 
         #[test]
         fn correct_for_0_1_2() {
-            let route = Route::new(
-                vec![POOL_0_1.clone(), POOL_1_2.clone()],
-                TOKEN0.clone(),
-                TOKEN2.clone(),
-            );
+            let route = create_route!(POOL_0_1, POOL_1_2; TOKEN0, TOKEN2);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "0.1000");
             assert_eq!(price.base_currency, *TOKEN0);
@@ -263,11 +255,7 @@ mod tests {
 
         #[test]
         fn correct_for_2_1_0() {
-            let route = Route::new(
-                vec![POOL_1_2.clone(), POOL_0_1.clone()],
-                TOKEN2.clone(),
-                TOKEN0.clone(),
-            );
+            let route = create_route!(POOL_1_2, POOL_0_1; TOKEN2, TOKEN0);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "10.0000");
             assert_eq!(price.base_currency, *TOKEN2);
@@ -276,7 +264,7 @@ mod tests {
 
         #[test]
         fn correct_for_ether_0() {
-            let route = Route::new(vec![POOL_0_WETH.clone()], ETHER.clone(), TOKEN0.clone());
+            let route = create_route!(POOL_0_WETH; ETHER, TOKEN0);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "0.3333");
             assert_eq!(price.base_currency, *ETHER);
@@ -285,7 +273,7 @@ mod tests {
 
         #[test]
         fn correct_for_1_weth() {
-            let route = Route::new(vec![POOL_1_WETH.clone()], TOKEN1.clone(), WETH.clone());
+            let route = create_route!(POOL_1_WETH; TOKEN1, WETH);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_fixed(4, None), "0.1429");
             assert_eq!(price.base_currency, *TOKEN1);
@@ -294,11 +282,7 @@ mod tests {
 
         #[test]
         fn correct_for_ether_0_1_weth() {
-            let route = Route::new(
-                vec![POOL_0_WETH.clone(), POOL_0_1.clone(), POOL_1_WETH.clone()],
-                ETHER.clone(),
-                WETH.clone(),
-            );
+            let route = create_route!( POOL_0_WETH, POOL_0_1, POOL_1_WETH; ETHER, WETH);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_significant(4, None).unwrap(), "0.009524");
             assert_eq!(price.base_currency, *ETHER);
@@ -307,11 +291,7 @@ mod tests {
 
         #[test]
         fn correct_for_weth_0_1_ether() {
-            let route = Route::new(
-                vec![POOL_0_WETH.clone(), POOL_0_1.clone(), POOL_1_WETH.clone()],
-                WETH.clone(),
-                ETHER.clone(),
-            );
+            let route = create_route!(POOL_0_WETH, POOL_0_1, POOL_1_WETH; WETH, ETHER);
             let price = route.mid_price().unwrap();
             assert_eq!(price.to_significant(4, None).unwrap(), "0.009524");
             assert_eq!(price.base_currency, *WETH);
