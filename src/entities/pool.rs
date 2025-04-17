@@ -660,7 +660,10 @@ mod tests {
 
     mod swaps {
         use super::*;
-        use crate::utils::tick_math::{MAX_TICK, MIN_TICK};
+        use crate::{
+            currency_amount,
+            utils::tick_math::{MAX_TICK, MIN_TICK},
+        };
 
         static POOL: Lazy<Pool<TickListDataProvider>> = Lazy::new(|| {
             Pool::new_with_tick_data_provider(
@@ -691,10 +694,7 @@ mod tests {
         #[test]
         fn get_output_amount_usdc_to_dai() {
             let output_amount = POOL
-                .get_output_amount(
-                    &CurrencyAmount::from_raw_amount(USDC.clone(), 100).unwrap(),
-                    None,
-                )
+                .get_output_amount(&currency_amount!(USDC, 100), None)
                 .unwrap();
             assert!(output_amount.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
@@ -703,10 +703,7 @@ mod tests {
         #[test]
         fn get_output_amount_dai_to_usdc() {
             let output_amount = POOL
-                .get_output_amount(
-                    &CurrencyAmount::from_raw_amount(DAI.clone(), 100).unwrap(),
-                    None,
-                )
+                .get_output_amount(&currency_amount!(DAI, 100), None)
                 .unwrap();
             assert!(output_amount.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
@@ -715,10 +712,7 @@ mod tests {
         #[test]
         fn get_input_amount_usdc_to_dai() {
             let input_amount = POOL
-                .get_input_amount(
-                    &CurrencyAmount::from_raw_amount(DAI.clone(), 98).unwrap(),
-                    None,
-                )
+                .get_input_amount(&currency_amount!(DAI, 98), None)
                 .unwrap();
             assert!(input_amount.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
@@ -727,10 +721,7 @@ mod tests {
         #[test]
         fn get_input_amount_dai_to_usdc() {
             let input_amount = POOL
-                .get_input_amount(
-                    &CurrencyAmount::from_raw_amount(USDC.clone(), 98).unwrap(),
-                    None,
-                )
+                .get_input_amount(&currency_amount!(USDC, 98), None)
                 .unwrap();
             assert!(input_amount.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());

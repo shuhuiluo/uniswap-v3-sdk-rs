@@ -113,13 +113,17 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, tests::*};
     use once_cell::sync::Lazy;
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN1.clone()));
     static POOL_1_WETH: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN1.clone(), WETH.clone()));
+    static ROUTE_0_1: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, TOKEN0, TOKEN1));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_WETH; TOKEN0, WETH));
 
     mod single_trade_input {
         use super::*;
@@ -128,8 +132,8 @@ mod tests {
         #[test]
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                ROUTE_0_1.clone(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -146,8 +150,8 @@ mod tests {
         #[test]
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                ROUTE_0_1.clone(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -168,12 +172,8 @@ mod tests {
         #[test]
         fn multi_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(
-                    vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-                    TOKEN0.clone(),
-                    WETH.clone(),
-                ),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                ROUTE_0_1_WETH.clone(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -193,11 +193,7 @@ mod tests {
         #[test]
         fn multi_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(
-                    vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-                    TOKEN0.clone(),
-                    WETH.clone(),
-                ),
+                ROUTE_0_1_WETH.clone(),
                 CurrencyAmount::from_raw_amount(WETH.clone(), 100).unwrap(),
                 TradeType::ExactOutput,
             )
@@ -218,8 +214,8 @@ mod tests {
         #[test]
         fn sqrt_price_limit_x96() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                ROUTE_0_1.clone(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -247,8 +243,8 @@ mod tests {
         #[test]
         fn single_hop_exact_input() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN0.clone(), 100).unwrap(),
+                ROUTE_0_1.clone(),
+                TOKEN0_AMOUNT_100.clone(),
                 TradeType::ExactInput,
             )
             .unwrap();
@@ -271,8 +267,8 @@ mod tests {
         #[test]
         fn single_hop_exact_output() {
             let trade = Trade::from_route(
-                Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 100).unwrap(),
+                ROUTE_0_1.clone(),
+                TOKEN1_AMOUNT_100.clone(),
                 TradeType::ExactOutput,
             )
             .unwrap();
