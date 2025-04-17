@@ -59,7 +59,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, tests::*};
     use alloy_primitives::hex;
     use once_cell::sync::Lazy;
 
@@ -74,30 +74,15 @@ mod tests {
         .unwrap()
     });
 
-    static ROUTE_0_1_2: Lazy<Route<Token, Token, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_2_LOW.clone()],
-            TOKEN0.clone(),
-            TOKEN2.clone(),
-        )
-    });
+    static ROUTE_0_1_2: Lazy<Route<Token, Token, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_2_LOW; TOKEN0, TOKEN2));
 
     static ROUTE_0_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_WETH.clone()], TOKEN0.clone(), ETHER.clone()));
-    static ROUTE_0_1_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-            TOKEN0.clone(),
-            ETHER.clone(),
-        )
-    });
-    static ROUTE_WETH_0_1: Lazy<Route<Ether, Token, NoTickDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_WETH.clone(), POOL_0_1.clone()],
-            ETHER.clone(),
-            TOKEN1.clone(),
-        )
-    });
+        Lazy::new(|| create_route!(POOL_0_WETH, TOKEN0, ETHER));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Ether, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_WETH; TOKEN0, ETHER));
+    static ROUTE_WETH_0_1: Lazy<Route<Ether, Token, NoTickDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_WETH, POOL_0_1; ETHER, TOKEN1));
 
     #[test]
     fn pack_them_for_exact_input_single_hop() {

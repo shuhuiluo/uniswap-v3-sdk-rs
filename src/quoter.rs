@@ -113,7 +113,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, tests::*};
     use once_cell::sync::Lazy;
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
@@ -121,14 +121,9 @@ mod tests {
     static POOL_1_WETH: Lazy<Pool<TickListDataProvider>> =
         Lazy::new(|| make_pool(TOKEN1.clone(), WETH.clone()));
     static ROUTE_0_1: Lazy<Route<Token, Token, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()));
-    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-            TOKEN0.clone(),
-            WETH.clone(),
-        )
-    });
+        Lazy::new(|| create_route!(POOL_0_1, TOKEN0, TOKEN1));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_WETH; TOKEN0, WETH));
 
     mod single_trade_input {
         use super::*;

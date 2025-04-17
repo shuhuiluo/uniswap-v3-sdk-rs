@@ -496,7 +496,7 @@ pub const fn get_permit_data(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{currency_amount, tests::*};
     use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
 
@@ -507,14 +507,14 @@ mod tests {
     const DEADLINE: U256 = uint!(123_U256);
     static COLLECT_OPTIONS: Lazy<CollectOptions<Token, Token>> = Lazy::new(|| CollectOptions {
         token_id: TOKEN_ID,
-        expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN0.clone(), 0).unwrap(),
-        expected_currency_owed1: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
+        expected_currency_owed0: currency_amount!(TOKEN0, 0),
+        expected_currency_owed1: currency_amount!(TOKEN1, 0),
         recipient: RECIPIENT,
     });
     static COLLECT_OPTIONS2: Lazy<CollectOptions<Token, Ether>> = Lazy::new(|| CollectOptions {
         token_id: TOKEN_ID,
-        expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
-        expected_currency_owed1: CurrencyAmount::from_raw_amount(ETHER.clone(), 0).unwrap(),
+        expected_currency_owed0: currency_amount!(TOKEN1, 0),
+        expected_currency_owed1: currency_amount!(ETHER, 0),
         recipient: RECIPIENT,
     });
 
@@ -713,8 +713,8 @@ mod tests {
     fn test_collect_call_parameters_eth() {
         let MethodParameters { calldata, value } = collect_call_parameters(&CollectOptions {
             token_id: TOKEN_ID,
-            expected_currency_owed0: CurrencyAmount::from_raw_amount(TOKEN1.clone(), 0).unwrap(),
-            expected_currency_owed1: CurrencyAmount::from_raw_amount(ETHER.clone(), 0).unwrap(),
+            expected_currency_owed0: currency_amount!(TOKEN1, 0),
+            expected_currency_owed1: currency_amount!(ETHER, 0),
             recipient: RECIPIENT,
         });
         assert_eq!(value, U256::ZERO);

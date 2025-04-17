@@ -211,72 +211,47 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{create_route, currency_amount, tests::*};
     use alloy_primitives::{address, hex, uint};
     use once_cell::sync::Lazy;
 
-    static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN1.clone()));
-    static POOL_1_WETH: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN1.clone(), WETH.clone()));
-    static POOL_0_2: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN2.clone()));
-    static POOL_0_3: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN0.clone(), TOKEN3.clone()));
-    static POOL_2_3: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN2.clone(), TOKEN3.clone()));
-    static POOL_3_WETH: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN3.clone(), WETH.clone()));
-    static POOL_1_3: Lazy<Pool<TickListDataProvider>> =
-        Lazy::new(|| make_pool(TOKEN3.clone(), TOKEN1.clone()));
+    macro_rules! define_pool {
+        ($name:ident, $token0:expr, $token1:expr) => {
+            static $name: Lazy<Pool<TickListDataProvider>> =
+                Lazy::new(|| make_pool($token0.clone(), $token1.clone()));
+        };
+    }
+
+    define_pool!(POOL_0_1, TOKEN0, TOKEN1);
+    define_pool!(POOL_1_WETH, TOKEN1, WETH);
+    define_pool!(POOL_0_2, TOKEN0, TOKEN2);
+    define_pool!(POOL_0_3, TOKEN0, TOKEN3);
+    define_pool!(POOL_2_3, TOKEN2, TOKEN3);
+    define_pool!(POOL_3_WETH, TOKEN3, WETH);
+    define_pool!(POOL_1_3, TOKEN3, TOKEN1);
 
     static ROUTE_0_1: Lazy<Route<Token, Token, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_1.clone()], TOKEN0.clone(), TOKEN1.clone()));
+        Lazy::new(|| create_route!(POOL_0_1, TOKEN0, TOKEN1));
     static ROUTE_0_3: Lazy<Route<Token, Token, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_0_3.clone()], TOKEN0.clone(), TOKEN3.clone()));
+        Lazy::new(|| create_route!(POOL_0_3, TOKEN0, TOKEN3));
     static ROUTE_1_ETH: Lazy<Route<Token, Ether, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_1_WETH.clone()], TOKEN1.clone(), ETHER.clone()));
+        Lazy::new(|| create_route!(POOL_1_WETH, TOKEN1, ETHER));
     static ROUTE_3_ETH: Lazy<Route<Token, Ether, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_3_WETH.clone()], TOKEN3.clone(), ETHER.clone()));
+        Lazy::new(|| create_route!(POOL_3_WETH, TOKEN3, ETHER));
     static ROUTE_ETH_1: Lazy<Route<Ether, Token, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_1_WETH.clone()], ETHER.clone(), TOKEN1.clone()));
+        Lazy::new(|| create_route!(POOL_1_WETH, ETHER, TOKEN1));
     static ROUTE_ETH_3: Lazy<Route<Ether, Token, TickListDataProvider>> =
-        Lazy::new(|| Route::new(vec![POOL_3_WETH.clone()], ETHER.clone(), TOKEN3.clone()));
-    static ROUTE_0_1_3: Lazy<Route<Token, Token, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_3.clone()],
-            TOKEN0.clone(),
-            TOKEN3.clone(),
-        )
-    });
-    static ROUTE_0_2_3: Lazy<Route<Token, Token, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_2.clone(), POOL_2_3.clone()],
-            TOKEN0.clone(),
-            TOKEN3.clone(),
-        )
-    });
-    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_0_1.clone(), POOL_1_WETH.clone()],
-            TOKEN0.clone(),
-            WETH.clone(),
-        )
-    });
-    static ROUTE_ETH_1_3: Lazy<Route<Ether, Token, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_1_WETH.clone(), POOL_1_3.clone()],
-            ETHER.clone(),
-            TOKEN3.clone(),
-        )
-    });
-    static ROUTE_3_1_ETH: Lazy<Route<Token, Ether, TickListDataProvider>> = Lazy::new(|| {
-        Route::new(
-            vec![POOL_1_3.clone(), POOL_1_WETH.clone()],
-            TOKEN3.clone(),
-            ETHER.clone(),
-        )
-    });
+        Lazy::new(|| create_route!(POOL_3_WETH, ETHER, TOKEN3));
+    static ROUTE_0_1_3: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_3; TOKEN0, TOKEN3));
+    static ROUTE_0_2_3: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_2, POOL_2_3; TOKEN0, TOKEN3));
+    static ROUTE_0_1_WETH: Lazy<Route<Token, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_0_1, POOL_1_WETH; TOKEN0, WETH));
+    static ROUTE_ETH_1_3: Lazy<Route<Ether, Token, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_1_WETH, POOL_1_3; ETHER, TOKEN3));
+    static ROUTE_3_1_ETH: Lazy<Route<Token, Ether, TickListDataProvider>> =
+        Lazy::new(|| create_route!(POOL_1_3, POOL_1_WETH; TOKEN3, ETHER));
 
     static SLIPPAGE_TOLERANCE: Lazy<Percent> = Lazy::new(|| Percent::new(1, 100));
     const RECIPIENT: Address = address!("0000000000000000000000000000000000000003");
@@ -337,7 +312,7 @@ mod tests {
         fn multi_hop_exact_output() {
             let trade = Trade::from_route(
                 ROUTE_0_1_WETH.clone(),
-                CurrencyAmount::from_raw_amount(WETH.clone(), 100).unwrap(),
+                currency_amount!(WETH, 100),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -450,7 +425,7 @@ mod tests {
         fn fee_with_eth_in() {
             let trade = Trade::from_route(
                 ROUTE_ETH_1.clone(),
-                CurrencyAmount::from_raw_amount(TOKEN1.clone(), 10).unwrap(),
+                currency_amount!(TOKEN1, 10),
                 TradeType::ExactOutput,
             )
             .unwrap();
@@ -700,8 +675,8 @@ mod tests {
         #[should_panic(expected = "TOKEN_IN_DIFF")]
         fn different_token_in_fails() {
             let trade1 = Trade::from_route(
-                Route::new(vec![POOL_2_3.clone()], TOKEN2.clone(), TOKEN3.clone()),
-                CurrencyAmount::from_raw_amount(TOKEN2.clone(), 100).unwrap(),
+                create_route!(POOL_2_3, TOKEN2, TOKEN3),
+                currency_amount!(TOKEN2, 100),
                 TradeType::ExactInput,
             )
             .unwrap();
