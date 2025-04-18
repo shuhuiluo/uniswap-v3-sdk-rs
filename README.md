@@ -25,6 +25,8 @@ It is feature-complete with unit tests matching the TypeScript SDK.
       the state and pool for all positions of the specified owner, using RPC client, etc
     - [`price_tick_conversions`](./src/extensions/price_tick_conversions.rs) module for converting between prices and
       ticks
+    - [`simple_tick_data_provider`](./src/extensions/simple_tick_data_provider.rs) module for fetching tick data
+      from a Uniswap V3 pool contract directly via RPC calls
     - [`ephemeral_tick_data_provider`](./src/extensions/ephemeral_tick_data_provider.rs) module for fetching ticks using
       an [ephemeral contract](https://github.com/Aperture-Finance/Aperture-Lens/blob/904101e4daed59e02fd4b758b98b0749e70b583b/contracts/EphemeralGetPopulatedTicksInRange.sol)
       in a single `eth_call`
@@ -61,7 +63,7 @@ The current MSRV (minimum supported rust version) is 1.82.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "3.6.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "3.8.0", features = ["extensions", "std"] }
 ```
 
 ### Usage

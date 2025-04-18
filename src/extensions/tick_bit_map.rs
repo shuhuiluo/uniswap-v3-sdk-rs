@@ -13,11 +13,11 @@ pub type TickBitMap<I = I24> = FxHashMap<I, U256>;
 pub trait TickBitMapProvider {
     type Index: TickIndex;
 
-    /// Get a bit map word at a specific index
-    fn get_word(&self, index: Self::Index) -> U256;
+    /// Get a bitmap word at a specific index
+    async fn get_word(&self, index: Self::Index) -> Result<U256, Error>;
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: Self::Index,
         lte: bool,
@@ -29,7 +29,7 @@ pub trait TickBitMapProvider {
             // all the 1s at or to the right of the current `bit_pos`
             // (2 << bitPos) may overflow but fine since 2 << 255 = 0
             let mask = (TWO << bit_pos) - uint!(1_U256);
-            let word = self.get_word(word_pos);
+            let word = self.get_word(word_pos).await?;
             let masked = word & mask;
             let initialized = masked != U256::ZERO;
             let msb = if initialized {
@@ -47,7 +47,7 @@ pub trait TickBitMapProvider {
             let (word_pos, bit_pos) = compressed.position();
             // all the 1s at or to the left of the `bit_pos`
             let mask = U256::ZERO - (uint!(1_U256) << bit_pos);
-            let word = self.get_word(word_pos);
+            let word = self.get_word(word_pos).await?;
             let masked = word & mask;
             let initialized = masked != U256::ZERO;
             let lsb = if initialized {
@@ -67,7 +67,7 @@ impl<I: TickIndex> TickBitMapProvider for TickBitMap<I> {
     type Index = I;
 
     #[inline]
-    fn get_word(&self, index: Self::Index) -> U256 {
-        *self.get(&index).unwrap_or(&U256::ZERO)
+    async fn get_word(&self, index: Self::Index) -> Result<U256, Error> {
+        Ok(self.get(&index).copied().unwrap_or(U256::ZERO))
     }
 }

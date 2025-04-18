@@ -67,21 +67,25 @@ mod tests {
         let tick = provider.get_tick(-92110).await?;
         assert_eq!(tick.liquidity_gross, 398290794261);
         assert_eq!(tick.liquidity_net, 398290794261);
+
         let (tick, initialized) = provider
             .next_initialized_tick_within_one_word(MIN_TICK_I32 + TICK_SPACING, true, TICK_SPACING)
             .await?;
         assert_eq!(tick, -887270);
         assert!(initialized);
+
         let (tick, initialized) = provider
             .next_initialized_tick_within_one_word(-92120, true, TICK_SPACING)
             .await?;
         assert_eq!(tick, -92160);
         assert!(!initialized);
+
         let (tick, initialized) = provider
             .next_initialized_tick_within_one_word(0, false, TICK_SPACING)
             .await?;
         assert_eq!(tick, 100);
         assert!(initialized);
+
         let (tick, initialized) = provider
             .next_initialized_tick_within_one_word(110, false, TICK_SPACING)
             .await?;

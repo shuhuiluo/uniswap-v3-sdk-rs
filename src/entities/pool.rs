@@ -233,6 +233,27 @@ impl<TP: TickDataProvider> Pool<TP> {
         })
     }
 
+    /// Returns a new pool with the given tick data provider
+    ///
+    /// ## Arguments
+    ///
+    /// * `tick_data_provider`: The new tick data provider
+    #[inline]
+    pub fn with_tick_data_provider<TP2: TickDataProvider>(
+        self,
+        tick_data_provider: TP2,
+    ) -> Pool<TP2> {
+        Pool {
+            token0: self.token0,
+            token1: self.token1,
+            fee: self.fee,
+            sqrt_ratio_x96: self.sqrt_ratio_x96,
+            liquidity: self.liquidity,
+            tick_current: TP2::Index::from_i24(self.tick_current.to_i24()),
+            tick_data_provider,
+        }
+    }
+
     async fn _swap(
         &self,
         zero_for_one: bool,
