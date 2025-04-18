@@ -155,7 +155,7 @@ pub fn compute_swap_step<const BITS: usize, const LIMBS: usize>(
 
 #[inline]
 #[allow(clippy::too_many_arguments)]
-pub fn v3_swap<TP: TickDataProvider>(
+pub async fn v3_swap<TP: TickDataProvider>(
     fee: U24,
     sqrt_price_x96: U160,
     tick_current: TP::Index,
@@ -204,11 +204,8 @@ pub fn v3_swap<TP: TickDataProvider>(
         // (relative to the smart contract) by simply traversing to the next available tick, we
         // instead need to exactly replicate
         (step.tick_next, step.initialized) = tick_data_provider
-            .next_initialized_tick_within_one_word(
-                state.tick_current,
-                zero_for_one,
-                tick_spacing,
-            )?;
+            .next_initialized_tick_within_one_word(state.tick_current, zero_for_one, tick_spacing)
+            .await?;
 
         step.tick_next = TP::Index::from_i24(step.tick_next.to_i24().clamp(MIN_TICK, MAX_TICK));
         step.sqrt_price_next_x96 = get_sqrt_ratio_at_tick(step.tick_next.to_i24())?;
@@ -247,7 +244,10 @@ pub fn v3_swap<TP: TickDataProvider>(
         if state.sqrt_price_x96 == step.sqrt_price_next_x96 {
             // if the tick is initialized, run the tick transition
             if step.initialized {
-                let mut liquidity_net = tick_data_provider.get_tick(step.tick_next)?.liquidity_net;
+                let mut liquidity_net = tick_data_provider
+                    .get_tick(step.tick_next)
+                    .await?
+                    .liquidity_net;
                 // if we're moving leftward, we interpret liquidityNet as the opposite sign
                 // safe because liquidityNet cannot be type(int128).min
                 if zero_for_one {

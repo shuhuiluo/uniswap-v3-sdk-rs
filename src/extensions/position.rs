@@ -498,7 +498,12 @@ mod tests {
         assert_eq!(position.liquidity, 34399999543676);
         assert_eq!(position.tick_lower, 253320);
         assert_eq!(position.tick_upper, 264600);
-        let tick = position.pool.tick_data_provider.get_tick(-92100).unwrap();
+        let tick = position
+            .pool
+            .tick_data_provider
+            .get_tick(-92100)
+            .await
+            .unwrap();
         assert_eq!(tick.liquidity_gross, 456406095307);
         assert_eq!(tick.liquidity_net, 456406095307);
     }

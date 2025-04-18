@@ -111,7 +111,7 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     type Index = I;
 
     #[inline]
-    fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
+    async fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
         let i = self.binary_search_by_tick(index)?;
         let tick = &self[i];
         if tick.index != index {
@@ -121,7 +121,7 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     }
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: I,
         lte: bool,
@@ -305,13 +305,14 @@ mod tests {
     mod next_initialized_tick_within_one_word {
         use super::*;
 
-        #[test]
-        fn test_words_around_0_lte_true() {
+        #[tokio::test]
+        async fn test_words_around_0_lte_true() {
             macro_rules! test_for_true {
                 ($tick:expr, $next:expr, $initialized:expr) => {
                     assert_eq!(
                         TICKS
                             .next_initialized_tick_within_one_word($tick, true, 1)
+                            .await
                             .unwrap(),
                         ($next, $initialized)
                     );
@@ -328,13 +329,14 @@ mod tests {
             test_for_true!(257, 256, false);
         }
 
-        #[test]
-        fn test_words_around_0_lte_false() {
+        #[tokio::test]
+        async fn test_words_around_0_lte_false() {
             macro_rules! test_for_false {
                 ($tick:expr, $next:expr, $initialized:expr) => {
                     assert_eq!(
                         TICKS
                             .next_initialized_tick_within_one_word($tick, false, 1)
+                            .await
                             .unwrap(),
                         ($next, $initialized)
                     );
@@ -353,8 +355,8 @@ mod tests {
             test_for_false!(256, 511, false);
         }
 
-        #[test]
-        fn test_performs_correctly_with_tick_spacing_gt_1() {
+        #[tokio::test]
+        async fn test_performs_correctly_with_tick_spacing_gt_1() {
             let ticks = [
                 Tick {
                     index: 0,
@@ -370,12 +372,14 @@ mod tests {
             assert_eq!(
                 ticks
                     .next_initialized_tick_within_one_word(0, false, 1)
+                    .await
                     .unwrap(),
                 (255, false)
             );
             assert_eq!(
                 ticks
                     .next_initialized_tick_within_one_word(0, false, 2)
+                    .await
                     .unwrap(),
                 (510, false)
             );
