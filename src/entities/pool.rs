@@ -700,37 +700,41 @@ mod tests {
             .unwrap()
         });
 
-        #[test]
-        fn get_output_amount_usdc_to_dai() {
+        #[tokio::test]
+        async fn get_output_amount_usdc_to_dai() {
             let output_amount = POOL
                 .get_output_amount(&currency_amount!(USDC, 100), None)
+                .await
                 .unwrap();
             assert!(output_amount.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
         }
 
-        #[test]
-        fn get_output_amount_dai_to_usdc() {
+        #[tokio::test]
+        async fn get_output_amount_dai_to_usdc() {
             let output_amount = POOL
                 .get_output_amount(&currency_amount!(DAI, 100), None)
+                .await
                 .unwrap();
             assert!(output_amount.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
         }
 
-        #[test]
-        fn get_input_amount_usdc_to_dai() {
+        #[tokio::test]
+        async fn get_input_amount_usdc_to_dai() {
             let input_amount = POOL
                 .get_input_amount(&currency_amount!(DAI, 98), None)
+                .await
                 .unwrap();
             assert!(input_amount.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
         }
 
-        #[test]
-        fn get_input_amount_dai_to_usdc() {
+        #[tokio::test]
+        async fn get_input_amount_dai_to_usdc() {
             let input_amount = POOL
                 .get_input_amount(&currency_amount!(USDC, 98), None)
+                .await
                 .unwrap();
             assert!(input_amount.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());

@@ -87,16 +87,21 @@ impl TickDataProvider for NoTickDataProvider {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_no_tick_data_provider() {
+    #[tokio::test]
+    async fn test_no_tick_data_provider() {
         let tick_data_provider = NoTickDataProvider;
         assert_eq!(
-            tick_data_provider.get_tick(0).unwrap_err().to_string(),
+            tick_data_provider
+                .get_tick(0)
+                .await
+                .unwrap_err()
+                .to_string(),
             Error::NoTickDataError.to_string()
         );
         assert_eq!(
             tick_data_provider
                 .next_initialized_tick_within_one_word(0, false, 1)
+                .await
                 .unwrap_err()
                 .to_string(),
             Error::NoTickDataError.to_string()

@@ -329,13 +329,14 @@ mod tests {
             test_for_true!(257, 256, false);
         }
 
-        #[test]
-        fn test_words_around_0_lte_false() {
+        #[tokio::test]
+        async fn test_words_around_0_lte_false() {
             macro_rules! test_for_false {
                 ($tick:expr, $next:expr, $initialized:expr) => {
                     assert_eq!(
                         TICKS
                             .next_initialized_tick_within_one_word($tick, false, 1)
+                            .await
                             .unwrap(),
                         ($next, $initialized)
                     );
@@ -354,8 +355,8 @@ mod tests {
             test_for_false!(256, 511, false);
         }
 
-        #[test]
-        fn test_performs_correctly_with_tick_spacing_gt_1() {
+        #[tokio::test]
+        async fn test_performs_correctly_with_tick_spacing_gt_1() {
             let ticks = [
                 Tick {
                     index: 0,
@@ -371,12 +372,14 @@ mod tests {
             assert_eq!(
                 ticks
                     .next_initialized_tick_within_one_word(0, false, 1)
+                    .await
                     .unwrap(),
                 (255, false)
             );
             assert_eq!(
                 ticks
                     .next_initialized_tick_within_one_word(0, false, 2)
+                    .await
                     .unwrap(),
                 (510, false)
             );
