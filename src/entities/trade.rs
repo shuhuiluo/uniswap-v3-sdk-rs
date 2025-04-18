@@ -514,7 +514,7 @@ where
     #[inline]
     pub async fn exact_in(
         route: Route<TInput, TOutput, TP>,
-        amount_in: CurrencyAmount<Token>,
+        amount_in: CurrencyAmount<TInput>,
     ) -> Result<Self, Error> {
         Self::from_route(route, amount_in, TradeType::ExactInput).await
     }
@@ -528,7 +528,7 @@ where
     #[inline]
     pub async fn exact_out(
         route: Route<TInput, TOutput, TP>,
-        amount_out: CurrencyAmount<Token>,
+        amount_out: CurrencyAmount<TOutput>,
     ) -> Result<Self, Error> {
         Self::from_route(route, amount_out, TradeType::ExactOutput).await
     }
