@@ -51,7 +51,7 @@ where
     I: TickIndex,
 {
     #[inline]
-    pub async fn new(pool: Address, provider: P, block_id: Option<BlockId>) -> Self {
+    pub const fn new(pool: Address, provider: P, block_id: Option<BlockId>) -> Self {
         Self {
             pool: IUniswapV3PoolState::new(pool, provider),
             block_id,
@@ -136,8 +136,7 @@ mod tests {
             address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
             PROVIDER.clone(),
             *BLOCK_ID,
-        )
-        .await;
+        );
         // [-887270, -92110, 100, 110, 22990, ...]
         let tick = provider.get_tick(-92110).await?;
         assert_eq!(tick.index, -92110);

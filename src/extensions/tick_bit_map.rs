@@ -3,8 +3,6 @@
 //! [`TickBitMapProvider::next_initialized_tick_within_one_word`] for a tick bit map that implements
 //! [`TickBitMapProvider::get_word`].
 
-#![allow(async_fn_in_trait)]
-
 use crate::prelude::*;
 use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, uint, U256};
 
@@ -70,6 +68,6 @@ impl<I: TickIndex> TickBitMapProvider for TickBitMap<I> {
 
     #[inline]
     async fn get_word(&self, index: Self::Index) -> Result<U256, Error> {
-        Ok(*self.get(&index).unwrap_or(&U256::ZERO))
+        Ok(self.get(&index).copied().unwrap_or(U256::ZERO))
     }
 }

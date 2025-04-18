@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(feature = "std", all(test, feature = "extensions"))), no_std)]
+#![allow(async_fn_in_trait)]
 #![warn(
     missing_copy_implementations,
     missing_debug_implementations,
