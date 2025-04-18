@@ -233,7 +233,7 @@ impl<TP: TickDataProvider> Pool<TP> {
         })
     }
 
-    fn _swap(
+    async fn _swap(
         &self,
         zero_for_one: bool,
         amount_specified: I256,
@@ -250,6 +250,7 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified,
             sqrt_price_limit_x96,
         )
+        .await
     }
 
     /// Given an input amount of a token, return the computed output amount
@@ -261,7 +262,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The output amount
     #[inline]
-    pub fn get_output_amount(
+    pub async fn get_output_amount(
         &self,
         input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -276,11 +277,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified_remaining,
             amount_calculated: output_amount,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(input_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(input_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -304,7 +307,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The output amount
     #[inline]
-    pub fn get_output_amount_mut(
+    pub async fn get_output_amount_mut(
         &mut self,
         input_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -321,11 +324,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             sqrt_price_x96,
             liquidity,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(input_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(input_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -355,7 +360,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The input amount
     #[inline]
-    pub fn get_input_amount(
+    pub async fn get_input_amount(
         &self,
         output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -370,11 +375,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             amount_specified_remaining,
             amount_calculated: input_amount,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(-output_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(-output_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -401,7 +408,7 @@ impl<TP: TickDataProvider> Pool<TP> {
     ///
     /// returns: The input amount
     #[inline]
-    pub fn get_input_amount_mut(
+    pub async fn get_input_amount_mut(
         &mut self,
         output_amount: &CurrencyAmount<impl BaseCurrency>,
         sqrt_price_limit_x96: Option<U160>,
@@ -418,11 +425,13 @@ impl<TP: TickDataProvider> Pool<TP> {
             sqrt_price_x96,
             liquidity,
             ..
-        } = self._swap(
-            zero_for_one,
-            I256::from_big_int(-output_amount.quotient()),
-            sqrt_price_limit_x96,
-        )?;
+        } = self
+            ._swap(
+                zero_for_one,
+                I256::from_big_int(-output_amount.quotient()),
+                sqrt_price_limit_x96,
+            )
+            .await?;
 
         if !amount_specified_remaining.is_zero() && sqrt_price_limit_x96.is_none() {
             return Err(Error::InsufficientLiquidity);
@@ -691,37 +700,41 @@ mod tests {
             .unwrap()
         });
 
-        #[test]
-        fn get_output_amount_usdc_to_dai() {
+        #[tokio::test]
+        async fn get_output_amount_usdc_to_dai() {
             let output_amount = POOL
                 .get_output_amount(&currency_amount!(USDC, 100), None)
+                .await
                 .unwrap();
             assert!(output_amount.currency.equals(&DAI.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
         }
 
-        #[test]
-        fn get_output_amount_dai_to_usdc() {
+        #[tokio::test]
+        async fn get_output_amount_dai_to_usdc() {
             let output_amount = POOL
                 .get_output_amount(&currency_amount!(DAI, 100), None)
+                .await
                 .unwrap();
             assert!(output_amount.currency.equals(&USDC.clone()));
             assert_eq!(output_amount.quotient(), 98.into());
         }
 
-        #[test]
-        fn get_input_amount_usdc_to_dai() {
+        #[tokio::test]
+        async fn get_input_amount_usdc_to_dai() {
             let input_amount = POOL
                 .get_input_amount(&currency_amount!(DAI, 98), None)
+                .await
                 .unwrap();
             assert!(input_amount.currency.equals(&USDC.clone()));
             assert_eq!(input_amount.quotient(), 100.into());
         }
 
-        #[test]
-        fn get_input_amount_dai_to_usdc() {
+        #[tokio::test]
+        async fn get_input_amount_dai_to_usdc() {
             let input_amount = POOL
                 .get_input_amount(&currency_amount!(USDC, 98), None)
+                .await
                 .unwrap();
             assert!(input_amount.currency.equals(&DAI.clone()));
             assert_eq!(input_amount.quotient(), 100.into());

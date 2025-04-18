@@ -37,14 +37,14 @@ impl<I: TickIndex> TickDataProvider for TickMap<I> {
     type Index = I;
 
     #[inline]
-    fn get_tick(&self, tick: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error> {
         self.inner
-            .get(&tick)
-            .ok_or(Error::InvalidTick(tick.to_i24()))
+            .get(&index)
+            .ok_or(Error::InvalidTick(index.to_i24()))
     }
 
     #[inline]
-    fn next_initialized_tick_within_one_word(
+    async fn next_initialized_tick_within_one_word(
         &self,
         tick: Self::Index,
         lte: bool,

@@ -47,6 +47,8 @@ pub trait TickIndex:
     + Shr<i32, Output = Self>
     + TryFrom<i32, Error: Debug>
     + TryInto<i32, Error: Debug>
+    + Send
+    + Sync
 {
     const ZERO: Self;
     const ONE: Self;

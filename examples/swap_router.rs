@@ -73,7 +73,9 @@ async fn main() {
     let account = provider.get_accounts().await.unwrap()[0];
 
     // Build the swap transaction
-    let trade = Trade::from_route(route, amount_in, TradeType::ExactInput).unwrap();
+    let trade = Trade::from_route(route, amount_in, TradeType::ExactInput)
+        .await
+        .unwrap();
     let params = swap_call_parameters(
         &mut [trade],
         SwapOptions {
