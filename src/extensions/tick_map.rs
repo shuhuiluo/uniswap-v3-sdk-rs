@@ -37,10 +37,11 @@ impl<I: TickIndex> TickDataProvider for TickMap<I> {
     type Index = I;
 
     #[inline]
-    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+    async fn get_tick(&self, index: Self::Index) -> Result<Tick<Self::Index>, Error> {
         self.inner
             .get(&index)
             .ok_or(Error::InvalidTick(index.to_i24()))
+            .copied()
     }
 
     #[inline]
@@ -52,5 +53,6 @@ impl<I: TickIndex> TickDataProvider for TickMap<I> {
     ) -> Result<(Self::Index, bool), Error> {
         self.bitmap
             .next_initialized_tick_within_one_word(tick, lte, tick_spacing)
+            .await
     }
 }

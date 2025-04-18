@@ -111,13 +111,13 @@ impl<I: TickIndex> TickDataProvider for [Tick<I>] {
     type Index = I;
 
     #[inline]
-    async fn get_tick(&self, index: I) -> Result<&Tick<I>, Error> {
+    async fn get_tick(&self, index: I) -> Result<Tick<I>, Error> {
         let i = self.binary_search_by_tick(index)?;
         let tick = &self[i];
         if tick.index != index {
             return Err(TickListError::NotContained.into());
         }
-        Ok(tick)
+        Ok(*tick)
     }
 
     #[inline]

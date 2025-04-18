@@ -13,8 +13,8 @@ pub trait TickDataProvider: Send + Sync {
     ///
     /// * `index`: The tick to load
     ///
-    /// returns: Result<&Tick<Self::Index>, Error>
-    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error>;
+    /// returns: Result<Tick<Self::Index>, Error>
+    async fn get_tick(&self, index: Self::Index) -> Result<Tick<Self::Index>, Error>;
 
     /// Return the next tick that is initialized within a single word
     ///
@@ -42,7 +42,7 @@ where
     type Index = <<TP as Deref>::Target as TickDataProvider>::Index;
 
     #[inline]
-    async fn get_tick(&self, index: Self::Index) -> Result<&Tick<Self::Index>, Error> {
+    async fn get_tick(&self, index: Self::Index) -> Result<Tick<Self::Index>, Error> {
         self.deref().get_tick(index).await
     }
 
@@ -68,7 +68,7 @@ impl TickDataProvider for NoTickDataProvider {
     type Index = i32;
 
     #[inline]
-    async fn get_tick(&self, _: i32) -> Result<&Tick, Error> {
+    async fn get_tick(&self, _: i32) -> Result<Tick, Error> {
         Err(Error::NoTickDataError)
     }
 
