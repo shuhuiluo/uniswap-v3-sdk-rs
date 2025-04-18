@@ -47,7 +47,7 @@ async fn main() {
     .unwrap();
     // Get the output amount from the pool
     let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
-    let local_amount_out = pool.get_output_amount(&amount_in, None).unwrap();
+    let local_amount_out = pool.get_output_amount(&amount_in, None).await.unwrap();
     let local_amount_out = local_amount_out.quotient();
     println!("Local amount out: {}", local_amount_out);
 

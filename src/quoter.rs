@@ -113,7 +113,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{create_route, tests::*};
+    use crate::{create_route, tests::*, trade_from_route};
     use once_cell::sync::Lazy;
 
     static POOL_0_1: Lazy<Pool<TickListDataProvider>> =
@@ -127,16 +127,12 @@ mod tests {
 
     mod single_trade_input {
         use super::*;
+        use crate::currency_amount;
         use alloy_primitives::hex;
 
-        #[test]
-        fn single_hop_exact_input() {
-            let trade = Trade::from_route(
-                ROUTE_0_1.clone(),
-                TOKEN0_AMOUNT_100.clone(),
-                TradeType::ExactInput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn single_hop_exact_input() {
+            let trade = trade_from_route!(ROUTE_0_1, TOKEN0_AMOUNT_100, TradeType::ExactInput);
             let input_amount = trade.input_amount().unwrap();
             let params =
                 quote_call_parameters(&trade.swaps[0].route, &input_amount, trade.trade_type, None);
@@ -147,14 +143,9 @@ mod tests {
             assert_eq!(params.value, U256::ZERO);
         }
 
-        #[test]
-        fn single_hop_exact_output() {
-            let trade = Trade::from_route(
-                ROUTE_0_1.clone(),
-                TOKEN1_AMOUNT_100.clone(),
-                TradeType::ExactOutput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn single_hop_exact_output() {
+            let trade = trade_from_route!(ROUTE_0_1, TOKEN1_AMOUNT_100, TradeType::ExactOutput);
             let output_amount = trade.output_amount().unwrap();
             let params = quote_call_parameters(
                 &trade.swaps[0].route,
@@ -169,14 +160,9 @@ mod tests {
             assert_eq!(params.value, U256::ZERO);
         }
 
-        #[test]
-        fn multi_hop_exact_input() {
-            let trade = Trade::from_route(
-                ROUTE_0_1_WETH.clone(),
-                TOKEN0_AMOUNT_100.clone(),
-                TradeType::ExactInput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn multi_hop_exact_input() {
+            let trade = trade_from_route!(ROUTE_0_1_WETH, TOKEN0_AMOUNT_100, TradeType::ExactInput);
             let params = quote_call_parameters(
                 trade.route(),
                 &trade.input_amount().unwrap(),
@@ -190,14 +176,13 @@ mod tests {
             assert_eq!(params.value, U256::ZERO);
         }
 
-        #[test]
-        fn multi_hop_exact_output() {
-            let trade = Trade::from_route(
-                ROUTE_0_1_WETH.clone(),
-                CurrencyAmount::from_raw_amount(WETH.clone(), 100).unwrap(),
-                TradeType::ExactOutput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn multi_hop_exact_output() {
+            let trade = trade_from_route!(
+                ROUTE_0_1_WETH,
+                currency_amount!(WETH, 100),
+                TradeType::ExactOutput
+            );
             let params = quote_call_parameters(
                 trade.route(),
                 &trade.output_amount().unwrap(),
@@ -211,14 +196,9 @@ mod tests {
             assert_eq!(params.value, U256::ZERO);
         }
 
-        #[test]
-        fn sqrt_price_limit_x96() {
-            let trade = Trade::from_route(
-                ROUTE_0_1.clone(),
-                TOKEN0_AMOUNT_100.clone(),
-                TradeType::ExactInput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn sqrt_price_limit_x96() {
+            let trade = trade_from_route!(ROUTE_0_1, TOKEN0_AMOUNT_100, TradeType::ExactInput);
             let params = quote_call_parameters(
                 trade.route(),
                 &trade.input_amount().unwrap(),
@@ -240,14 +220,9 @@ mod tests {
         use super::*;
         use alloy_primitives::hex;
 
-        #[test]
-        fn single_hop_exact_input() {
-            let trade = Trade::from_route(
-                ROUTE_0_1.clone(),
-                TOKEN0_AMOUNT_100.clone(),
-                TradeType::ExactInput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn single_hop_exact_input() {
+            let trade = trade_from_route!(ROUTE_0_1, TOKEN0_AMOUNT_100, TradeType::ExactInput);
             let input_amount = trade.input_amount().unwrap();
             let params = quote_call_parameters(
                 &trade.swaps[0].route,
@@ -264,14 +239,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn single_hop_exact_output() {
-            let trade = Trade::from_route(
-                ROUTE_0_1.clone(),
-                TOKEN1_AMOUNT_100.clone(),
-                TradeType::ExactOutput,
-            )
-            .unwrap();
+        #[tokio::test]
+        async fn single_hop_exact_output() {
+            let trade = trade_from_route!(ROUTE_0_1, TOKEN1_AMOUNT_100, TradeType::ExactOutput);
             let output_amount = trade.output_amount().unwrap();
             let params = quote_call_parameters(
                 &trade.swaps[0].route,

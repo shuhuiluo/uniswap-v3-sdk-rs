@@ -40,25 +40,25 @@ mod tests {
         TickListDataProvider::new(vec![Tick::new(-1, 1, -1), Tick::new(1, 1, 2)], 1);
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(not(feature = "extensions"))]
-    fn throws_if_tick_not_in_list() {
+    async fn throws_if_tick_not_in_list() {
         assert_eq!(
-            PROVIDER.get_tick(0).unwrap_err(),
+            PROVIDER.get_tick(0).await.unwrap_err(),
             TickListError::NotContained.into()
         );
     }
 
-    #[test]
-    fn gets_the_smallest_tick_from_the_list() {
-        let tick = PROVIDER.get_tick(-1).unwrap();
+    #[tokio::test]
+    async fn gets_the_smallest_tick_from_the_list() {
+        let tick = PROVIDER.get_tick(-1).await.unwrap();
         assert_eq!(tick.liquidity_net, 1);
         assert_eq!(tick.liquidity_gross, 1);
     }
 
-    #[test]
-    fn gets_the_largest_tick_from_the_list() {
-        let tick = PROVIDER.get_tick(1).unwrap();
+    #[tokio::test]
+    async fn gets_the_largest_tick_from_the_list() {
+        let tick = PROVIDER.get_tick(1).await.unwrap();
         assert_eq!(tick.liquidity_net, -1);
         assert_eq!(tick.liquidity_gross, 1);
     }

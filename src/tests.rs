@@ -114,6 +114,15 @@ pub(crate) static ROUTE_ETH_0: Lazy<Route<Ether, Token, NoTickDataProvider>> =
     Lazy::new(|| create_route!(POOL_0_WETH, ETHER, TOKEN0));
 
 #[macro_export]
+macro_rules! trade_from_route {
+    ($route:expr, $amount:expr, $trade_type:expr) => {
+        Trade::from_route($route.clone(), $amount.clone(), $trade_type)
+            .await
+            .unwrap()
+    };
+}
+
+#[macro_export]
 macro_rules! currency_amount {
     ($currency:expr, $amount:expr) => {
         CurrencyAmount::from_raw_amount($currency.clone(), $amount).unwrap()
