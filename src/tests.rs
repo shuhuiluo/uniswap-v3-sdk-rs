@@ -167,18 +167,28 @@ pub(crate) fn make_pool(token0: Token, token1: Token) -> Pool<TickListDataProvid
 }
 
 #[cfg(feature = "extensions")]
-pub(crate) static RPC_URL: Lazy<alloy::transports::http::reqwest::Url> = Lazy::new(|| {
-    dotenv::dotenv().ok();
-    std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap()
-});
+pub(crate) use extensions::*;
 
 #[cfg(feature = "extensions")]
-pub(crate) static PROVIDER: Lazy<alloy::providers::RootProvider> = Lazy::new(|| {
-    alloy::providers::ProviderBuilder::new()
-        .disable_recommended_fillers()
-        .on_http(RPC_URL.clone())
-});
+mod extensions {
+    use alloy::{
+        eips::{BlockId, BlockNumberOrTag},
+        providers::{ProviderBuilder, RootProvider},
+        transports::http::reqwest::Url,
+    };
+    use once_cell::sync::Lazy;
 
-#[cfg(feature = "extensions")]
-pub(crate) static BLOCK_ID: Lazy<Option<alloy::eips::BlockId>> =
-    Lazy::new(|| Some(alloy::eips::BlockId::from(17000000)));
+    pub(crate) static RPC_URL: Lazy<Url> = Lazy::new(|| {
+        dotenv::dotenv().ok();
+        std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap()
+    });
+
+    pub(crate) static PROVIDER: Lazy<RootProvider> = Lazy::new(|| {
+        ProviderBuilder::new()
+            .disable_recommended_fillers()
+            .on_http(RPC_URL.clone())
+    });
+
+    pub(crate) const BLOCK_ID: Option<BlockId> =
+        Some(BlockId::Number(BlockNumberOrTag::Number(17000000)));
+}

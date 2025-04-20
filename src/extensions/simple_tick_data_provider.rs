@@ -141,7 +141,7 @@ mod tests {
         let provider = SimpleTickDataProvider::new(
             address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
             PROVIDER.clone(),
-            *BLOCK_ID,
+            BLOCK_ID,
         );
         // [-887270, -92110, 100, 110, 22990, ...]
         let tick = provider.get_tick(-92110).await?;
