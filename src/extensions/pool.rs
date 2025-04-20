@@ -330,7 +330,7 @@ mod tests {
             address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
             FeeAmount::LOW,
             PROVIDER.clone(),
-            *BLOCK_ID,
+            BLOCK_ID,
         )
         .await
         .unwrap()
@@ -358,7 +358,7 @@ mod tests {
             tick_lower,
             tick_upper,
             PROVIDER.clone(),
-            *BLOCK_ID,
+            BLOCK_ID,
             None,
             None,
         )
