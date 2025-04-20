@@ -1,7 +1,6 @@
 # Uniswap V3 SDK Rust
 
 [![Rust CI](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/actions/workflows/rust.yml)
-![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/shuhuiluo/uniswap-v3-sdk-rs?logo=rust&label=CodeRabbit&color=orange)
 [![docs.rs](https://img.shields.io/docsrs/uniswap-v3-sdk)](https://docs.rs/uniswap-v3-sdk/latest)
 [![crates.io](https://img.shields.io/crates/v/uniswap-v3-sdk.svg)](https://crates.io/crates/uniswap-v3-sdk)
 
@@ -20,9 +19,9 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 - An [`extensions`](./src/extensions) feature for additional functionalities related to Uniswap V3, including:
 
     - [`pool`](./src/extensions/pool.rs) module for creating a `Pool` struct from a pool key and fetching the
-      liquidity map within a tick range for the specified pool, using RPC client
+      liquidity map within a tick range for the specified pool, using an RPC provider
     - [`position`](./src/extensions/position.rs) module for creating a `Position` struct from a token id and fetching
-      the state and pool for all positions of the specified owner, using RPC client, etc
+      the state and pool for all positions of the specified owner, etc., using an RPC provider
     - [`price_tick_conversions`](./src/extensions/price_tick_conversions.rs) module for converting between prices and
       ticks
     - [`simple_tick_data_provider`](./src/extensions/simple_tick_data_provider.rs) module for fetching tick data
@@ -53,7 +52,7 @@ It is feature-complete with unit tests matching the TypeScript SDK.
 When updating this, also update:
 - clippy.toml
 - Cargo.toml
-- .github/workflows/ci.yml
+- .github/workflows/rust.yml
 -->
 
 The current MSRV (minimum supported rust version) is 1.82.
@@ -63,7 +62,7 @@ The current MSRV (minimum supported rust version) is 1.82.
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "3.8.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "3.9.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
