@@ -60,7 +60,7 @@ mod tests {
             PROVIDER.clone(),
             None,
             None,
-            *BLOCK_ID,
+            BLOCK_ID,
         )
         .await?;
         // [-887270, -92110, 100, 110, 22990, ...]

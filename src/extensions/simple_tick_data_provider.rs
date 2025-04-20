@@ -4,7 +4,7 @@
 use crate::prelude::*;
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
-    network::Network,
+    network::{Ethereum, Network},
     providers::Provider,
     sol,
 };
@@ -32,7 +32,7 @@ sol! {
 
 /// A data provider that fetches tick data from a Uniswap V3 pool contract on the fly.
 #[derive(Clone, Debug)]
-pub struct SimpleTickDataProvider<N, P, I = I24>
+pub struct SimpleTickDataProvider<P, N = Ethereum, I = I24>
 where
     N: Network,
     P: Provider<N>,
@@ -44,7 +44,7 @@ where
     _network: core::marker::PhantomData<N>,
 }
 
-impl<N, P, I> SimpleTickDataProvider<N, P, I>
+impl<P, N, I> SimpleTickDataProvider<P, N, I>
 where
     N: Network,
     P: Provider<N>,
@@ -59,9 +59,15 @@ where
             _network: core::marker::PhantomData,
         }
     }
+
+    #[inline]
+    pub const fn block_id(mut self, block_id: Option<BlockId>) -> Self {
+        self.block_id = block_id;
+        self
+    }
 }
 
-impl<N, P, I> TickBitMapProvider for SimpleTickDataProvider<N, P, I>
+impl<P, N, I> TickBitMapProvider for SimpleTickDataProvider<P, N, I>
 where
     N: Network,
     P: Provider<N>,
@@ -84,7 +90,7 @@ where
     }
 }
 
-impl<N, P, I> TickDataProvider for SimpleTickDataProvider<N, P, I>
+impl<P, N, I> TickDataProvider for SimpleTickDataProvider<P, N, I>
 where
     N: Network,
     P: Provider<N>,
@@ -135,7 +141,7 @@ mod tests {
         let provider = SimpleTickDataProvider::new(
             address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
             PROVIDER.clone(),
-            *BLOCK_ID,
+            BLOCK_ID,
         );
         // [-887270, -92110, 100, 110, 22990, ...]
         let tick = provider.get_tick(-92110).await?;
