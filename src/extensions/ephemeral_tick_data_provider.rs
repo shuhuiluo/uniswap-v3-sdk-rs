@@ -84,7 +84,7 @@ mod tests {
             PROVIDER.clone(),
             None,
             None,
-            *BLOCK_ID,
+            BLOCK_ID,
         )
         .await?;
         assert!(!provider.ticks.is_empty());
