@@ -142,7 +142,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
     /// async fn main() {
     ///     dotenv::dotenv().ok();
     ///     let rpc_url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    ///     let provider = ProviderBuilder::new().on_http(rpc_url);
+    ///     let provider = ProviderBuilder::new().connect_http(rpc_url);
     ///     let block_id = Some(BlockId::from(17000000));
     ///     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
     ///         1,
