@@ -66,11 +66,13 @@ fn compute_swap_step_benchmark_ref(c: &mut Criterion) {
                 fee_pips,
             ) in &inputs
             {
+                #[allow(clippy::missing_transmute_annotations)]
+                let amount_remaining = unsafe { core::mem::transmute(*amount_remaining) };
                 let _ = swap_math::compute_swap_step(
                     *sqrt_ratio_current_x96,
                     *sqrt_ratio_target_x96,
                     *liquidity,
-                    *amount_remaining,
+                    amount_remaining,
                     fee_pips.into_limbs()[0] as u32,
                 );
             }

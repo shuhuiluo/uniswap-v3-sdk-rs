@@ -22,7 +22,7 @@ use uniswap_v3_sdk::prelude::*;
 async fn main() {
     dotenv::dotenv().ok();
     let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    let provider = ProviderBuilder::new().on_http(rpc_url);
+    let provider = ProviderBuilder::new().connect_http(rpc_url);
     let block_id = BlockId::from(17000000);
     const CHAIN_ID: u64 = 1;
     let wbtc = token!(
@@ -58,9 +58,8 @@ async fn main() {
         .to(*QUOTER_ADDRESSES.get(&CHAIN_ID).unwrap())
         .input(params.calldata.into());
     let res = provider.call(tx).block(block_id).await.unwrap();
-    let amount_out = IQuoter::quoteExactInputSingleCall::abi_decode_returns(res.as_ref(), true)
-        .unwrap()
-        .amountOut;
+    let amount_out =
+        IQuoter::quoteExactInputSingleCall::abi_decode_returns_validate(res.as_ref()).unwrap();
     println!("Quoter amount out: {}", amount_out);
 
     // Compare local calculation with on-chain quoter to ensure accuracy

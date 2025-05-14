@@ -30,7 +30,7 @@ async fn main() {
     let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
         anvil
             .fork(rpc_url)
             .fork_block_number(block_id.as_u64().unwrap())
@@ -111,8 +111,7 @@ async fn main() {
             .balanceOf(account.address())
             .call()
             .await
-            .unwrap()
-            ._0,
+            .unwrap(),
         U256::ZERO
     );
 }
@@ -154,7 +153,6 @@ where
         .call()
         .await
         .unwrap()
-        ._0
 }
 
 /// Burn a position with a permit
