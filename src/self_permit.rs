@@ -1,5 +1,5 @@
 use super::abi::ISelfPermit;
-use alloy_primitives::{Bytes, PrimitiveSignature, B256, U256};
+use alloy_primitives::{Bytes, Signature, B256, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
 use uniswap_sdk_core::prelude::*;
 
@@ -35,7 +35,7 @@ impl<P: SolStruct> ERC20PermitData<P> {
 ///
 /// ```
 /// use alloy::signers::{local::PrivateKeySigner, SignerSync};
-/// use alloy_primitives::{address, b256, uint, PrimitiveSignature, B256};
+/// use alloy_primitives::{address, b256, uint, Signature, B256};
 /// use alloy_sol_types::SolStruct;
 /// use uniswap_v3_sdk::prelude::*;
 ///
@@ -74,7 +74,7 @@ impl<P: SolStruct> ERC20PermitData<P> {
 /// // Derive the EIP-712 signing hash.
 /// let hash: B256 = permit_data.eip712_signing_hash();
 ///
-/// let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
+/// let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
 /// assert_eq!(
 ///     signature.recover_address_from_prehash(&hash).unwrap(),
 ///     signer.address()
@@ -103,14 +103,14 @@ pub fn get_erc20_permit_data<P: SolStruct>(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StandardPermitArguments {
-    pub signature: PrimitiveSignature,
+    pub signature: Signature,
     pub amount: U256,
     pub deadline: U256,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AllowedPermitArguments {
-    pub signature: PrimitiveSignature,
+    pub signature: Signature,
     pub nonce: U256,
     pub expiry: U256,
 }
@@ -126,7 +126,7 @@ impl StandardPermitArguments {
     #[must_use]
     pub const fn new(r: U256, s: U256, v: bool, amount: U256, deadline: U256) -> Self {
         Self {
-            signature: PrimitiveSignature::new(r, s, v),
+            signature: Signature::new(r, s, v),
             amount,
             deadline,
         }
@@ -138,7 +138,7 @@ impl AllowedPermitArguments {
     #[must_use]
     pub const fn new(r: U256, s: U256, v: bool, nonce: U256, expiry: U256) -> Self {
         Self {
-            signature: PrimitiveSignature::new(r, s, v),
+            signature: Signature::new(r, s, v),
             nonce,
             expiry,
         }
