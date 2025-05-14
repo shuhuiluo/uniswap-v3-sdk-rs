@@ -17,7 +17,7 @@ use alloy::{
     sol,
     transports::http::reqwest::Url,
 };
-use alloy_primitives::{keccak256, PrimitiveSignature, B256, U256};
+use alloy_primitives::{keccak256, Signature, B256, U256};
 use alloy_sol_types::SolValue;
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
@@ -38,7 +38,7 @@ async fn main() {
     let block_id = BlockId::from(17000000);
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
         anvil
             .fork(rpc_url)
             .fork_block_number(block_id.as_u64().unwrap())
@@ -49,8 +49,8 @@ async fn main() {
     let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
 
     let iusdc = USDC::new(usdc.address(), provider.clone());
-    let name = iusdc.name().call().await.unwrap()._0;
-    let version = iusdc.version().call().await.unwrap()._0;
+    let name = iusdc.name().call().await.unwrap();
+    let version = iusdc.version().call().await.unwrap();
 
     // Create a signer and sign a permit
     let signer = PrivateKeySigner::random();
@@ -64,7 +64,7 @@ async fn main() {
     };
     let permit_data = get_erc20_permit_data(permit, name.leak(), version.leak(), usdc.address(), 1);
     let hash: B256 = permit_data.eip712_signing_hash();
-    let signature: PrimitiveSignature = signer.sign_hash_sync(&hash).unwrap();
+    let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
     assert_eq!(
         signature.recover_address_from_prehash(&hash).unwrap(),
         signer.address()
@@ -96,12 +96,7 @@ async fn main() {
         .unwrap();
 
     // Check the spender allowance
-    let allowance = iusdc
-        .allowance(signer.address(), npm)
-        .call()
-        .await
-        .unwrap()
-        ._0;
+    let allowance = iusdc.allowance(signer.address(), npm).call().await.unwrap();
     println!("USDC allowance: {}", allowance);
     assert_eq!(allowance, amount);
 }

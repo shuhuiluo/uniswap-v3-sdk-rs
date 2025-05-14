@@ -547,14 +547,12 @@ where
         trade_type: TradeType,
     ) -> Result<Self, Error> {
         let mut token_amount: CurrencyAmount<Token> = amount.wrapped_owned()?;
+        let currency = amount.meta.currency;
         let input_amount: CurrencyAmount<TInput>;
         let output_amount: CurrencyAmount<TOutput>;
         match trade_type {
             TradeType::ExactInput => {
-                assert!(
-                    amount.currency.wrapped().equals(route.input.wrapped()),
-                    "INPUT"
-                );
+                assert!(currency.wrapped().equals(route.input.wrapped()), "INPUT");
                 for pool in &route.pools {
                     token_amount = pool.get_output_amount(&token_amount, None).await?;
                 }
@@ -570,10 +568,7 @@ where
                 )?;
             }
             TradeType::ExactOutput => {
-                assert!(
-                    amount.currency.wrapped().equals(route.output.wrapped()),
-                    "OUTPUT"
-                );
+                assert!(currency.wrapped().equals(route.output.wrapped()), "OUTPUT");
                 for pool in route.pools.iter().rev() {
                     token_amount = pool.get_input_amount(&token_amount, None).await?;
                 }

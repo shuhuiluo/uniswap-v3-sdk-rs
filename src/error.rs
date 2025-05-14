@@ -3,13 +3,6 @@
 #[cfg(doc)]
 use crate::prelude::*;
 
-#[cfg(feature = "extensions")]
-use alloy::contract::Error as ContractError;
-#[cfg(feature = "extensions")]
-use alloy::providers::MulticallError;
-#[cfg(feature = "extensions")]
-use uniswap_lens::error::Error as LensError;
-
 use alloy_primitives::{aliases::I24, U160};
 use uniswap_sdk_core::error::Error as CoreError;
 
@@ -67,15 +60,15 @@ pub enum Error {
 
     #[cfg(feature = "extensions")]
     #[error("{0}")]
-    ContractError(#[from] ContractError),
+    ContractError(#[from] alloy::contract::Error),
 
     #[cfg(feature = "extensions")]
     #[error("{0}")]
-    LensError(#[from] LensError),
+    LensError(#[from] uniswap_lens::error::Error),
 
     #[cfg(feature = "extensions")]
     #[error("{0}")]
-    MulticallError(#[from] MulticallError),
+    MulticallError(#[from] alloy::providers::MulticallError),
 
     #[cfg(feature = "extensions")]
     #[error("Invalid access list")]
@@ -95,6 +88,6 @@ pub enum TickListError {
 #[cfg(feature = "extensions")]
 impl From<alloy::transports::TransportError> for Error {
     fn from(e: alloy::transports::TransportError) -> Self {
-        Self::ContractError(ContractError::TransportError(e))
+        Self::ContractError(alloy::contract::Error::TransportError(e))
     }
 }
