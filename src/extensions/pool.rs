@@ -26,7 +26,7 @@ pub fn get_pool_contract<N, P>(
     token_b: Address,
     fee: FeeAmount,
     provider: P,
-) -> IUniswapV3PoolInstance<(), P, N>
+) -> IUniswapV3PoolInstance<P, N>
 where
     N: Network,
     P: Provider<N>,
@@ -96,20 +96,20 @@ impl Pool {
             token!(
                 chain_id,
                 token_a,
-                token_a_decimals._0,
-                token_a_symbol._0,
-                token_a_name._0
+                token_a_decimals,
+                token_a_symbol,
+                token_a_name
             ),
             token!(
                 chain_id,
                 token_b,
-                token_b_decimals._0,
-                token_b_symbol._0,
-                token_b_name._0
+                token_b_decimals,
+                token_b_symbol,
+                token_b_name
             ),
             fee,
             sqrt_price_x96,
-            liquidity._0,
+            liquidity,
         )
     }
 }
@@ -142,7 +142,7 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
     /// async fn main() {
     ///     dotenv::dotenv().ok();
     ///     let rpc_url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    ///     let provider = ProviderBuilder::new().on_http(rpc_url);
+    ///     let provider = ProviderBuilder::new().connect_http(rpc_url);
     ///     let block_id = Some(BlockId::from(17000000));
     ///     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
     ///         1,

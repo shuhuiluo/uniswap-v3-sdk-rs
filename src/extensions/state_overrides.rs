@@ -110,16 +110,14 @@ mod tests {
             .call()
             .overrides(overrides.clone())
             .await
-            .unwrap()
-            ._0;
+            .unwrap();
         assert_eq!(balance, amount);
         let allowance = usdc
             .allowance(owner, npm)
             .call()
             .overrides(overrides)
             .await
-            .unwrap()
-            ._0;
+            .unwrap();
         assert_eq!(allowance, amount);
     }
 }

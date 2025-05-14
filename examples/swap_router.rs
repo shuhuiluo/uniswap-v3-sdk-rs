@@ -31,7 +31,7 @@ sol! {
 async fn main() {
     dotenv::dotenv().ok();
     let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    let provider = ProviderBuilder::new().on_http(rpc_url.clone());
+    let provider = ProviderBuilder::new().connect_http(rpc_url.clone());
     let block_id = BlockId::from(17000000);
     const WBTC: Address = address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
     let wbtc = token!(1, WBTC, 8, "WBTC");
@@ -59,13 +59,12 @@ async fn main() {
         .to(*QUOTER_ADDRESSES.get(&1).unwrap())
         .input(params.calldata.into());
     let res = provider.call(tx).block(block_id).await.unwrap();
-    let amount_out = IQuoter::quoteExactInputSingleCall::abi_decode_returns(res.as_ref(), true)
-        .unwrap()
-        .amountOut;
+    let amount_out =
+        IQuoter::quoteExactInputSingleCall::abi_decode_returns_validate(res.as_ref()).unwrap();
     println!("Quoter amount out: {}", amount_out);
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().on_anvil_with_config(|anvil| {
+    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
         anvil
             .fork(rpc_url)
             .fork_block_number(block_id.as_u64().unwrap())
@@ -100,7 +99,7 @@ async fn main() {
         .unwrap();
 
     let iwbtc = IERC20::new(WBTC, provider);
-    let balance = iwbtc.balanceOf(account).call().await.unwrap()._0;
+    let balance = iwbtc.balanceOf(account).call().await.unwrap();
     println!("WBTC balance: {}", balance);
     assert_eq!(balance, amount_out);
 }

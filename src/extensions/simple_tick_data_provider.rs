@@ -38,7 +38,7 @@ where
     P: Provider<N>,
     I: TickIndex,
 {
-    pub pool: IUniswapV3PoolState::IUniswapV3PoolStateInstance<(), P, N>,
+    pub pool: IUniswapV3PoolState::IUniswapV3PoolStateInstance<P, N>,
     pub block_id: Option<BlockId>,
     _tick_index: core::marker::PhantomData<I>,
     _network: core::marker::PhantomData<N>,
@@ -86,7 +86,7 @@ where
             .block(block_id)
             .call()
             .await?;
-        Ok(U256::from(word._0))
+        Ok(U256::from(word))
     }
 }
 
