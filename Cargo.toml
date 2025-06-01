@@ -30,6 +30,8 @@ serde_json = { version = "1.0", optional = true, default-features = false }
 thiserror = { version = "2", default-features = false }
 uniswap-lens = { version = "0.15", optional = true }
 uniswap-sdk-core = "5.1.0"
+uni-obrv = "0.1.2"
+
 
 [dev-dependencies]
 alloy = { version = "1.0.1", default-features = false, features = ["provider-anvil-node", "reqwest", "signer-local"] }

@@ -9,7 +9,11 @@ mod simple_tick_data_provider;
 mod state_overrides;
 mod tick_bit_map;
 mod tick_map;
+mod uni_observer_tick_data_provider;
+mod uni_observer_tick_map_data_provider;
 
+pub use uni_observer_tick_data_provider::ObserverTickDataProvider;
+pub use uni_observer_tick_map_data_provider::UniObserverTickMapDataProvider;
 pub use ephemeral_tick_data_provider::EphemeralTickDataProvider;
 pub use ephemeral_tick_map_data_provider::EphemeralTickMapDataProvider;
 pub use pool::*;
