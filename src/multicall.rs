@@ -23,7 +23,7 @@ where
     E: AsRef<[u8]>,
     B: From<Bytes>,
 {
-    IMulticall::multicallCall::abi_decode_validate(encoded.as_ref())
+    IMulticall::multicallCall::abi_decode(encoded.as_ref())
         .map(|decoded| decoded.data.into_iter().map(Into::into).collect())
 }
 
