@@ -97,6 +97,6 @@ async fn main() {
 
     // Check the spender allowance
     let allowance = iusdc.allowance(signer.address(), npm).call().await.unwrap();
-    println!("USDC allowance: {}", allowance);
+    println!("USDC allowance: {allowance}");
     assert_eq!(allowance, amount);
 }
