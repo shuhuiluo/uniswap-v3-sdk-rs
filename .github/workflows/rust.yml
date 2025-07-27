@@ -10,7 +10,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-  MSRV: 1.82
+  MSRV: 1.86
 
 jobs:
   lint:
@@ -19,8 +19,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Cache Cargo registry
         uses: actions/cache@v4
         with:
@@ -40,43 +38,16 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-  msrv:
-    name: Rust MSRV Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-msrv-${{ env.MSRV }}-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-msrv-${{ env.MSRV }}-
-            ${{ runner.os }}-cargo-msrv-
-      - name: Install Rust ${{ env.MSRV }}
-        run: rustup install ${{ env.MSRV }} --profile minimal
-      - name: Verify MSRV version
-        run: cargo +${{ env.MSRV }} -V
-      - name: Build with MSRV
-        run: cargo +${{ env.MSRV }} build
-      - name: Build with all features
-        run: cargo +${{ env.MSRV }} build --all-features
-
   test:
-    needs: [ lint, msrv ]
+    needs: lint
     name: Rust Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        rust-version: [ '1.86', 'stable' ]
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Cache Cargo registry
         uses: actions/cache@v4
         with:
@@ -84,20 +55,26 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.rust-version }}-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-${{ matrix.rust-version }}-
+            ${{ runner.os }}-cargo-
+      - name: Install Rust ${{ matrix.rust-version }}
+        run: |
+          if [ "${{ matrix.rust-version }}" != "stable" ]; then
+            rustup install ${{ matrix.rust-version }} --profile minimal
+          fi
       - name: Build
-        run: cargo build
+        run: cargo +${{ matrix.rust-version }} build
       - name: Build with std feature
-        run: cargo build --features std
+        run: cargo +${{ matrix.rust-version }} build --features std
       - name: Build with extensions
-        run: cargo build --features extensions
-      - name: Run tests for core library
-        run: cargo test
-      - name: Run tests for std feature
-        run: cargo test --features std
-      - name: Run tests for extensions
-        run: cargo test --features extensions --lib extensions -- --test-threads=1
-      - name: Run doc tests
-        run: cargo test --doc --all-features
+        run: cargo +${{ matrix.rust-version }} build --features extensions
+      - name: Build with all features
+        run: cargo +${{ matrix.rust-version }} build --all-features
+      - name: Run tests
+        run: |
+          cargo +${{ matrix.rust-version }} test
+          cargo +${{ matrix.rust-version }} test --features std
+          cargo +${{ matrix.rust-version }} test --features extensions --lib extensions -- --test-threads=1
+          cargo +${{ matrix.rust-version }} test --doc --all-features

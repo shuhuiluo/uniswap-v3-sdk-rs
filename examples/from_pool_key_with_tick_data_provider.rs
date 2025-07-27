@@ -49,7 +49,7 @@ async fn main() {
     let amount_in = CurrencyAmount::from_raw_amount(wbtc.clone(), 100000000).unwrap();
     let local_amount_out = pool.get_output_amount(&amount_in, None).await.unwrap();
     let local_amount_out = local_amount_out.quotient();
-    println!("Local amount out: {}", local_amount_out);
+    println!("Local amount out: {local_amount_out}");
 
     // Get the output amount from the quoter
     let route = Route::new(vec![pool], wbtc, weth);
@@ -60,7 +60,7 @@ async fn main() {
     let res = provider.call(tx).block(block_id).await.unwrap();
     let amount_out =
         IQuoter::quoteExactInputSingleCall::abi_decode_returns_validate(res.as_ref()).unwrap();
-    println!("Quoter amount out: {}", amount_out);
+    println!("Quoter amount out: {amount_out}");
 
     // Compare local calculation with on-chain quoter to ensure accuracy
     assert_eq!(U256::from_big_int(local_amount_out), amount_out);
