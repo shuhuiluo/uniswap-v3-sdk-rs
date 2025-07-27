@@ -43,13 +43,10 @@ impl<I: TickIndex> TickList for [Tick<I>] {
         for i in 1..self.len() {
             assert!(self[i] >= self[i - 1], "SORTED");
         }
-        assert_eq!(
-            self.iter().fold(0_u128, |acc, x| acc
-                .checked_add_signed(x.liquidity_net)
-                .expect("ZERO_NET")),
-            0,
-            "ZERO_NET"
-        );
+        let liquidity_net_sum = self
+            .iter()
+            .fold(0_i128, |acc, x| acc + x.liquidity_net as i128);
+        assert_eq!(liquidity_net_sum, 0, "ZERO_NET");
     }
 
     #[inline]
