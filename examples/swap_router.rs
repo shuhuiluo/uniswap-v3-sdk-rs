@@ -61,7 +61,7 @@ async fn main() {
     let res = provider.call(tx).block(block_id).await.unwrap();
     let amount_out =
         IQuoter::quoteExactInputSingleCall::abi_decode_returns_validate(res.as_ref()).unwrap();
-    println!("Quoter amount out: {}", amount_out);
+    println!("Quoter amount out: {amount_out}");
 
     // Create an Anvil fork
     let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
@@ -100,6 +100,6 @@ async fn main() {
 
     let iwbtc = IERC20::new(WBTC, provider);
     let balance = iwbtc.balanceOf(account).call().await.unwrap();
-    println!("WBTC balance: {}", balance);
+    println!("WBTC balance: {balance}");
     assert_eq!(balance, amount_out);
 }
