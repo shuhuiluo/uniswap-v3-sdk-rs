@@ -196,6 +196,41 @@ mod tests {
         fn test_errors_if_ticks_are_not_on_multiples_of_tick_spacing() {
             [HIGH_TICK, LOW_TICK, MID_TICK].validate_list(1337);
         }
+
+        #[test]
+        fn test_u128_max_validates() {
+            // position 0 range [-2, 2), liquidity i128::MAX
+            // position 1 range [-1, 1), liquidity i128::MAX
+            // position 2 range [0, 2), liquidity 1
+            let ticks = [
+                Tick {
+                    index: -2,
+                    liquidity_gross: i128::MAX as u128,
+                    liquidity_net: i128::MAX,
+                },
+                Tick {
+                    index: -1,
+                    liquidity_gross: i128::MAX as u128,
+                    liquidity_net: i128::MAX,
+                },
+                Tick {
+                    index: 0,
+                    liquidity_gross: 1,
+                    liquidity_net: 1, // total liquidity u128::MAX
+                },
+                Tick {
+                    index: 1,
+                    liquidity_gross: i128::MAX as u128,
+                    liquidity_net: -i128::MAX,
+                },
+                Tick {
+                    index: 2,
+                    liquidity_gross: 1 << 127,
+                    liquidity_net: i128::MIN,
+                },
+            ];
+            ticks.validate_list(1);
+        }
     }
 
     #[test]
