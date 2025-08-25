@@ -971,22 +971,22 @@ mod tests {
         assert_eq!(amount0.to_string(), "120054069145287995769397");
         assert_eq!(amount1.to_string(), "79831926243");
     }
+
     #[test]
-    #[should_panic(expected = "LiquidityOverflow")]
     fn from_amount1_liquidity_overflow() {
-        Position::from_amount1(
+        let res = Position::from_amount1(
             Pool::new(
                 DAI.clone(),
                 WETH.clone(),
                 FeeAmount::LOW,
-                U160::get_sqrt_ratio_at_tick(99200.to_i24()).unwrap(),
+                get_sqrt_ratio_at_tick(99200.to_i24()).unwrap(),
                 0,
             )
             .unwrap(),
             99200,
             99400,
             U256::from(1000000000000000000_u128),
-        )
-        .unwrap();
+        );
+        assert!(matches!(res, Err(Error::LiquidityOverflow)));
     }
 }
