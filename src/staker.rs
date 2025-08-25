@@ -235,7 +235,7 @@ mod tests {
             amount: Some(uint!(1_U256)),
         };
         let MethodParameters { calldata, value } =
-            collect_rewards(&[INCENTIVE_KEY.clone()], options);
+            collect_rewards(core::slice::from_ref(&INCENTIVE_KEY), options);
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata.to_vec(),
@@ -251,7 +251,7 @@ mod tests {
             amount: None,
         };
         let MethodParameters { calldata, value } =
-            collect_rewards(&[INCENTIVE_KEY.clone()], options);
+            collect_rewards(core::slice::from_ref(&INCENTIVE_KEY), options);
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata.to_vec(),
@@ -278,7 +278,7 @@ mod tests {
     fn test_withdraw_token_succeeds_with_one_key() {
         let options = WITHDRAW_OPTIONS.clone();
         let MethodParameters { calldata, value } =
-            withdraw_token(&[INCENTIVE_KEY.clone()], options);
+            withdraw_token(core::slice::from_ref(&INCENTIVE_KEY), options);
         assert_eq!(value, U256::ZERO);
         assert_eq!(
             calldata.to_vec(),
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_encode_deposit_succeeds_single_key() {
-        let deposit = encode_deposit(&[INCENTIVE_KEY.clone()]);
+        let deposit = encode_deposit(core::slice::from_ref(&INCENTIVE_KEY));
         assert_eq!(
             deposit.to_vec(),
             hex!("0000000000000000000000001f9840a85d5af5bf1d1762f925bdaddc4201f9840000000000000000000000004fa63b0dea87d2cd519f3b67a5ddb145779b7bd2000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000000000001")
@@ -317,7 +317,7 @@ mod tests {
 
     #[test]
     fn test_safe_transfer_from_succeeds() {
-        let data = encode_deposit(&[INCENTIVE_KEY.clone()]);
+        let data = encode_deposit(core::slice::from_ref(&INCENTIVE_KEY));
         let MethodParameters { calldata, value } =
             safe_transfer_from_parameters(SafeTransferOptions {
                 sender: SENDER,
