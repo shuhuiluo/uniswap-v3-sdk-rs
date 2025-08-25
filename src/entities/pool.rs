@@ -479,15 +479,14 @@ mod tests {
 
     mod constructor {
         use super::*;
+        use uniswap_sdk_core::error::Error as CoreError;
 
         #[test]
         fn cannot_be_used_for_tokens_on_different_chains() {
             let weth9 = WETH9::default().get(3).unwrap().clone();
             assert!(matches!(
                 Pool::new(USDC.clone(), weth9, FeeAmount::MEDIUM, ONE_ETHER, 0),
-                Err(Error::Core(
-                    uniswap_sdk_core::error::Error::ChainIdMismatch(1, 3)
-                ))
+                Err(Error::Core(CoreError::ChainIdMismatch(1, 3)))
             ));
         }
 
@@ -495,7 +494,7 @@ mod tests {
         fn cannot_be_given_two_of_the_same_token() {
             assert!(matches!(
                 Pool::new(USDC.clone(), USDC.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0),
-                Err(Error::Core(uniswap_sdk_core::error::Error::EqualAddresses))
+                Err(Error::Core(CoreError::EqualAddresses))
             ));
         }
 

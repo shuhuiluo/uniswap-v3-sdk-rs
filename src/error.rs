@@ -8,6 +8,7 @@ use uniswap_sdk_core::error::Error as CoreError;
 
 #[derive(Debug, thiserror::Error)]
 #[cfg_attr(not(feature = "extensions"), derive(Clone, Copy, Hash, PartialEq, Eq))]
+#[non_exhaustive]
 pub enum Error {
     /// Thrown when an error occurs in the core library.
     #[error("{0}")]
