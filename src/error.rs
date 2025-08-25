@@ -45,6 +45,9 @@ pub enum Error {
     #[error("Overflow in price calculation")]
     PriceOverflow,
 
+    #[error("Overflow in liquidity calculation")]
+    LiquidityOverflow,
+
     #[error("Insufficient liquidity")]
     InsufficientLiquidity,
 

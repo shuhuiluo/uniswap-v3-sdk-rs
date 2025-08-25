@@ -440,7 +440,7 @@ impl<TP: TickDataProvider> Position<TP> {
         );
         Ok(Self::new(
             pool,
-            liquidity.to_u128().unwrap(),
+            liquidity.to_u128().ok_or(Error::LiquidityOverflow)?,
             tick_lower,
             tick_upper,
         ))
@@ -970,5 +970,23 @@ mod tests {
         let MintAmounts { amount0, amount1 } = position.mint_amounts().unwrap();
         assert_eq!(amount0.to_string(), "120054069145287995769397");
         assert_eq!(amount1.to_string(), "79831926243");
+    }
+    #[test]
+    #[should_panic(expected = "LiquidityOverflow")]
+    fn from_amount1_liquidity_overflow() {
+        Position::from_amount1(
+            Pool::new(
+                DAI.clone(),
+                WETH.clone(),
+                FeeAmount::LOW,
+                U160::get_sqrt_ratio_at_tick(99200.to_i24()).unwrap(),
+                0,
+            )
+            .unwrap(),
+            99200,
+            99400,
+            U256::from(1000000000000000000_u128),
+        )
+        .unwrap();
     }
 }
