@@ -294,15 +294,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTick(-887273)")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_small() {
-        get_sqrt_ratio_at_tick(MIN_TICK - I24::ONE).unwrap();
+        let result = get_sqrt_ratio_at_tick(MIN_TICK - I24::ONE);
+        assert!(matches!(result, Err(Error::InvalidTick(tick)) if tick == MIN_TICK - I24::ONE));
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTick(887273)")]
     fn get_sqrt_ratio_at_tick_throws_for_tick_too_large() {
-        get_sqrt_ratio_at_tick(MAX_TICK + I24::ONE).unwrap();
+        let result = get_sqrt_ratio_at_tick(MAX_TICK + I24::ONE);
+        assert!(matches!(result, Err(Error::InvalidTick(tick)) if tick == MAX_TICK + I24::ONE));
     }
 
     #[test]
