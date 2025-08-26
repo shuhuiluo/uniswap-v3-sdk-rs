@@ -482,19 +482,23 @@ mod tests {
 
     mod constructor {
         use super::*;
+        use uniswap_sdk_core::error::Error as CoreError;
 
         #[test]
-        #[should_panic(expected = "CHAIN_IDS")]
         fn cannot_be_used_for_tokens_on_different_chains() {
             let weth9 = WETH9::default().get(3).unwrap().clone();
-            Pool::new(USDC.clone(), weth9, FeeAmount::MEDIUM, ONE_ETHER, 0).expect("CHAIN_IDS");
+            assert!(matches!(
+                Pool::new(USDC.clone(), weth9, FeeAmount::MEDIUM, ONE_ETHER, 0),
+                Err(Error::Core(CoreError::ChainIdMismatch(1, 3)))
+            ));
         }
 
         #[test]
-        #[should_panic(expected = "ADDRESSES")]
         fn cannot_be_given_two_of_the_same_token() {
-            Pool::new(USDC.clone(), USDC.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0)
-                .expect("ADDRESSES");
+            assert!(matches!(
+                Pool::new(USDC.clone(), USDC.clone(), FeeAmount::MEDIUM, ONE_ETHER, 0),
+                Err(Error::Core(CoreError::EqualAddresses))
+            ));
         }
 
         #[test]
@@ -637,7 +641,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidToken")]
     fn price_of_throws_if_invalid_token() {
         let pool = Pool::new(
             USDC.clone(),
@@ -647,8 +650,10 @@ mod tests {
             0,
         )
         .unwrap();
-        pool.price_of(&WETH9::default().get(1).unwrap().clone())
-            .unwrap();
+        assert!(matches!(
+            pool.price_of(&WETH9::default().get(1).unwrap().clone()),
+            Err(Error::InvalidToken)
+        ));
     }
 
     #[test]
