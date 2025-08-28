@@ -1,0 +1,46 @@
+name: Examples
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+jobs:
+  examples:
+    name: Run Examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+      - name: Install Rust stable
+        run: |
+          rustup install stable --profile minimal
+          rustup default stable
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Build with extensions
+        run: cargo build --features extensions
+      - name: Run all examples
+        run: |
+          for example in from_pool_key_with_tick_data_provider nonfungible_position_manager self_permit swap_router; do
+            echo "Running example: $example"
+            cargo run --example $example --features extensions
+          done
