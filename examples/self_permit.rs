@@ -9,18 +9,19 @@
 //! This example uses mainnet block 17000000 for consistent results
 
 use alloy::{
-    eips::BlockId,
     node_bindings::WEI_IN_ETHER,
-    providers::{ext::AnvilApi, Provider, ProviderBuilder},
+    providers::{ext::AnvilApi, Provider},
     rpc::types::TransactionRequest,
     signers::{local::PrivateKeySigner, SignerSync},
     sol,
-    transports::http::reqwest::Url,
 };
 use alloy_primitives::{keccak256, Signature, B256, U256};
 use alloy_sol_types::SolValue;
-use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
+
+#[path = "common/mod.rs"]
+mod common;
+use common::{setup_anvil_fork_provider, CHAIN_ID, NPM_ADDRESS, USDC, USDC_ADDRESS};
 
 sol! {
     #[sol(rpc)]
@@ -33,22 +34,14 @@ sol! {
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
-    let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    let block_id = BlockId::from(17000000);
-
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
-        anvil
-            .fork(rpc_url)
-            .fork_block_number(block_id.as_u64().unwrap())
-    });
+    let provider = setup_anvil_fork_provider().await;
     provider.anvil_auto_impersonate_account(true).await.unwrap();
 
-    let usdc = token!(1, "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", 6);
-    let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
+    let usdc = USDC.clone();
+    let npm = *NPM_ADDRESS;
 
-    let iusdc = USDC::new(usdc.address(), provider.clone());
+    let iusdc = USDC::new(USDC_ADDRESS, provider.clone());
     let name = iusdc.name().call().await.unwrap();
     let version = iusdc.version().call().await.unwrap();
 
@@ -62,7 +55,8 @@ async fn main() {
         nonce: U256::ZERO,
         deadline: U256::MAX,
     };
-    let permit_data = get_erc20_permit_data(permit, name.leak(), version.leak(), usdc.address(), 1);
+    let permit_data =
+        get_erc20_permit_data(permit, name.leak(), version.leak(), USDC_ADDRESS, CHAIN_ID);
     let hash: B256 = permit_data.eip712_signing_hash();
     let signature: Signature = signer.sign_hash_sync(&hash).unwrap();
     assert_eq!(
