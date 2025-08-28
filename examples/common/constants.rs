@@ -11,8 +11,7 @@ use uniswap_sdk_core::prelude::NONFUNGIBLE_POSITION_MANAGER_ADDRESSES;
 pub const CHAIN_ID: u64 = 1;
 pub const FORK_BLOCK_NUMBER: u64 = 17000000;
 
-pub const BLOCK_ID: Option<BlockId> =
-    Some(BlockId::Number(BlockNumberOrTag::Number(FORK_BLOCK_NUMBER)));
+pub const BLOCK_ID: BlockId = BlockId::Number(BlockNumberOrTag::Number(FORK_BLOCK_NUMBER));
 
 pub static RPC_URL: Lazy<Url> = Lazy::new(|| {
     dotenv::dotenv().ok();

@@ -30,7 +30,6 @@ sol! {
 #[tokio::main]
 async fn main() {
     let provider = setup_http_provider();
-    let block_id = BLOCK_ID.unwrap();
     let wbtc = WBTC.clone();
     let eth = ETHER.clone();
 
@@ -42,7 +41,7 @@ async fn main() {
         eth.address(),
         FeeAmount::LOW,
         provider.clone(),
-        Some(block_id),
+        Some(BLOCK_ID),
     )
     .await
     .unwrap();
@@ -55,7 +54,7 @@ async fn main() {
     let tx = TransactionRequest::default()
         .to(*QUOTER_ADDRESSES.get(&CHAIN_ID).unwrap())
         .input(params.calldata.into());
-    let res = provider.call(tx).block(block_id).await.unwrap();
+    let res = provider.call(tx).block(BLOCK_ID).await.unwrap();
     let amount_out =
         IQuoter::quoteExactInputSingleCall::abi_decode_returns_validate(res.as_ref()).unwrap();
     println!("Quoter amount out: {amount_out}");
