@@ -8,17 +8,17 @@
 //! This example uses mainnet block 17000000 for consistent results
 
 use alloy::{
-    eips::BlockId,
-    node_bindings::WEI_IN_ETHER,
-    providers::{Provider, ProviderBuilder},
-    rpc::types::TransactionRequest,
-    sol,
-    transports::http::reqwest::Url,
+    node_bindings::WEI_IN_ETHER, providers::Provider, rpc::types::TransactionRequest, sol,
 };
-use alloy_primitives::address;
 use alloy_sol_types::SolCall;
-use uniswap_sdk_core::{prelude::*, token};
+use uniswap_sdk_core::prelude::*;
 use uniswap_v3_sdk::prelude::*;
+
+#[path = "common/mod.rs"]
+mod common;
+use common::{
+    setup_anvil_fork_provider, setup_http_provider, BLOCK_ID, CHAIN_ID, ETHER, WBTC, WBTC_ADDRESS,
+};
 
 sol! {
     #[sol(rpc)]
@@ -29,17 +29,14 @@ sol! {
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
-    let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    let provider = ProviderBuilder::new().connect_http(rpc_url.clone());
-    let block_id = BlockId::from(17000000);
-    const WBTC: Address = address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
-    let wbtc = token!(1, WBTC, 8, "WBTC");
-    let eth = Ether::on_chain(1);
+    let provider = setup_http_provider();
+    let block_id = BLOCK_ID.unwrap();
+    let wbtc = WBTC.clone();
+    let eth = ETHER.clone();
 
     // Create a pool with a tick map data provider
     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
-        1,
+        CHAIN_ID,
         FACTORY_ADDRESS,
         wbtc.address(),
         eth.address(),
@@ -56,7 +53,7 @@ async fn main() {
     let route = Route::new(vec![pool], eth, wbtc);
     let params = quote_call_parameters(&route, &amount_in, TradeType::ExactInput, None);
     let tx = TransactionRequest::default()
-        .to(*QUOTER_ADDRESSES.get(&1).unwrap())
+        .to(*QUOTER_ADDRESSES.get(&CHAIN_ID).unwrap())
         .input(params.calldata.into());
     let res = provider.call(tx).block(block_id).await.unwrap();
     let amount_out =
@@ -64,11 +61,7 @@ async fn main() {
     println!("Quoter amount out: {amount_out}");
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
-        anvil
-            .fork(rpc_url)
-            .fork_block_number(block_id.as_u64().unwrap())
-    });
+    let provider = setup_anvil_fork_provider().await;
     let account = provider.get_accounts().await.unwrap()[0];
 
     // Build the swap transaction
@@ -85,7 +78,7 @@ async fn main() {
     .unwrap();
     let tx = TransactionRequest::default()
         .from(account)
-        .to(*SWAP_ROUTER_02_ADDRESSES.get(&1).unwrap())
+        .to(*SWAP_ROUTER_02_ADDRESSES.get(&CHAIN_ID).unwrap())
         .input(params.calldata.into())
         .value(params.value);
 
@@ -98,7 +91,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let iwbtc = IERC20::new(WBTC, provider);
+    let iwbtc = IERC20::new(WBTC_ADDRESS, provider);
     let balance = iwbtc.balanceOf(account).call().await.unwrap();
     println!("WBTC balance: {balance}");
     assert_eq!(balance, amount_out);
