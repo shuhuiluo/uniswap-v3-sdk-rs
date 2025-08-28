@@ -116,7 +116,7 @@ The `common` module provides shared utilities across examples:
 ## Features
 
 - **`extensions`** (required) - Enables RPC-based functionality for pool creation and tick data providers
-- **`std`** - Standard library support (automatically enabled with extensions)
+- **`std`** - Standard library support (must be enabled explicitly if needed)
 
 ## Notes
 

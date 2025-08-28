@@ -29,7 +29,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
       - name: Install Rust stable
-        run: rustup install stable --profile minimal
+        run: |
+          rustup install stable --profile minimal
+          rustup default stable
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
