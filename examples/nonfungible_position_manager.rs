@@ -1,42 +1,28 @@
 use alloy::{
-    eips::BlockId,
     network::{Network, TransactionBuilder},
     node_bindings::WEI_IN_ETHER,
-    providers::{ext::AnvilApi, Provider, ProviderBuilder},
-    signers::{
-        k256::ecdsa::SigningKey,
-        local::{LocalSigner, PrivateKeySigner},
-        SignerSync,
-    },
-    transports::http::reqwest::Url,
+    providers::{ext::AnvilApi, Provider},
+    signers::{k256::ecdsa::SigningKey, local::LocalSigner, SignerSync},
 };
-use alloy_primitives::{address, Address, U256};
+use alloy_primitives::{Address, U256};
 use uniswap_lens::bindings::ierc721enumerable::IERC721Enumerable;
-use uniswap_sdk_core::{prelude::*, token};
+use uniswap_sdk_core::prelude::*;
 use uniswap_v3_sdk::prelude::*;
+
+#[path = "common/mod.rs"]
+mod common;
+use common::{random_signer, setup_anvil_fork_provider, CHAIN_ID, NPM_ADDRESS, WBTC, WETH};
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
-    let rpc_url: Url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
-    let block_id = BlockId::from(17000000);
-    let wbtc = token!(
-        1,
-        address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
-        8,
-        "WBTC"
-    );
-    let weth = WETH9::on_chain(1).unwrap();
-    let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
+    let wbtc = WBTC.clone();
+    let weth = WETH.clone();
+    let npm = *NPM_ADDRESS;
 
     // Create an Anvil fork
-    let provider = ProviderBuilder::new().connect_anvil_with_config(|anvil| {
-        anvil
-            .fork(rpc_url)
-            .fork_block_number(block_id.as_u64().unwrap())
-    });
+    let provider = setup_anvil_fork_provider().await;
     provider.anvil_auto_impersonate_account(true).await.unwrap();
-    let account: LocalSigner<SigningKey> = PrivateKeySigner::random();
+    let account: LocalSigner<SigningKey> = random_signer();
     provider
         .anvil_set_balance(account.address(), WEI_IN_ETHER)
         .await
@@ -44,7 +30,7 @@ async fn main() {
     let sender = provider.get_accounts().await.unwrap()[0];
 
     let pool = Pool::from_pool_key(
-        1,
+        CHAIN_ID,
         FACTORY_ADDRESS,
         wbtc.address(),
         weth.address(),
@@ -96,7 +82,7 @@ async fn main() {
 
     let token_id = mint_liquidity(&mut position, account.address(), &provider).await;
 
-    let minted_position = Position::from_token_id(1, npm, token_id, provider.clone(), None)
+    let minted_position = Position::from_token_id(CHAIN_ID, npm, token_id, provider.clone(), None)
         .await
         .unwrap();
 
@@ -122,7 +108,7 @@ where
     N: Network,
     P: Provider<N>,
 {
-    let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
+    let npm = *NPM_ADDRESS;
 
     let options = AddLiquidityOptions {
         slippage_tolerance: Percent::default(),
@@ -166,7 +152,7 @@ async fn burn_liquidity<N, P>(
     N: Network,
     P: Provider<N>,
 {
-    let npm = *NONFUNGIBLE_POSITION_MANAGER_ADDRESSES.get(&1).unwrap();
+    let npm = *NPM_ADDRESS;
 
     // Sign the permit
     let hash = get_permit_data(
@@ -177,7 +163,7 @@ async fn burn_liquidity<N, P>(
             deadline: U256::MAX,
         },
         npm,
-        1,
+        CHAIN_ID,
     )
     .eip712_signing_hash();
     let signature = owner.sign_hash_sync(&hash).unwrap();
