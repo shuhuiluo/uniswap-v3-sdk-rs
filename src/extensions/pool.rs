@@ -5,11 +5,7 @@
 
 use crate::prelude::*;
 use alloc::{string::ToString, vec, vec::Vec};
-use alloy::{
-    eips::{BlockId, BlockNumberOrTag},
-    network::Network,
-    providers::Provider,
-};
+use alloy::{eips::BlockId, network::Network, providers::Provider};
 use alloy_primitives::{Address, ChainId, B256};
 use uniswap_lens::{
     bindings::{
@@ -63,7 +59,7 @@ impl Pool {
         N: Network,
         P: Provider<N>,
     {
-        let block_id = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+        let block_id = block_id.unwrap_or(BlockId::latest());
         let pool_contract = get_pool_contract(factory, token_a, token_b, fee, provider.root());
         let token_a_contract = IERC20Metadata::new(token_a, provider.root());
         let token_b_contract = IERC20Metadata::new(token_b, provider.root());
