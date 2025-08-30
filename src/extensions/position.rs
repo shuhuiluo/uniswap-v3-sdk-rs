@@ -6,7 +6,7 @@
 use crate::prelude::{Error, *};
 use alloc::string::ToString;
 use alloy::{
-    eips::{BlockId, BlockNumberOrTag},
+    eips::BlockId,
     network::Network,
     providers::Provider,
     transports::{TransportError, TransportErrorKind},
@@ -57,7 +57,7 @@ where
     N: Network,
     P: Provider<N>,
 {
-    let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+    let block_id_ = block_id.unwrap_or(BlockId::latest());
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     let multicall = provider
@@ -266,7 +266,7 @@ where
     N: Network,
     P: Provider<N>,
 {
-    let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+    let block_id_ = block_id.unwrap_or(BlockId::latest());
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     let multicall = provider
@@ -351,7 +351,7 @@ where
 {
     let uri = get_nonfungible_position_manager_contract(nonfungible_position_manager, provider)
         .tokenURI(token_id)
-        .block(block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest)))
+        .block(block_id.unwrap_or(BlockId::latest()))
         .call()
         .await?;
     let json_uri = base64::Engine::decode(
@@ -467,7 +467,7 @@ where
 mod tests {
     use super::*;
     use crate::tests::PROVIDER;
-    use alloy::providers::MulticallBuilder;
+    use alloy::{eips::BlockNumberOrTag, providers::MulticallBuilder};
     use alloy_primitives::{address, uint};
     use fastnum::decimal::Context;
 

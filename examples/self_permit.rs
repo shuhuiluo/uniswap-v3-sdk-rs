@@ -35,7 +35,7 @@ sol! {
 #[tokio::main]
 async fn main() {
     // Create an Anvil fork
-    let provider = setup_anvil_fork_provider().await;
+    let provider = setup_anvil_fork_provider();
     provider.anvil_auto_impersonate_account(true).await.unwrap();
 
     let usdc = USDC.clone();
