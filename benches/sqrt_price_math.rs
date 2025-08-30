@@ -1,6 +1,8 @@
+use alloy::uint;
 use alloy_primitives::{keccak256, U160, U256};
 use alloy_sol_types::SolValue;
-use criterion::{criterion_group, criterion_main, Criterion};
+use core::hint::black_box;
+use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use uniswap_v3_math::sqrt_price_math;
 use uniswap_v3_sdk::prelude::*;
 
@@ -14,7 +16,7 @@ fn pseudo_random_128(seed: u64) -> u128 {
 }
 
 fn generate_inputs() -> Vec<(U160, u128, U256, bool)> {
-    (0u64..100)
+    let mut inputs = (0u64..100)
         .map(|i| {
             (
                 U160::saturating_from(pseudo_random(i)),
@@ -23,11 +25,32 @@ fn generate_inputs() -> Vec<(U160, u128, U256, bool)> {
                 i % 2 == 0,
             )
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    // Add edge cases
+    inputs.extend([
+        (U160::MIN, 1, uint!(1_U256), true),
+        (U160::MAX, u128::MAX, U256::MAX, false),
+        (uint!(1_U160) << 96, 1000000, uint!(1000_U256), true),
+    ]);
+
+    inputs
+}
+
+type SdkInputs = Vec<(U160, u128, U256, bool)>;
+type RefInputs = Vec<(U256, u128, U256, bool)>;
+
+fn generate_inputs_with_ref() -> (SdkInputs, RefInputs) {
+    let sdk_inputs = generate_inputs();
+    let ref_inputs = sdk_inputs
+        .iter()
+        .map(|(a, b, c, d)| (U256::from(*a), *b, *c, *d))
+        .collect();
+    (sdk_inputs, ref_inputs)
 }
 
 fn get_amount_inputs() -> Vec<(U160, U160, u128, bool)> {
-    (0u64..100)
+    let mut inputs = (0u64..100)
         .map(|i| {
             (
                 U160::saturating_from(pseudo_random(i)),
@@ -36,218 +59,257 @@ fn get_amount_inputs() -> Vec<(U160, U160, u128, bool)> {
                 i % 2 == 0,
             )
         })
-        .collect()
-}
-
-fn get_amount_inputs_ref() -> Vec<(U256, U256, u128, bool)> {
-    get_amount_inputs()
-        .into_iter()
-        .map(|(a, b, c, d)| (U256::from(a), U256::from(b), c, d))
-        .collect::<Vec<_>>()
-}
-
-fn get_next_sqrt_price_from_input_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
-    c.bench_function("get_next_sqrt_price_from_input", |b| {
-        b.iter(|| {
-            for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
-                let _ = get_next_sqrt_price_from_input(*sqrt_price_x_96, *liquidity, *amount, *add);
-            }
-        })
-    });
-}
-
-fn get_next_sqrt_price_from_input_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs()
-        .into_iter()
-        .map(|(a, b, c, d)| (U256::from(a), b, c, d))
         .collect::<Vec<_>>();
-    c.bench_function("get_next_sqrt_price_from_input_ref", |b| {
+
+    // Add edge cases
+    inputs.extend([
+        (U160::MIN, U160::MIN, 1, true),
+        (U160::MAX, U160::MAX, u128::MAX, false),
+        (uint!(1_U160) << 96, uint!(1_U160) << 96, 1000000, true),
+    ]);
+
+    inputs
+}
+
+type SdkAmountInputs = Vec<(U160, U160, u128, bool)>;
+type RefAmountInputs = Vec<(U256, U256, u128, bool)>;
+
+fn get_amount_inputs_with_ref() -> (SdkAmountInputs, RefAmountInputs) {
+    let sdk_inputs = get_amount_inputs();
+    let ref_inputs = sdk_inputs
+        .iter()
+        .map(|(a, b, c, d)| (U256::from(*a), U256::from(*b), *c, *d))
+        .collect();
+    (sdk_inputs, ref_inputs)
+}
+
+fn get_next_sqrt_price_from_input_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = generate_inputs_with_ref();
+    let mut group = c.benchmark_group("get_next_sqrt_price_from_input");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
-                let _ = sqrt_price_math::get_next_sqrt_price_from_input(
+            for (sqrt_price_x_96, liquidity, amount, add) in &sdk_inputs {
+                let _ = black_box(get_next_sqrt_price_from_input(
                     *sqrt_price_x_96,
                     *liquidity,
                     *amount,
                     *add,
-                );
+                ));
             }
         })
     });
-}
 
-fn get_next_sqrt_price_from_output_benchmark(c: &mut Criterion) {
-    let inputs = generate_inputs();
-    c.bench_function("get_next_sqrt_price_from_output", |b| {
+    group.bench_function("reference", |b| {
         b.iter(|| {
-            for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
-                let _ =
-                    get_next_sqrt_price_from_output(*sqrt_price_x_96, *liquidity, *amount, *add);
-            }
-        });
-    });
-}
-
-fn get_next_sqrt_price_from_output_benchmark_ref(c: &mut Criterion) {
-    let inputs = generate_inputs()
-        .into_iter()
-        .map(|(a, b, c, d)| (U256::from(a), b, c, d))
-        .collect::<Vec<_>>();
-    c.bench_function("get_next_sqrt_price_from_output_ref", |b| {
-        b.iter(|| {
-            for (sqrt_price_x_96, liquidity, amount, add) in &inputs {
-                let _ = sqrt_price_math::get_next_sqrt_price_from_output(
+            for (sqrt_price_x_96, liquidity, amount, add) in &ref_inputs {
+                let _ = black_box(sqrt_price_math::get_next_sqrt_price_from_input(
                     *sqrt_price_x_96,
                     *liquidity,
                     *amount,
                     *add,
-                );
+                ));
             }
-        });
+        })
     });
+
+    group.finish();
 }
 
-fn get_amount_0_delta_benchmark(c: &mut Criterion) {
-    let inputs = get_amount_inputs();
-    c.bench_function("get_amount_0_delta", |b| {
+fn get_next_sqrt_price_from_output_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = generate_inputs_with_ref();
+    let mut group = c.benchmark_group("get_next_sqrt_price_from_output");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
-                let _ =
-                    get_amount_0_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
+            for (sqrt_price_x_96, liquidity, amount, add) in &sdk_inputs {
+                let _ = black_box(get_next_sqrt_price_from_output(
+                    *sqrt_price_x_96,
+                    *liquidity,
+                    *amount,
+                    *add,
+                ));
             }
-        });
+        })
     });
+
+    group.bench_function("reference", |b| {
+        b.iter(|| {
+            for (sqrt_price_x_96, liquidity, amount, add) in &ref_inputs {
+                let _ = black_box(sqrt_price_math::get_next_sqrt_price_from_output(
+                    *sqrt_price_x_96,
+                    *liquidity,
+                    *amount,
+                    *add,
+                ));
+            }
+        })
+    });
+
+    group.finish();
 }
 
-fn get_amount_0_delta_benchmark_ref(c: &mut Criterion) {
-    let inputs = get_amount_inputs_ref();
-    c.bench_function("get_amount_0_delta_ref", |b| {
+fn get_amount_0_delta_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = get_amount_inputs_with_ref();
+    let mut group = c.benchmark_group("get_amount_0_delta");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
-                let _ = sqrt_price_math::_get_amount_0_delta(
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &sdk_inputs {
+                let _ = black_box(get_amount_0_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
                     *liquidity,
                     *round_up,
-                );
+                ));
             }
-        });
+        })
     });
-}
 
-fn get_amount_1_delta_benchmark(c: &mut Criterion) {
-    let inputs = get_amount_inputs();
-    c.bench_function("get_amount_1_delta", |b| {
+    group.bench_function("reference", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
-                let _ =
-                    get_amount_1_delta(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, *liquidity, *round_up);
-            }
-        });
-    });
-}
-
-fn get_amount_1_delta_benchmark_ref(c: &mut Criterion) {
-    let inputs = get_amount_inputs_ref();
-    c.bench_function("get_amount_1_delta_ref", |b| {
-        b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &inputs {
-                let _ = sqrt_price_math::_get_amount_1_delta(
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &ref_inputs {
+                let _ = black_box(sqrt_price_math::_get_amount_0_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
                     *liquidity,
                     *round_up,
-                );
+                ));
             }
-        });
+        })
     });
+
+    group.finish();
 }
 
-fn get_amount_0_delta_signed_benchmark(c: &mut Criterion) {
-    let inputs = get_amount_inputs();
-    c.bench_function("get_amount_0_delta_signed", |b| {
+fn get_amount_1_delta_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = get_amount_inputs_with_ref();
+    let mut group = c.benchmark_group("get_amount_1_delta");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &sdk_inputs {
+                let _ = black_box(get_amount_1_delta(
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
+                    *liquidity,
+                    *round_up,
+                ));
+            }
+        })
+    });
+
+    group.bench_function("reference", |b| {
+        b.iter(|| {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up) in &ref_inputs {
+                let _ = black_box(sqrt_price_math::_get_amount_1_delta(
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
+                    *liquidity,
+                    *round_up,
+                ));
+            }
+        })
+    });
+
+    group.finish();
+}
+
+fn get_amount_0_delta_signed_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = get_amount_inputs_with_ref();
+    let mut group = c.benchmark_group("get_amount_0_delta_signed");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
+        b.iter(|| {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &sdk_inputs {
                 let liquidity = if *sign {
                     *liquidity as i128
                 } else {
                     -(*liquidity as i128)
                 };
-                let _ = get_amount_0_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, liquidity);
-            }
-        });
-    });
-}
-
-fn get_amount_0_delta_signed_benchmark_ref(c: &mut Criterion) {
-    let inputs = get_amount_inputs_ref();
-    c.bench_function("get_amount_0_delta_signed_ref", |b| {
-        b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
-                let liquidity = if *sign {
-                    *liquidity as i128
-                } else {
-                    -(*liquidity as i128)
-                };
-                let _ = sqrt_price_math::get_amount_0_delta(
+                let _ = black_box(get_amount_0_delta_signed(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
                     liquidity,
-                );
+                ));
             }
-        });
+        })
     });
-}
 
-fn get_amount_1_delta_signed_benchmark(c: &mut Criterion) {
-    let inputs = get_amount_inputs();
-    c.bench_function("get_amount_1_delta_signed", |b| {
+    group.bench_function("reference", |b| {
         b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &ref_inputs {
                 let liquidity = if *sign {
                     *liquidity as i128
                 } else {
                     -(*liquidity as i128)
                 };
-                let _ = get_amount_1_delta_signed(*sqrt_ratio_a_x96, *sqrt_ratio_b_x96, liquidity);
-            }
-        });
-    });
-}
-
-fn get_amount_1_delta_signed_benchmark_ref(c: &mut Criterion) {
-    let inputs = get_amount_inputs_ref();
-    c.bench_function("get_amount_1_delta_signed_ref", |b| {
-        b.iter(|| {
-            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &inputs {
-                let liquidity = if *sign {
-                    *liquidity as i128
-                } else {
-                    -(*liquidity as i128)
-                };
-                let _ = sqrt_price_math::get_amount_1_delta(
+                let _ = black_box(sqrt_price_math::get_amount_0_delta(
                     *sqrt_ratio_a_x96,
                     *sqrt_ratio_b_x96,
                     liquidity,
-                );
+                ));
             }
-        });
+        })
     });
+
+    group.finish();
+}
+
+fn get_amount_1_delta_signed_comparison(c: &mut Criterion) {
+    let (sdk_inputs, ref_inputs) = get_amount_inputs_with_ref();
+    let mut group = c.benchmark_group("get_amount_1_delta_signed");
+    group.throughput(Throughput::Elements(sdk_inputs.len() as u64));
+
+    group.bench_function("sdk", |b| {
+        b.iter(|| {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &sdk_inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
+                let _ = black_box(get_amount_1_delta_signed(
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
+                    liquidity,
+                ));
+            }
+        })
+    });
+
+    group.bench_function("reference", |b| {
+        b.iter(|| {
+            for (sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, sign) in &ref_inputs {
+                let liquidity = if *sign {
+                    *liquidity as i128
+                } else {
+                    -(*liquidity as i128)
+                };
+                let _ = black_box(sqrt_price_math::get_amount_1_delta(
+                    *sqrt_ratio_a_x96,
+                    *sqrt_ratio_b_x96,
+                    liquidity,
+                ));
+            }
+        })
+    });
+
+    group.finish();
 }
 
 criterion_group!(
     benches,
-    get_next_sqrt_price_from_input_benchmark,
-    get_next_sqrt_price_from_input_benchmark_ref,
-    get_next_sqrt_price_from_output_benchmark,
-    get_next_sqrt_price_from_output_benchmark_ref,
-    get_amount_0_delta_benchmark,
-    get_amount_0_delta_benchmark_ref,
-    get_amount_1_delta_benchmark,
-    get_amount_1_delta_benchmark_ref,
-    get_amount_0_delta_signed_benchmark,
-    get_amount_0_delta_signed_benchmark_ref,
-    get_amount_1_delta_signed_benchmark,
-    get_amount_1_delta_signed_benchmark_ref,
+    get_next_sqrt_price_from_input_comparison,
+    get_next_sqrt_price_from_output_comparison,
+    get_amount_0_delta_comparison,
+    get_amount_1_delta_comparison,
+    get_amount_0_delta_signed_comparison,
+    get_amount_1_delta_signed_comparison,
 );
 criterion_main!(benches);
