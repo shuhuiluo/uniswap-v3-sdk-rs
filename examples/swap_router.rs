@@ -60,7 +60,7 @@ async fn main() {
     println!("Quoter amount out: {amount_out}");
 
     // Create an Anvil fork
-    let provider = setup_anvil_fork_provider().await;
+    let provider = setup_anvil_fork_provider();
     let account = provider.get_accounts().await.unwrap()[0];
 
     // Build the swap transaction

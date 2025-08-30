@@ -6,7 +6,7 @@
 use crate::prelude::{Error, *};
 use alloc::string::ToString;
 use alloy::{
-    eips::{BlockId, BlockNumberOrTag},
+    eips::BlockId,
     network::Network,
     providers::Provider,
     transports::{TransportError, TransportErrorKind},
@@ -58,7 +58,7 @@ where
     N: Network,
     P: Provider<N>,
 {
-    let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+    let block_id = block_id.unwrap_or(BlockId::latest());
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     let multicall = provider
@@ -76,7 +76,7 @@ where
             liquidity,
             ..
         },
-    ) = multicall.block(block_id_).aggregate().await?;
+    ) = multicall.block(block_id).aggregate().await?;
     let pool = Pool::from_pool_key(
         chain_id,
         factory,
@@ -84,7 +84,7 @@ where
         token1,
         fee.into(),
         provider,
-        block_id,
+        Some(block_id),
     )
     .await?;
     Ok(Position::new(
@@ -267,14 +267,14 @@ where
     N: Network,
     P: Provider<N>,
 {
-    let block_id_ = block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+    let block_id = block_id.unwrap_or(BlockId::latest());
     let npm_contract =
         get_nonfungible_position_manager_contract(nonfungible_position_manager, provider.root());
     let multicall = provider
         .multicall()
         .add(npm_contract.factory())
         .add(npm_contract.positions(token_id));
-    let (factory, position) = multicall.block(block_id_).aggregate().await?;
+    let (factory, position) = multicall.block(block_id).aggregate().await?;
     let pool_contract = get_pool_contract(
         factory,
         position.token0,
@@ -290,7 +290,7 @@ where
         .add(pool_contract.ticks(position.tickLower))
         .add(pool_contract.ticks(position.tickUpper));
     let (slot0, fee_growth_global_0x128, fee_growth_global_1x128, tick_info_lower, tick_info_upper) =
-        multicall.block(block_id_).aggregate().await?;
+        multicall.block(block_id).aggregate().await?;
     let tick = slot0.tick;
     let fee_growth_outside_0x128_lower = tick_info_lower.feeGrowthOutside0X128;
     let fee_growth_outside_1x128_lower = tick_info_lower.feeGrowthOutside1X128;
@@ -352,7 +352,7 @@ where
 {
     let uri = get_nonfungible_position_manager_contract(nonfungible_position_manager, provider)
         .tokenURI(token_id)
-        .block(block_id.unwrap_or(BlockId::Number(BlockNumberOrTag::Latest)))
+        .block(block_id.unwrap_or(BlockId::latest()))
         .call()
         .await?;
     let json_uri = base64::Engine::decode(
@@ -471,7 +471,7 @@ where
 mod tests {
     use super::*;
     use crate::tests::PROVIDER;
-    use alloy::providers::MulticallBuilder;
+    use alloy::{eips::BlockNumberOrTag, providers::MulticallBuilder};
     use alloy_primitives::{address, uint};
     use core::str::FromStr;
     use num_traits::{Signed, Zero};

@@ -3,7 +3,7 @@
 
 use crate::prelude::*;
 use alloy::{
-    eips::{BlockId, BlockNumberOrTag},
+    eips::BlockId,
     network::{Ethereum, Network},
     providers::Provider,
     sol,
@@ -77,9 +77,7 @@ where
 
     #[inline]
     async fn get_word(&self, index: Self::Index) -> Result<U256, Error> {
-        let block_id = self
-            .block_id
-            .unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+        let block_id = self.block_id.unwrap_or(BlockId::latest());
         let word = self
             .pool
             .tickBitmap(index.to_i24().as_i16())
@@ -100,9 +98,7 @@ where
 
     #[inline]
     async fn get_tick(&self, index: Self::Index) -> Result<Tick<Self::Index>, Error> {
-        let block_id = self
-            .block_id
-            .unwrap_or(BlockId::Number(BlockNumberOrTag::Latest));
+        let block_id = self.block_id.unwrap_or(BlockId::latest());
         let tick = self
             .pool
             .ticks(index.to_i24())
