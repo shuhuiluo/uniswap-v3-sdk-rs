@@ -125,5 +125,5 @@ fn compute_swap_step_comparison(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, compute_swap_step_comparison,);
+criterion_group!(benches, compute_swap_step_comparison);
 criterion_main!(benches);

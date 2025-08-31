@@ -1,5 +1,4 @@
-use alloy::uint;
-use alloy_primitives::{keccak256, U160, U256};
+use alloy_primitives::{keccak256, uint, U160, U256};
 use alloy_sol_types::SolValue;
 use core::hint::black_box;
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
@@ -310,6 +309,6 @@ criterion_group!(
     get_amount_0_delta_comparison,
     get_amount_1_delta_comparison,
     get_amount_0_delta_signed_comparison,
-    get_amount_1_delta_signed_comparison,
+    get_amount_1_delta_signed_comparison
 );
 criterion_main!(benches);
