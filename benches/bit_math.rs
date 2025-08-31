@@ -1,55 +1,69 @@
 use alloy_primitives::{uint, U256};
-use criterion::{criterion_group, criterion_main, Criterion};
+use core::hint::black_box;
+use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use uniswap_v3_math::bit_math;
 use uniswap_v3_sdk::prelude::*;
 
 const ONE: U256 = uint!(1_U256);
 
-fn most_significant_bit_benchmark(c: &mut Criterion) {
-    c.bench_function("most_significant_bit", |b| {
+fn generate_test_values() -> Vec<U256> {
+    let mut values = (0u8..=255).map(|i| ONE << i).collect::<Vec<_>>();
+    // Add edge cases
+    values.extend([ONE, U256::MAX]);
+    values
+}
+
+fn most_significant_bit_comparison(c: &mut Criterion) {
+    let values = generate_test_values();
+    let mut group = c.benchmark_group("most_significant_bit");
+    group.throughput(Throughput::Elements(values.len() as u64));
+
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for i in 0u8..=255 {
-                let _ = most_significant_bit(ONE << i);
+            for value in &values {
+                let _ = black_box(most_significant_bit(*value));
             }
         })
     });
-}
 
-fn most_significant_bit_benchmark_ref(c: &mut Criterion) {
-    c.bench_function("most_significant_bit_ref", |b| {
+    group.bench_function("reference", |b| {
         b.iter(|| {
-            for i in 0u8..=255 {
-                let _ = bit_math::most_significant_bit(ONE << i);
+            for value in &values {
+                let _ = black_box(bit_math::most_significant_bit(*value));
             }
         })
     });
+
+    group.finish();
 }
 
-fn least_significant_bit_benchmark(c: &mut Criterion) {
-    c.bench_function("least_significant_bit", |b| {
-        b.iter(|| {
-            for i in 0u8..=255 {
-                let _ = least_significant_bit(ONE << i);
-            }
-        });
-    });
-}
+fn least_significant_bit_comparison(c: &mut Criterion) {
+    let values = generate_test_values();
+    let mut group = c.benchmark_group("least_significant_bit");
+    group.throughput(Throughput::Elements(values.len() as u64));
 
-fn least_significant_bit_benchmark_ref(c: &mut Criterion) {
-    c.bench_function("least_significant_bit_ref", |b| {
+    group.bench_function("sdk", |b| {
         b.iter(|| {
-            for i in 0u8..=255 {
-                let _ = bit_math::least_significant_bit(ONE << i);
+            for value in &values {
+                let _ = black_box(least_significant_bit(*value));
             }
-        });
+        })
     });
+
+    group.bench_function("reference", |b| {
+        b.iter(|| {
+            for value in &values {
+                let _ = black_box(bit_math::least_significant_bit(*value));
+            }
+        })
+    });
+
+    group.finish();
 }
 
 criterion_group!(
     benches,
-    most_significant_bit_benchmark,
-    most_significant_bit_benchmark_ref,
-    least_significant_bit_benchmark,
-    least_significant_bit_benchmark_ref
+    most_significant_bit_comparison,
+    least_significant_bit_comparison
 );
 criterion_main!(benches);
