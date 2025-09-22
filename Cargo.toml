@@ -33,7 +33,7 @@ uniswap-lens = { version = "0.15", optional = true }
 uniswap-sdk-core = "3.8.0"
 
 [dev-dependencies]
-alloy = { version = "1.0.23", default-features = false, features = ["provider-anvil-node", "reqwest", "signer-local"] }
+alloy = { version = "1.0.23", default-features = false, features = ["provider-anvil-node", "reqwest-rustls-tls", "signer-local"] }
 criterion = "0.7"
 dotenv = "0.15.0"
 tokio = { version = "1.47", features = ["full"] }
