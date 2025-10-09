@@ -108,6 +108,81 @@ impl Pool {
             liquidity,
         )
     }
+
+    /// Get a [`Pool`] struct from pool address
+    ///
+    /// ## Arguments
+    ///
+    /// * `chain_id`: The chain id
+    /// * `address`: The pool address
+    /// * `token_a`: One of the tokens in the pool
+    /// * `token_b`: The other token in the pool
+    /// * `fee`: Fee tier of the pool
+    /// * `provider`: The alloy provider
+    /// * `block_id`: Optional block number to query.
+    #[inline]
+    pub async fn from_pool_address<N, P>(
+        chain_id: ChainId,
+        address: Address,
+        token_a: Address,
+        token_b: Address,
+        fee: FeeAmount,
+        provider: P,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, Error>
+    where
+        N: Network,
+        P: Provider<N>,
+    {
+        let block_id = block_id.unwrap_or(BlockId::latest());
+        let pool_contract = IUniswapV3PoolInstance::new(address, provider.root());
+        let token_a_contract = IERC20Metadata::new(token_a, provider.root());
+        let token_b_contract = IERC20Metadata::new(token_b, provider.root());
+        let multicall = provider
+            .multicall()
+            .add(pool_contract.slot0())
+            .add(pool_contract.liquidity())
+            .add(token_a_contract.decimals())
+            .add(token_a_contract.name())
+            .add(token_a_contract.symbol())
+            .add(token_b_contract.decimals())
+            .add(token_b_contract.name())
+            .add(token_b_contract.symbol());
+        let (
+            slot_0,
+            liquidity,
+            token_a_decimals,
+            token_a_name,
+            token_a_symbol,
+            token_b_decimals,
+            token_b_name,
+            token_b_symbol,
+        ) = multicall.block(block_id).aggregate().await?;
+        let sqrt_price_x96 = slot_0.sqrtPriceX96;
+        assert!(
+            !sqrt_price_x96.is_zero(),
+            "Pool has been created but not yet initialized"
+        );
+        Self::new(
+            token!(
+                chain_id,
+                token_a,
+                token_a_decimals,
+                token_a_symbol,
+                token_a_name
+            ),
+            token!(
+                chain_id,
+                token_b,
+                token_b_decimals,
+                token_b_symbol,
+                token_b_name
+            ),
+            fee,
+            sqrt_price_x96,
+            liquidity,
+        )
+    }
 }
 
 impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
@@ -185,6 +260,84 @@ impl<I: TickIndex> Pool<EphemeralTickMapDataProvider<I>> {
             block_id,
         )
         .await?;
+        Self::new_with_tick_data_provider(
+            pool.token0,
+            pool.token1,
+            pool.fee,
+            pool.sqrt_ratio_x96,
+            pool.liquidity,
+            tick_data_provider,
+        )
+    }
+
+    /// Get a [`Pool`] struct with tick data provider from pool key
+    ///
+    /// ## Arguments
+    ///
+    /// * `chain_id`: The chain id
+    /// * `address`: The pool address
+    /// * `token_a`: One of the tokens in the pool
+    /// * `token_b`: The other token in the pool
+    /// * `fee`: Fee tier of the pool
+    /// * `provider`: The alloy provider
+    /// * `block_id`: Optional block number to query.
+    ///
+    /// ## Returns
+    ///
+    /// A [`Pool`] struct with tick data provider
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use alloy::{eips::BlockId, providers::ProviderBuilder};
+    /// use alloy_primitives::address;
+    /// use uniswap_v3_sdk::prelude::*;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     dotenv::dotenv().ok();
+    ///     let rpc_url = std::env::var("MAINNET_RPC_URL").unwrap().parse().unwrap();
+    ///     let provider = ProviderBuilder::new().connect_http(rpc_url);
+    ///     let block_id = Some(BlockId::from(17000000));
+    ///     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
+    ///         1,
+    ///         POOL_ADDRESS,
+    ///         address!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
+    ///         address!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+    ///         FeeAmount::LOW,
+    ///         provider,
+    ///         block_id,
+    ///     )
+    ///     .await
+    ///     .unwrap();
+    /// }
+    /// ```
+    #[inline]
+    pub async fn from_pool_address_with_tick_data_provider<N, P>(
+        chain_id: ChainId,
+        address: Address,
+        token_a: Address,
+        token_b: Address,
+        fee: FeeAmount,
+        provider: P,
+        block_id: Option<BlockId>,
+    ) -> Result<Self, Error>
+    where
+        N: Network,
+        P: Provider<N>,
+    {
+        let pool = Pool::from_pool_address(
+            chain_id,
+            address,
+            token_a,
+            token_b,
+            fee,
+            provider.root(),
+            block_id,
+        )
+        .await?;
+        let tick_data_provider =
+            EphemeralTickMapDataProvider::new(address, provider, None, None, block_id).await?;
         Self::new_with_tick_data_provider(
             pool.token0,
             pool.token1,
