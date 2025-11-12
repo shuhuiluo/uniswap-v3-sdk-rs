@@ -55,14 +55,14 @@ When updating this, also update:
 - .github/workflows/rust.yml
 -->
 
-The current MSRV (minimum supported Rust version) is 1.86.
+The current MSRV (minimum supported Rust version) is 1.88.
 
 ## Getting started
 
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "3.11.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "5.3.0", features = ["extensions", "std"] }
 ```
 
 ### Usage

@@ -114,6 +114,6 @@ shared state. Examples demonstrate real-world usage patterns with mainnet data.
 
 ### Environment Requirements
 
-- MSRV: Rust 1.86
+- MSRV: Rust 1.88
 - Environment variable `MAINNET_RPC_URL` required for extension tests and examples
 - Uses block 17000000 as reference point for consistent test results
