@@ -143,7 +143,7 @@ To run a specific benchmark, use `cargo bench --bench <bench_name>`.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](https://github.com/shuhuiluo/uniswap-v3-sdk-rs/blob/master/LICENSE).
 
 ## Acknowledgements
 
