@@ -16,6 +16,8 @@ use alloy_primitives::{
 use alloy_sol_types::SolCall;
 use uniswap_lens::bindings::ierc20::IERC20;
 
+const GAS_LIMIT: u64 = 1 << 24;
+
 #[inline]
 pub async fn get_erc20_state_overrides<N, P>(
     token: Address,
@@ -30,11 +32,11 @@ where
 {
     let balance_tx = N::TransactionRequest::default()
         .with_to(token)
-        .with_gas_limit(0x11E1A300) // avoids "intrinsic gas too low" error
+        .with_gas_limit(GAS_LIMIT) // avoids "intrinsic gas too low" error
         .with_input(IERC20::balanceOfCall { account: owner }.abi_encode());
     let allowance_tx = N::TransactionRequest::default()
         .with_to(token)
-        .with_gas_limit(0x11E1A300)
+        .with_gas_limit(GAS_LIMIT)
         .with_input(IERC20::allowanceCall { owner, spender }.abi_encode());
     let balance_access_list = provider.create_access_list(&balance_tx).await?.access_list;
     let allowance_access_list = provider
