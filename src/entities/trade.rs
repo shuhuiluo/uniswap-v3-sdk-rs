@@ -817,7 +817,6 @@ mod tests {
     use super::*;
     use crate::{create_route, currency_amount, tests::*, trade_from_route};
     use num_integer::Roots;
-    use num_traits::ToPrimitive;
     use once_cell::sync::Lazy;
     use tokio::sync::OnceCell;
 

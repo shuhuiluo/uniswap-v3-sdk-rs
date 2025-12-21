@@ -67,9 +67,7 @@ where
         None => (price, ""),
     };
     let decimals = fraction.len();
-    let without_decimals: BigInt = [whole, fraction]
-        .concat()
-        .parse()
+    let without_decimals: BigInt = BigInt::from_str(&[whole, fraction].concat())
         .map_err(|e| anyhow::anyhow!("Invalid price string: {}", e))?;
     let numerator = without_decimals * BigInt::from(10).pow(quote_token.decimals() as u32);
     let denominator = BigInt::from(10).pow(decimals as u32 + base_token.decimals() as u32);

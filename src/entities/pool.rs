@@ -579,7 +579,10 @@ mod tests {
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
-            encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
+            encode_sqrt_ratio_x96(
+                BigInt::from_u128(101e6 as u128).unwrap(),
+                BigInt::from_u128(100e18 as u128).unwrap(),
+            ),
             0,
         )
         .unwrap();
@@ -588,7 +591,10 @@ mod tests {
             DAI.clone(),
             USDC.clone(),
             FeeAmount::LOW,
-            encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
+            encode_sqrt_ratio_x96(
+                BigInt::from_u128(101e6 as u128).unwrap(),
+                BigInt::from_u128(100e18 as u128).unwrap(),
+            ),
             0,
         )
         .unwrap();
@@ -601,7 +607,10 @@ mod tests {
             USDC.clone(),
             DAI.clone(),
             FeeAmount::LOW,
-            encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
+            encode_sqrt_ratio_x96(
+                BigInt::from_u128(101e6 as u128).unwrap(),
+                BigInt::from_u128(100e18 as u128).unwrap(),
+            ),
             0,
         )
         .unwrap();
@@ -613,7 +622,10 @@ mod tests {
             DAI.clone(),
             USDC.clone(),
             FeeAmount::LOW,
-            encode_sqrt_ratio_x96(101e6 as u128, 100e18 as u128),
+            encode_sqrt_ratio_x96(
+                BigInt::from_u128(101e6 as u128).unwrap(),
+                BigInt::from_u128(100e18 as u128).unwrap(),
+            ),
             0,
         )
         .unwrap();
