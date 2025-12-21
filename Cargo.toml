@@ -1,6 +1,6 @@
 [package]
 name = "uniswap-v3-sdk"
-version = "5.3.1"
+version = "6.0.0"
 edition = "2021"
 rust-version = "1.88"
 authors = ["Shuhui Luo <twitter.com/aureliano_law>"]
@@ -29,7 +29,7 @@ regex = { version = "1.11", optional = true }
 serde_json = { version = "1.0", optional = true, default-features = false }
 thiserror = { version = "2", default-features = false }
 uniswap-lens = { version = "0.15", optional = true }
-uniswap-sdk-core = "5.3.0"
+uniswap-sdk-core = "6.0.0"
 
 [dev-dependencies]
 alloy = { version = "1.1", default-features = false, features = ["provider-anvil-node", "reqwest-rustls-tls", "signer-local"] }

@@ -1,6 +1,5 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{U160, U256};
-use num_traits::ToPrimitive;
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a position on a Uniswap V3 Pool
@@ -440,7 +439,7 @@ impl<TP: TickDataProvider> Position<TP> {
         );
         Ok(Self::new(
             pool,
-            liquidity.to_u128().ok_or(Error::LiquidityOverflow)?,
+            liquidity.to_u128().map_err(|_| Error::LiquidityOverflow)?,
             tick_lower,
             tick_upper,
         ))

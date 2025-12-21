@@ -1,7 +1,6 @@
 use crate::prelude::{Error, *};
 use alloy_primitives::{Bytes, Signature, B256, U256};
 use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
-use num_traits::ToPrimitive;
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -327,10 +326,11 @@ where
             position.pool.sqrt_ratio_x96,
             position.pool.liquidity,
         )?,
-        (options.liquidity_percentage.clone() * Percent::new(position.liquidity, 1))
-            .quotient()
-            .to_u128()
-            .unwrap(),
+        (options.liquidity_percentage.clone()
+            * Percent::new(BigInt::from_u128(position.liquidity).unwrap(), 1))
+        .quotient()
+        .to_u128()
+        .unwrap(),
         position.tick_lower.try_into().unwrap(),
         position.tick_upper.try_into().unwrap(),
     );
