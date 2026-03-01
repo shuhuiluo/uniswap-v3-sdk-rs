@@ -1,6 +1,6 @@
-use alloy_primitives::{uint, U256};
+use alloy_primitives::{U256, uint};
 use core::hint::black_box;
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use uniswap_v3_math::bit_math;
 use uniswap_v3_sdk::prelude::*;
 

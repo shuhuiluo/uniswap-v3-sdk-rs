@@ -4,7 +4,7 @@
 
 use super::most_significant_bit;
 use crate::error::Error;
-use alloy_primitives::{aliases::I24, uint, Uint, U160, U256};
+use alloy_primitives::{U160, U256, Uint, aliases::I24, uint};
 use core::ops::{Shl, Shr, Sub};
 
 /// The maximum tick that can be passed to `get_sqrt_ratio_at_tick`.

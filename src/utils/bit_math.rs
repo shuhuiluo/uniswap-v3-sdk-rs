@@ -87,7 +87,7 @@ pub fn least_significant_bit<const BITS: usize, const LIMBS: usize>(x: Uint<BITS
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::{uint, U256};
+    use alloy_primitives::{U256, uint};
 
     const ONE: U256 = uint!(1_U256);
 

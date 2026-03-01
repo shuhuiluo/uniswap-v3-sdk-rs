@@ -6,7 +6,7 @@
 use crate::prelude::*;
 use alloc::{string::ToString, vec, vec::Vec};
 use alloy::{eips::BlockId, network::Network, providers::Provider};
-use alloy_primitives::{Address, ChainId, B256};
+use alloy_primitives::{Address, B256, ChainId};
 use uniswap_lens::{
     bindings::{
         ierc20metadata::IERC20Metadata, iuniswapv3pool::IUniswapV3Pool::IUniswapV3PoolInstance,

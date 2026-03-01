@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{aliases::I24, Signed};
+use alloy_primitives::{Signed, aliases::I24};
 use core::{
     fmt::Debug,
     hash::Hash,

@@ -1,5 +1,5 @@
 use crate::prelude::{Error, *};
-use alloy_primitives::{ChainId, B256, I256, U160};
+use alloy_primitives::{B256, ChainId, I256, U160};
 use uniswap_sdk_core::prelude::*;
 
 /// Represents a V3 pool

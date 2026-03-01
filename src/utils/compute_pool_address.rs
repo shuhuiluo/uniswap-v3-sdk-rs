@@ -1,8 +1,8 @@
 use crate::constants::{FeeAmount, POOL_INIT_CODE_HASH};
-use alloy_primitives::{aliases::U24, b256, keccak256, Address, B256};
+use alloy_primitives::{Address, B256, aliases::U24, b256, keccak256};
 use alloy_sol_types::SolValue;
 use uniswap_sdk_core::prelude::{
-    compute_zksync_create2_address::compute_zksync_create2_address, ChainId,
+    ChainId, compute_zksync_create2_address::compute_zksync_create2_address,
 };
 
 /// Computes a pool address

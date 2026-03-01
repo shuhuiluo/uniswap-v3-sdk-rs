@@ -1,6 +1,6 @@
 use alloy_primitives::Uint;
 use uniswap_sdk_core::prelude::{
-    fastnum::{Cast, TryCast, I1024},
+    fastnum::{Cast, I1024, TryCast},
     *,
 };
 
@@ -27,7 +27,7 @@ pub fn encode_sqrt_ratio_x96<const BITS: usize, const LIMBS: usize>(
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{encode_sqrt_ratio_x96, Q96};
+    use crate::utils::{Q96, encode_sqrt_ratio_x96};
     use alloy_primitives::U256;
 
     #[test]

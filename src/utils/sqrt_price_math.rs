@@ -3,7 +3,7 @@
 //! with custom optimizations presented in [uni-v3-lib](https://github.com/Aperture-Finance/uni-v3-lib/blob/main/src/SqrtPriceMath.sol).
 
 use crate::prelude::*;
-use alloy_primitives::{ruint::UintTryFrom, Uint, I256, U256};
+use alloy_primitives::{I256, U256, Uint, ruint::UintTryFrom};
 use num_traits::Zero;
 
 const U160_MAX: U256 = U256::from_limbs([u64::MAX, u64::MAX, u32::MAX as u64, 0]);
@@ -473,7 +473,7 @@ pub fn get_amount_1_delta_signed<const BITS: usize, const LIMBS: usize>(
 mod tests {
     use super::*;
     use alloc::vec::Vec;
-    use alloy_primitives::{keccak256, U160};
+    use alloy_primitives::{U160, keccak256};
     use alloy_sol_types::SolValue;
     use uniswap_v3_math::{error::UniswapV3MathError, sqrt_price_math};
 

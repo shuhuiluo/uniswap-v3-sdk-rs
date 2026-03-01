@@ -1,7 +1,7 @@
 use alloy_primitives::{
-    address,
+    Address, B256, address,
     aliases::{I24, U24},
-    b256, Address, B256,
+    b256,
 };
 
 pub const FACTORY_ADDRESS: Address = address!("1F98431c8aD98523631AE4a59f267346ea31F984");

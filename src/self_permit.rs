@@ -1,6 +1,6 @@
 use super::abi::ISelfPermit;
-use alloy_primitives::{Bytes, Signature, B256, U256};
-use alloy_sol_types::{eip712_domain, Eip712Domain, SolCall, SolStruct};
+use alloy_primitives::{B256, Bytes, Signature, U256};
+use alloy_sol_types::{Eip712Domain, SolCall, SolStruct, eip712_domain};
 use uniswap_sdk_core::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

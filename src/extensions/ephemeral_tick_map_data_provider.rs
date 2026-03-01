@@ -3,7 +3,7 @@
 
 use crate::prelude::*;
 use alloy::{eips::BlockId, network::Network, providers::Provider};
-use alloy_primitives::{aliases::I24, Address};
+use alloy_primitives::{Address, aliases::I24};
 use derive_more::Deref;
 
 /// A data provider that fetches ticks using an ephemeral contract in a single `eth_call`.

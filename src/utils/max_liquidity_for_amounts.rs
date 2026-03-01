@@ -1,4 +1,4 @@
-use alloy_primitives::{Uint, U256};
+use alloy_primitives::{U256, Uint};
 use uniswap_sdk_core::prelude::{BigUint, ToBig};
 
 #[inline]

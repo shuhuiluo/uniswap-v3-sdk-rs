@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{aliases::U24, Bytes};
+use alloy_primitives::{Bytes, aliases::U24};
 use alloy_sol_types::SolValue;
 use uniswap_sdk_core::prelude::*;
 
@@ -88,7 +88,9 @@ mod tests {
     fn pack_them_for_exact_input_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1, false).to_vec(),
-            hex!("0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002")
+            hex!(
+                "0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002"
+            )
         );
     }
 
@@ -96,7 +98,9 @@ mod tests {
     fn pack_them_for_exact_output_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1, true).to_vec(),
-            hex!("0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001")
+            hex!(
+                "0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001"
+            )
         );
     }
 
@@ -104,7 +108,9 @@ mod tests {
     fn pack_them_for_exact_input_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1_2, false).to_vec(),
-            hex!("0000000000000000000000000000000000000001000bb800000000000000000000000000000000000000020001f40000000000000000000000000000000000000003")
+            hex!(
+                "0000000000000000000000000000000000000001000bb800000000000000000000000000000000000000020001f40000000000000000000000000000000000000003"
+            )
         );
     }
 
@@ -112,7 +118,9 @@ mod tests {
     fn pack_them_for_exact_output_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1_2, true).to_vec(),
-            hex!("00000000000000000000000000000000000000030001f40000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001")
+            hex!(
+                "00000000000000000000000000000000000000030001f40000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001"
+            )
         );
     }
 
@@ -120,7 +128,9 @@ mod tests {
     fn wrap_ether_input_for_exact_input_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_ETH_0, false).to_vec(),
-            hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001")
+            hex!(
+                "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001"
+            )
         );
     }
 
@@ -128,7 +138,9 @@ mod tests {
     fn wrap_ether_input_for_exact_output_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_ETH_0, true).to_vec(),
-            hex!("0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+            hex!(
+                "0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+            )
         );
     }
 
@@ -136,7 +148,9 @@ mod tests {
     fn wrap_ether_input_for_exact_input_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_WETH_0_1, false).to_vec(),
-            hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002")
+            hex!(
+                "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002"
+            )
         );
     }
 
@@ -144,7 +158,9 @@ mod tests {
     fn wrap_ether_input_for_exact_output_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_WETH_0_1, true).to_vec(),
-            hex!("0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+            hex!(
+                "0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+            )
         );
     }
 
@@ -152,7 +168,9 @@ mod tests {
     fn wrap_ether_output_for_exact_input_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_WETH, false).to_vec(),
-            hex!("0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+            hex!(
+                "0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+            )
         );
     }
 
@@ -160,7 +178,9 @@ mod tests {
     fn wrap_ether_output_for_exact_output_single_hop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_WETH, true).to_vec(),
-            hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001")
+            hex!(
+                "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001"
+            )
         );
     }
 
@@ -168,7 +188,9 @@ mod tests {
     fn wrap_ether_output_for_exact_input_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1_WETH, false).to_vec(),
-            hex!("0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+            hex!(
+                "0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+            )
         );
     }
 
@@ -176,7 +198,9 @@ mod tests {
     fn wrap_ether_output_for_exact_output_multihop() {
         assert_eq!(
             encode_route_to_path(&ROUTE_0_1_WETH, true).to_vec(),
-            hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001")
+            hex!(
+                "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001"
+            )
         );
     }
 }

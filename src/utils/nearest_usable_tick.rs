@@ -1,4 +1,4 @@
-use crate::prelude::{TickIndex, MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK};
+use crate::prelude::{MAX_TICK_I32 as MAX_TICK, MIN_TICK_I32 as MIN_TICK, TickIndex};
 use num_integer::Integer;
 
 /// Returns the closest tick that is nearest a given tick and usable for the given tick spacing
