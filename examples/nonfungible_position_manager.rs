@@ -1,8 +1,8 @@
 use alloy::{
     network::{Network, TransactionBuilder},
     node_bindings::WEI_IN_ETHER,
-    providers::{ext::AnvilApi, Provider},
-    signers::{k256::ecdsa::SigningKey, local::LocalSigner, SignerSync},
+    providers::{Provider, ext::AnvilApi},
+    signers::{SignerSync, k256::ecdsa::SigningKey, local::LocalSigner},
 };
 use alloy_primitives::{Address, U256};
 use uniswap_lens::bindings::ierc721enumerable::IERC721Enumerable;
@@ -11,7 +11,7 @@ use uniswap_v3_sdk::prelude::*;
 
 #[path = "common/mod.rs"]
 mod common;
-use common::{random_signer, setup_anvil_fork_provider, CHAIN_ID, NPM_ADDRESS, WBTC, WETH};
+use common::{CHAIN_ID, NPM_ADDRESS, WBTC, WETH, random_signer, setup_anvil_fork_provider};
 
 #[tokio::main]
 async fn main() {

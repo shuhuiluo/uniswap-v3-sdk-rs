@@ -3,7 +3,7 @@
 #[cfg(doc)]
 use crate::prelude::*;
 
-use alloy_primitives::{aliases::I24, U160};
+use alloy_primitives::{U160, aliases::I24};
 use uniswap_sdk_core::error::Error as CoreError;
 
 #[derive(Debug, thiserror::Error)]

@@ -10,18 +10,18 @@
 
 use alloy::{
     node_bindings::WEI_IN_ETHER,
-    providers::{ext::AnvilApi, Provider},
+    providers::{Provider, ext::AnvilApi},
     rpc::types::TransactionRequest,
-    signers::{local::PrivateKeySigner, SignerSync},
+    signers::{SignerSync, local::PrivateKeySigner},
     sol,
 };
-use alloy_primitives::{keccak256, Signature, B256, U256};
+use alloy_primitives::{B256, Signature, U256, keccak256};
 use alloy_sol_types::SolValue;
 use uniswap_v3_sdk::prelude::*;
 
 #[path = "common/mod.rs"]
 mod common;
-use common::{setup_anvil_fork_provider, CHAIN_ID, NPM_ADDRESS, USDC, USDC_ADDRESS};
+use common::{CHAIN_ID, NPM_ADDRESS, USDC, USDC_ADDRESS, setup_anvil_fork_provider};
 
 sol! {
     #[sol(rpc)]

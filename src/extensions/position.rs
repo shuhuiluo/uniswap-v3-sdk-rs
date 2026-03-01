@@ -17,7 +17,7 @@ use uniswap_lens::{
         ephemeralallpositionsbyowner::EphemeralAllPositionsByOwner,
         ephemeralgetposition::EphemeralGetPosition,
         iuniswapv3nonfungiblepositionmanager::IUniswapV3NonfungiblePositionManager::{
-            positionsReturn, IUniswapV3NonfungiblePositionManagerInstance,
+            IUniswapV3NonfungiblePositionManagerInstance, positionsReturn,
         },
     },
     position_lens,
@@ -620,11 +620,13 @@ mod tests {
         assert!(position2.amount0().unwrap().quotient().is_zero());
         assert!(position2.amount1().unwrap().quotient().is_positive());
         let rebalanced_position = get_rebalanced_position(position1, 46080, 62160).unwrap();
-        assert!(rebalanced_position
-            .amount0()
-            .unwrap()
-            .quotient()
-            .is_positive());
+        assert!(
+            rebalanced_position
+                .amount0()
+                .unwrap()
+                .quotient()
+                .is_positive()
+        );
         assert!(rebalanced_position.amount1().unwrap().quotient().is_zero());
     }
 
@@ -651,16 +653,20 @@ mod tests {
             new_tick_upper,
         )
         .unwrap();
-        assert!(position_rebalanced_at_tick_upper
-            .amount1()
-            .unwrap()
-            .quotient()
-            .is_zero());
+        assert!(
+            position_rebalanced_at_tick_upper
+                .amount1()
+                .unwrap()
+                .quotient()
+                .is_zero()
+        );
         // if rebalancing at the upper tick, `token0` are bought back at a higher price, hence
         // `amount0` will be lower
-        assert!((position_rebalanced_at_current_price.amount0().unwrap()
-            - position_rebalanced_at_tick_upper.amount0().unwrap())
-        .quotient()
-        .is_positive());
+        assert!(
+            (position_rebalanced_at_current_price.amount0().unwrap()
+                - position_rebalanced_at_tick_upper.amount0().unwrap())
+            .quotient()
+            .is_positive()
+        );
     }
 }

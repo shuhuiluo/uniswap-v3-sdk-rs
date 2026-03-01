@@ -1,7 +1,7 @@
-use alloy_primitives::{keccak256, uint, U160, U256};
+use alloy_primitives::{U160, U256, keccak256, uint};
 use alloy_sol_types::SolValue;
 use core::hint::black_box;
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use uniswap_v3_math::sqrt_price_math;
 use uniswap_v3_sdk::prelude::*;
 

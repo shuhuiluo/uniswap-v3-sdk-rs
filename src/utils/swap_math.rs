@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use alloy_primitives::{aliases::U24, Uint, I256, U160, U256};
+use alloy_primitives::{I256, U160, U256, Uint, aliases::U24};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SwapState<I = i32> {

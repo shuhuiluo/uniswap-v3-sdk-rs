@@ -2,7 +2,7 @@
 //! Utility functions for converting between [`I24`] ticks and SDK Core [`Price`] prices.
 
 use crate::prelude::{Error, *};
-use alloy_primitives::{aliases::I24, U160};
+use alloy_primitives::{U160, aliases::I24};
 use uniswap_sdk_core::prelude::*;
 
 /// Returns a price object corresponding to the input tick and the base/quote token.

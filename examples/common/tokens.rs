@@ -1,7 +1,7 @@
 //! Common token definitions used across examples
 
 use super::constants::CHAIN_ID;
-use alloy_primitives::{address, Address};
+use alloy_primitives::{Address, address};
 use once_cell::sync::Lazy;
 use uniswap_sdk_core::{prelude::*, token};
 

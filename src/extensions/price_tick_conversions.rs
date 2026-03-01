@@ -3,7 +3,7 @@
 //! [`Price`] prices. Ported from [uniswap-v3-automation-sdk](https://github.com/Aperture-Finance/uniswap-v3-automation-sdk/blob/8bc54456753f454848d25029631f4e64ff573e12/price.ts).
 
 use crate::prelude::{Error, *};
-use alloy_primitives::{aliases::I24, U160};
+use alloy_primitives::{U160, aliases::I24};
 use fastnum::dec512;
 use num_integer::Roots;
 use once_cell::sync::Lazy;

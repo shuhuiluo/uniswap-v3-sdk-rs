@@ -1,6 +1,6 @@
 use super::{Q96, THREE, TWO};
 use crate::error::Error;
-use alloy_primitives::{uint, Uint, U256};
+use alloy_primitives::{U256, Uint, uint};
 
 const ONE: U256 = uint!(1_U256);
 

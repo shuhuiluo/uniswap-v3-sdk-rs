@@ -4,7 +4,7 @@
 
 use crate::prelude::*;
 use alloc::vec::Vec;
-use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, uint, U256};
+use alloy_primitives::{U256, aliases::I24, map::rustc_hash::FxHashMap, uint};
 
 #[derive(Clone, Debug)]
 pub struct TickMap<I = I24> {

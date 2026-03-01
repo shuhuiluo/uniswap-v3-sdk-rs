@@ -4,7 +4,7 @@
 use crate::prelude::*;
 use alloc::vec::Vec;
 use alloy::{eips::BlockId, network::Network, providers::Provider};
-use alloy_primitives::{aliases::I24, Address};
+use alloy_primitives::{Address, aliases::I24};
 use derive_more::Deref;
 use uniswap_lens::pool_lens;
 

@@ -30,7 +30,7 @@ pub use swap_math::*;
 pub use tick_list::TickList;
 pub use tick_math::*;
 
-use alloy_primitives::{uint, Bytes, U160, U256};
+use alloy_primitives::{Bytes, U160, U256, uint};
 use uniswap_sdk_core::prelude::{BigInt, BigUint};
 
 pub(crate) const ONE: U160 = uint!(1_U160);

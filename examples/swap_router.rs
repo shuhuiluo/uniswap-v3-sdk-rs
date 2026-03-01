@@ -17,7 +17,7 @@ use uniswap_v3_sdk::prelude::*;
 #[path = "common/mod.rs"]
 mod common;
 use common::{
-    setup_anvil_fork_provider, setup_http_provider, BLOCK_ID, CHAIN_ID, ETHER, WBTC, WBTC_ADDRESS,
+    BLOCK_ID, CHAIN_ID, ETHER, WBTC, WBTC_ADDRESS, setup_anvil_fork_provider, setup_http_provider,
 };
 
 sol! {

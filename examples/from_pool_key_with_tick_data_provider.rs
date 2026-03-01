@@ -15,7 +15,7 @@ use uniswap_v3_sdk::prelude::*;
 
 #[path = "common/mod.rs"]
 mod common;
-use common::{setup_http_provider, BLOCK_ID, CHAIN_ID, WBTC, WETH};
+use common::{BLOCK_ID, CHAIN_ID, WBTC, WETH, setup_http_provider};
 
 #[tokio::main]
 async fn main() {

@@ -10,8 +10,8 @@ use alloy::{
     rpc::types::state::{AccountOverride, StateOverride},
 };
 use alloy_primitives::{
-    map::{B256HashMap, B256HashSet},
     Address, B256, U256,
+    map::{B256HashMap, B256HashSet},
 };
 use alloy_sol_types::SolCall;
 use uniswap_lens::bindings::ierc20::IERC20;
@@ -94,7 +94,7 @@ fn filter_access_list(access_list: AccessList, token: Address) -> Vec<AccessList
 mod tests {
     use super::*;
     use crate::tests::*;
-    use alloy_primitives::{address, U256};
+    use alloy_primitives::{U256, address};
     use uniswap_sdk_core::prelude::{BaseCurrency, NONFUNGIBLE_POSITION_MANAGER_ADDRESSES};
 
     #[tokio::test]

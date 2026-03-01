@@ -8,7 +8,7 @@ use alloy::{
     providers::Provider,
     sol,
 };
-use alloy_primitives::{aliases::I24, Address, U256};
+use alloy_primitives::{Address, U256, aliases::I24};
 
 sol! {
     #[sol(rpc)]

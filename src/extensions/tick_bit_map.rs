@@ -4,7 +4,7 @@
 //! [`TickBitMapProvider::get_word`].
 
 use crate::prelude::*;
-use alloy_primitives::{aliases::I24, map::rustc_hash::FxHashMap, uint, U256};
+use alloy_primitives::{U256, aliases::I24, map::rustc_hash::FxHashMap, uint};
 
 pub type TickBitMap<I = I24> = FxHashMap<I, U256>;
 
