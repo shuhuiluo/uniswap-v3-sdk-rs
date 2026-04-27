@@ -69,7 +69,7 @@ incompatible-rust-versions = "fallback"
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "6.1.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "6.2.0", features = ["extensions", "std"] }
 ```
 
 ### Usage
