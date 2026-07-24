@@ -389,9 +389,14 @@ where
         if self.trade_type == TradeType::ExactOutput {
             return Ok(output_amount);
         }
-        output_amount
-            .multiply(&((Percent::new(1, 1) + slippage_tolerance).invert()))
-            .map_err(|e| e.into())
+        // Slippage tolerance represents the fraction of output the trader is willing to lose, not
+        // a worsening of the execution price, so clamp to zero rather than go negative.
+        let multiplier = Percent::new(1, 1) - slippage_tolerance;
+        if multiplier < Percent::default() {
+            return CurrencyAmount::from_raw_amount(output_amount.meta.currency, 0)
+                .map_err(|e| e.into());
+        }
+        output_amount.multiply(&multiplier).map_err(|e| e.into())
     }
 
     /// Get the minimum amount that must be received from this trade for the given slippage
@@ -416,9 +421,12 @@ where
         if self.trade_type == TradeType::ExactOutput {
             return Ok(output_amount);
         }
-        output_amount
-            .multiply(&((Percent::new(1, 1) + slippage_tolerance).invert()))
-            .map_err(|e| e.into())
+        let multiplier = Percent::new(1, 1) - slippage_tolerance;
+        if multiplier < Percent::default() {
+            return CurrencyAmount::from_raw_amount(output_amount.meta.currency, 0)
+                .map_err(|e| e.into());
+        }
+        output_amount.multiply(&multiplier).map_err(|e| e.into())
     }
 
     /// Get the maximum amount in that can be spent via this trade for the given slippage tolerance
@@ -1267,11 +1275,11 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 10500, 6900)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 2000, 1311)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 23)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 0)
                 );
             }
 
@@ -1284,11 +1292,11 @@ mod tests {
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(5, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 10500, 6900)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 2000, 1311)
                 );
                 assert_eq!(
                     trade.worst_execution_price(Percent::new(200, 100)).unwrap(),
-                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 23)
+                    Price::new(TOKEN0.clone(), TOKEN2.clone(), 100, 0)
                 );
             }
         }
@@ -1944,13 +1952,13 @@ mod tests {
                     trade
                         .minimum_amount_out(Percent::new(5, 100), None)
                         .unwrap(),
-                    CurrencyAmount::from_fractional_amount(TOKEN2.clone(), 700400, 105).unwrap()
+                    CurrencyAmount::from_fractional_amount(TOKEN2.clone(), 33269, 5).unwrap()
                 );
                 assert_eq!(
                     trade
                         .minimum_amount_out(Percent::new(200, 100), None)
                         .unwrap(),
-                    CurrencyAmount::from_fractional_amount(TOKEN2.clone(), 700400, 300).unwrap()
+                    CurrencyAmount::from_raw_amount(TOKEN2.clone(), 0).unwrap()
                 );
             }
         }
