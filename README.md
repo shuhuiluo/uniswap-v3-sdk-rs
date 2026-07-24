@@ -55,7 +55,7 @@ When updating this, also update:
 - .github/workflows/rust.yml
 -->
 
-The current MSRV (minimum supported Rust version) is 1.88.
+The current MSRV (minimum supported Rust version) is 1.91.
 
 To avoid transitive dependencies requiring a newer `rustc`, use edition 2024 or add to `.cargo/config.toml`:
 
@@ -69,7 +69,7 @@ incompatible-rust-versions = "fallback"
 Add the following to your `Cargo.toml` file:
 
 ```toml
-uniswap-v3-sdk = { version = "6.2.0", features = ["extensions", "std"] }
+uniswap-v3-sdk = { version = "7.0.0", features = ["extensions", "std"] }
 ```
 
 ### Usage

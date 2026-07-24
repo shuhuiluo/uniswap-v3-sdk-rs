@@ -12,7 +12,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-  MSRV: 1.88
+  MSRV: 1.91
 
 jobs:
   lint:
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        rust-version: [ '1.88', 'stable' ]
+        rust-version: [ '1.91', 'stable' ]
     steps:
       - uses: actions/checkout@v4
       - name: Cache Cargo registry
