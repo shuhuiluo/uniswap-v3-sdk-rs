@@ -17,23 +17,26 @@ pub fn get_fee_growth_inside<const BITS: usize, const LIMBS: usize, T: PartialOr
     fee_growth_global0_x128: Uint<BITS, LIMBS>,
     fee_growth_global1_x128: Uint<BITS, LIMBS>,
 ) -> (Uint<BITS, LIMBS>, Uint<BITS, LIMBS>) {
-    let fee_growth_inside0_x128;
-    let fee_growth_inside1_x128;
     if tick_current < tick_lower {
-        fee_growth_inside0_x128 = lower.fee_growth_outside0_x128 - upper.fee_growth_outside0_x128;
-        fee_growth_inside1_x128 = lower.fee_growth_outside1_x128 - upper.fee_growth_outside1_x128;
+        (
+            lower.fee_growth_outside0_x128 - upper.fee_growth_outside0_x128,
+            lower.fee_growth_outside1_x128 - upper.fee_growth_outside1_x128,
+        )
     } else if tick_current >= tick_upper {
-        fee_growth_inside0_x128 = upper.fee_growth_outside0_x128 - lower.fee_growth_outside0_x128;
-        fee_growth_inside1_x128 = upper.fee_growth_outside1_x128 - lower.fee_growth_outside1_x128;
+        (
+            upper.fee_growth_outside0_x128 - lower.fee_growth_outside0_x128,
+            upper.fee_growth_outside1_x128 - lower.fee_growth_outside1_x128,
+        )
     } else {
-        fee_growth_inside0_x128 = fee_growth_global0_x128
-            - lower.fee_growth_outside0_x128
-            - upper.fee_growth_outside0_x128;
-        fee_growth_inside1_x128 = fee_growth_global1_x128
-            - lower.fee_growth_outside1_x128
-            - upper.fee_growth_outside1_x128;
+        (
+            fee_growth_global0_x128
+                - lower.fee_growth_outside0_x128
+                - upper.fee_growth_outside0_x128,
+            fee_growth_global1_x128
+                - lower.fee_growth_outside1_x128
+                - upper.fee_growth_outside1_x128,
+        )
     }
-    (fee_growth_inside0_x128, fee_growth_inside1_x128)
 }
 
 #[cfg(test)]
